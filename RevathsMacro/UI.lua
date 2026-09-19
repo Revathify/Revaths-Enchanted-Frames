@@ -884,9 +884,9 @@ local function BuildUI()
     fontMinus:SetScript("OnClick", function() ChangeEditorFontSize(-1) end); fontPlus:SetScript("OnClick", function() ChangeEditorFontSize(1) end)
     macroBody = Edit(editorPane, true); macroBody.styleRole = "parchment"; ApplyFrameBackdrop(macroBody); macroBody:SetPoint("TOPLEFT", bodyLabel, "BOTTOMLEFT", 0, -6); macroBody:SetPoint("BOTTOMRIGHT", -20, 139); macroBody:SetMaxLetters(255)
     local suggestionPopup = CreateFrame("Frame", nil, editorPane, "BackdropTemplate"); suggestionPopup:SetSize(500, 224); suggestionPopup:SetFrameLevel(editorPane:GetFrameLevel() + 10); RegisterBackdrop(suggestionPopup, "panel"); suggestionPopup:Hide()
-    local suggestionTitle = Text(suggestionPopup, 11, "muted"); suggestionTitle:SetPoint("TOPLEFT", 10, -8); suggestionTitle:SetText("SYNTAX SUGGESTIONS  ·  TAB TO SELECT  ·  ENTER TO INSERT")
-    local suggestionHint = Text(suggestionPopup, 13, "muted"); suggestionHint:SetPoint("TOPLEFT", 14, -42); suggestionHint:SetWidth(380); suggestionHint:SetText("Start typing spell name"); suggestionHint:Hide()
-    local suggestionSyntax = Text(suggestionPopup, 11, "accent2"); suggestionSyntax:SetPoint("BOTTOMLEFT", 12, 8); suggestionSyntax:SetPoint("RIGHT", -12, 0); suggestionSyntax:SetHeight(30); suggestionSyntax:SetWordWrap(true); suggestionSyntax:SetJustifyV("BOTTOM"); suggestionSyntax:SetText("Syntax:\n/castsequence [conditions] reset=target/combat/5 Spell One, Spell Two"); suggestionSyntax:Hide()
+    local suggestionTitle = Text(suggestionPopup, 14, "muted"); suggestionTitle:SetPoint("TOPLEFT", 12, -10); suggestionTitle:SetText("SYNTAX HELP  ·  TAB: SELECT  ·  ENTER: INSERT")
+    local suggestionHint = Text(suggestionPopup, 16, "muted"); suggestionHint:SetPoint("TOPLEFT", 16, -52); suggestionHint:SetWidth(440); suggestionHint:SetText("Start typing spell name"); suggestionHint:Hide()
+    local suggestionSyntax = Text(suggestionPopup, 14, "accent2"); suggestionSyntax:SetPoint("BOTTOMLEFT", 14, 10); suggestionSyntax:SetPoint("RIGHT", -14, 0); suggestionSyntax:SetHeight(40); suggestionSyntax:SetWordWrap(true); suggestionSyntax:SetJustifyV("BOTTOM"); suggestionSyntax:SetText("Syntax:\n/castsequence [conditions] reset=target/combat/5 Spell One, Spell Two"); suggestionSyntax:Hide()
     local caretMeasure = macroBody:CreateFontString(nil, "OVERLAY"); caretMeasure:SetAlpha(0); caretMeasure:SetPoint("TOPLEFT", macroBody, "TOPLEFT")
     local commandCatalog = {
         { "/cast ", "Cast a spell" }, { "/castsequence ", "Cast spells in sequence" }, { "/castrandom ", "Cast one listed spell" },
@@ -1035,9 +1035,10 @@ local function BuildUI()
     local sequenceSkipResetKey, sequenceEndedKey
     local UpdateSuggestions, QueueSuggestionRefresh
     for index = 1, 8 do
-        local button = Button(suggestionPopup, "", 480, 21); button:SetPoint("TOPLEFT", 10, -25 - (index - 1) * 23)
-        button.label:SetJustifyH("LEFT"); button.label:ClearAllPoints(); button.label:SetPoint("LEFT", 7, 0); button.label:SetPoint("RIGHT", button, "CENTER", -6, 0)
-        button.detail = Text(button, 10, "muted", "LEFT"); button.detail:SetPoint("LEFT", button, "CENTER", 6, 0); button.detail:SetPoint("RIGHT", -7, 0); button.detail:SetWordWrap(false)
+        local button = Button(suggestionPopup, "", 480, 31); button:SetPoint("TOPLEFT", 10, -34 - (index - 1) * 34)
+        button.label.baseSize = 15; button.label:SetFont(STANDARD_TEXT_FONT, 15, "")
+        button.label:SetJustifyH("LEFT"); button.label:ClearAllPoints(); button.label:SetPoint("LEFT", 9, 0); button.label:SetPoint("RIGHT", button, "CENTER", -7, 0)
+        button.detail = Text(button, 13, "muted", "LEFT"); button.detail:SetPoint("LEFT", button, "CENTER", 7, 0); button.detail:SetPoint("RIGHT", -9, 0); button.detail:SetWordWrap(false)
         suggestionButtons[index] = button
     end
     local function PaintSuggestions()
@@ -1323,9 +1324,9 @@ local function BuildUI()
         local x = 10 + (textWidth % innerWidth)
         local lineHeight = (fontSize or 13) + 4
         local lineTop = 8 + (visualLine * lineHeight)
-        local popupWidth = math.max(340, math.min(620, (macroBody:GetWidth() or 400) - 16))
-        local footerHeight = showSequenceSyntax and 42 or 0
-        local popupHeight = (infoOnly and 78 or (42 + (#matches * 23))) + footerHeight
+        local popupWidth = math.max(360, math.min(700, (macroBody:GetWidth() or 400) - 16))
+        local footerHeight = showSequenceSyntax and 56 or 0
+        local popupHeight = (infoOnly and 96 or (50 + (#matches * 34))) + footerHeight
         suggestionPopup:SetSize(popupWidth, popupHeight)
         for _, button in ipairs(suggestionButtons) do button:SetWidth(popupWidth - 20) end
         x = math.max(8, math.min(x, (macroBody:GetWidth() or 400) - popupWidth - 8))

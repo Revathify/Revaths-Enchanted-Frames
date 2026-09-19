@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.11 — Readable syntax assistant
+
+- Increased the syntax-helper heading, suggestion labels, explanations, prompts, and full command preview for comfortable reading at normal gameplay scale.
+- Increased suggestion row height and spacing so the larger type remains clean and uncluttered.
+- Expanded the helper popup and castsequence syntax footer to prevent the larger text from crowding or clipping.
+
 ## 3.0.10 — Font-safe controls and clearer syntax help
 
 - Replaced unsupported checkmark, menu, arrow, and status glyphs that appeared as rectangular boxes with font-safe styling.
