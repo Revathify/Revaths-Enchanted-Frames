@@ -2,7 +2,7 @@
 ## Title: Revath's Enchanted Tooltips
 ## Notes: Account-wide bag, bank, and Warband-bank item totals in item tooltips.
 ## Author: Revath#2331 (Revathify)
-## Version: 3.0.9
+## Version: 3.0.10
 ## Dependencies: RevathsEnchantedFrames
 ## SavedVariables: RevathsMailboxTooltipHelperDB
 ## Category: User Interface
