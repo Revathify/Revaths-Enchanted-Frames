@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.10 — Font-safe controls and clearer syntax help
+
+- Replaced unsupported checkmark, menu, arrow, and status glyphs that appeared as rectangular boxes with font-safe styling.
+- Added proper dropdown arrow textures to Mailbox, Macros, and Blizzard AddOns settings.
+- Selected options now use accent colors and borders instead of font-dependent symbols.
+- Removed the Support section from the Blizzard AddOns overview.
+- Increased syntax-helper heading, detail, hint, and full-syntax font sizes.
+- Expanded the syntax footer and popup width so the larger command example remains readable.
+
 ## 3.0.9 — Version synchronization safeguards
 
 - Made every in-game module display the parent Enchanted Frames suite version as the canonical version.

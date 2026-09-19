@@ -344,6 +344,15 @@ local function Button(parent, label, width, height)
     return button
 end
 
+local function AddDropdownArrow(button)
+    local arrow = button:CreateTexture(nil, "ARTWORK")
+    arrow:SetSize(17, 17); arrow:SetPoint("RIGHT", -9, 0)
+    local atlasLoaded = arrow.SetAtlas and pcall(arrow.SetAtlas, arrow, "common-dropdown-icon")
+    if not atlasLoaded then arrow:SetTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Up") end
+    button.label:ClearAllPoints(); button.label:SetPoint("LEFT", 10, 0); button.label:SetPoint("RIGHT", -31, 0); button.label:SetJustifyH("CENTER")
+    button.dropdownArrow = arrow
+end
+
 local function Edit(parent, multiline)
     local object = CreateFrame("EditBox", nil, parent, "BackdropTemplate")
     RegisterBackdrop(object, "input")
@@ -405,8 +414,8 @@ local function ApplyAppearance()
     if modernSkinButton and classicSkinButton and ns.db then
         modernSkinButton.selected = ns.db.skin ~= "classic"
         classicSkinButton.selected = ns.db.skin == "classic"
-        modernSkinButton.label:SetText((modernSkinButton.selected and "✓  " or "") .. "Modern")
-        classicSkinButton.label:SetText((classicSkinButton.selected and "✓  " or "") .. "Classic")
+        modernSkinButton.label:SetText("Modern")
+        classicSkinButton.label:SetText("Classic")
         ApplyFrameBackdrop(modernSkinButton); ApplyFrameBackdrop(classicSkinButton)
     end
     if frame and not scaleDragging then frame:SetScale(ns.db and ns.db.scale or 1) end
@@ -721,6 +730,7 @@ local function BuildSettings()
     classicSkinButton:SetScript("OnClick", function() ns.db.skin = "classic"; ApplyAppearance(); settingsPage:Refresh(); NotifySharedSettings() end)
     local paletteTitle = Text(settingsPage, 11, "muted"); paletteTitle:SetPoint("TOPLEFT", 360, -82); paletteTitle:SetText("MODERN COLOR PALETTE")
     local paletteButton = Button(settingsPage, "", 280, 34); paletteButton:SetPoint("TOPLEFT", 360, -103)
+    AddDropdownArrow(paletteButton)
     local paletteMenu = CreateFrame("Frame", nil, settingsPage, "BackdropTemplate")
     paletteMenu:SetSize(304, 220); paletteMenu:SetFrameLevel(settingsPage:GetFrameLevel() + 20); paletteMenu:SetClampedToScreen(true); RegisterBackdrop(paletteMenu, "panel"); paletteMenu:Hide()
     local paletteMenuTitle = Text(paletteMenu, 11, "muted"); paletteMenuTitle:SetPoint("TOPLEFT", 12, -10); paletteMenuTitle:SetText("SELECT COLOR PALETTE")
@@ -738,6 +748,7 @@ local function BuildSettings()
     DiscoverSharedMediaFonts()
     local fontTitle = Text(settingsPage, 11, "muted"); fontTitle:SetPoint("TOPLEFT", 28, -165); fontTitle:SetText("ADDON FONT")
     local fontButton = Button(settingsPage, "", 300, 34); fontButton:SetPoint("TOPLEFT", 28, -186)
+    AddDropdownArrow(fontButton)
     local fontMenu = CreateFrame("Frame", nil, settingsPage, "BackdropTemplate")
     fontMenu:SetSize(360, 250); fontMenu:SetFrameLevel(settingsPage:GetFrameLevel() + 20); fontMenu:SetClampedToScreen(true); RegisterBackdrop(fontMenu, "panel"); fontMenu:Hide()
     local fontMenuTitle = Text(fontMenu, 11, "muted"); fontMenuTitle:SetPoint("TOPLEFT", 12, -10); fontMenuTitle:SetText("SELECT FONT")
@@ -748,9 +759,9 @@ local function BuildSettings()
         button:SetPoint("TOPLEFT", 12 + column * 172, -30 - row * 34)
         fontMenuButtons[index] = button
     end
-    local fontPrev = Button(fontMenu, "‹", 28, 24); fontPrev:SetPoint("BOTTOMLEFT", 12, 10)
+    local fontPrev = Button(fontMenu, "<", 28, 24); fontPrev:SetPoint("BOTTOMLEFT", 12, 10)
     local fontPage = Text(fontMenu, 10, "muted", "CENTER"); fontPage:SetPoint("BOTTOM", 0, 15); fontPage:SetWidth(80)
-    local fontNext = Button(fontMenu, "›", 28, 24); fontNext:SetPoint("BOTTOMRIGHT", -12, 10)
+    local fontNext = Button(fontMenu, ">", 28, 24); fontNext:SetPoint("BOTTOMRIGHT", -12, 10)
     local fontMenuPage = 1
     local function RefreshFontMenu()
         DiscoverSharedMediaFonts()
@@ -760,8 +771,10 @@ local function BuildSettings()
             local option = FONTS[start + index]
             button:SetShown(option ~= nil)
             if option then
-                button.label:SetText(option.label .. (option.key == ns.db.font and "  ✓" or ""))
+                button.label:SetText(option.label)
                 button.label:SetFont(option.path, 11, option.flags or "")
+                button.selected = option.key == ns.db.font
+                ApplyFrameBackdrop(button)
                 button:SetScript("OnClick", function()
                     ns.db.font = option.key; fontMenu:Hide(); settingsPage:Refresh(); ApplyAppearance(); NotifySharedSettings()
                 end)
@@ -784,8 +797,8 @@ local function BuildSettings()
     function settingsPage:Refresh()
         settingsRefreshing = true
         local palette = PALETTES[ns.db.palette] or PALETTES.midnight
-        paletteButton.label:SetText(palette.label .. "  ▾")
-        fontButton.label:SetText(SelectedFont().label .. "  ▾"); opacity:SetValue(ns.db.opacity); RefreshFontMenu()
+        paletteButton.label:SetText(palette.label)
+        fontButton.label:SetText(SelectedFont().label); opacity:SetValue(ns.db.opacity); RefreshFontMenu()
         settingsRefreshing = false; ApplyAppearance()
     end
     settingsPage:Hide()
@@ -865,15 +878,15 @@ local function BuildUI()
     local nameLabel = Text(editorPane, 11, "muted"); nameLabel:SetPoint("TOPLEFT", 20, -70); nameLabel:SetPoint("RIGHT", iconButton, "LEFT", -12, 0); nameLabel:SetWordWrap(false); nameLabel:SetText("MACRO NAME")
     macroName = Edit(editorPane); macroName:SetPoint("TOPLEFT", nameLabel, "BOTTOMLEFT", 0, -6); macroName:SetPoint("RIGHT", iconButton, "LEFT", -12, 0); macroName:SetHeight(35); macroName:SetMaxLetters(16)
     bodyLabel = Text(editorPane, 11, "muted"); bodyLabel:SetPoint("TOPLEFT", 20, -128); bodyLabel:SetPoint("RIGHT", -145, 0); bodyLabel:SetWordWrap(false); bodyLabel:SetText("MACRO BODY")
-    local fontMinus = Button(editorPane, "−", 27, 23); fontMinus:SetPoint("TOPRIGHT", -57, -111)
+    local fontMinus = Button(editorPane, "-", 27, 23); fontMinus:SetPoint("TOPRIGHT", -57, -111)
     editorFontValue = Text(editorPane, 10, "accent2", "RIGHT"); editorFontValue:SetPoint("RIGHT", fontMinus, "LEFT", -7, 0); editorFontValue:SetWidth(40)
     local fontPlus = Button(editorPane, "+", 27, 23); fontPlus:SetPoint("TOPRIGHT", -20, -111)
     fontMinus:SetScript("OnClick", function() ChangeEditorFontSize(-1) end); fontPlus:SetScript("OnClick", function() ChangeEditorFontSize(1) end)
     macroBody = Edit(editorPane, true); macroBody.styleRole = "parchment"; ApplyFrameBackdrop(macroBody); macroBody:SetPoint("TOPLEFT", bodyLabel, "BOTTOMLEFT", 0, -6); macroBody:SetPoint("BOTTOMRIGHT", -20, 139); macroBody:SetMaxLetters(255)
     local suggestionPopup = CreateFrame("Frame", nil, editorPane, "BackdropTemplate"); suggestionPopup:SetSize(500, 224); suggestionPopup:SetFrameLevel(editorPane:GetFrameLevel() + 10); RegisterBackdrop(suggestionPopup, "panel"); suggestionPopup:Hide()
-    local suggestionTitle = Text(suggestionPopup, 10, "muted"); suggestionTitle:SetPoint("TOPLEFT", 10, -8); suggestionTitle:SetText("SYNTAX SUGGESTIONS  ·  TAB TO SELECT  ·  ENTER TO INSERT")
-    local suggestionHint = Text(suggestionPopup, 12, "muted"); suggestionHint:SetPoint("TOPLEFT", 14, -42); suggestionHint:SetWidth(340); suggestionHint:SetText("Start typing spell name"); suggestionHint:Hide()
-    local suggestionSyntax = Text(suggestionPopup, 9, "accent2"); suggestionSyntax:SetPoint("BOTTOMLEFT", 12, 9); suggestionSyntax:SetPoint("RIGHT", -12, 0); suggestionSyntax:SetWordWrap(false); suggestionSyntax:SetText("Syntax: /castsequence [conditions] reset=target/combat/5 Spell One, Spell Two"); suggestionSyntax:Hide()
+    local suggestionTitle = Text(suggestionPopup, 11, "muted"); suggestionTitle:SetPoint("TOPLEFT", 10, -8); suggestionTitle:SetText("SYNTAX SUGGESTIONS  ·  TAB TO SELECT  ·  ENTER TO INSERT")
+    local suggestionHint = Text(suggestionPopup, 13, "muted"); suggestionHint:SetPoint("TOPLEFT", 14, -42); suggestionHint:SetWidth(380); suggestionHint:SetText("Start typing spell name"); suggestionHint:Hide()
+    local suggestionSyntax = Text(suggestionPopup, 11, "accent2"); suggestionSyntax:SetPoint("BOTTOMLEFT", 12, 8); suggestionSyntax:SetPoint("RIGHT", -12, 0); suggestionSyntax:SetHeight(30); suggestionSyntax:SetWordWrap(true); suggestionSyntax:SetJustifyV("BOTTOM"); suggestionSyntax:SetText("Syntax:\n/castsequence [conditions] reset=target/combat/5 Spell One, Spell Two"); suggestionSyntax:Hide()
     local caretMeasure = macroBody:CreateFontString(nil, "OVERLAY"); caretMeasure:SetAlpha(0); caretMeasure:SetPoint("TOPLEFT", macroBody, "TOPLEFT")
     local commandCatalog = {
         { "/cast ", "Cast a spell" }, { "/castsequence ", "Cast spells in sequence" }, { "/castrandom ", "Cast one listed spell" },
@@ -1024,7 +1037,7 @@ local function BuildUI()
     for index = 1, 8 do
         local button = Button(suggestionPopup, "", 480, 21); button:SetPoint("TOPLEFT", 10, -25 - (index - 1) * 23)
         button.label:SetJustifyH("LEFT"); button.label:ClearAllPoints(); button.label:SetPoint("LEFT", 7, 0); button.label:SetPoint("RIGHT", button, "CENTER", -6, 0)
-        button.detail = Text(button, 9, "muted", "LEFT"); button.detail:SetPoint("LEFT", button, "CENTER", 6, 0); button.detail:SetPoint("RIGHT", -7, 0); button.detail:SetWordWrap(false)
+        button.detail = Text(button, 10, "muted", "LEFT"); button.detail:SetPoint("LEFT", button, "CENTER", 6, 0); button.detail:SetPoint("RIGHT", -7, 0); button.detail:SetWordWrap(false)
         suggestionButtons[index] = button
     end
     local function PaintSuggestions()
@@ -1237,12 +1250,12 @@ local function BuildUI()
                                 local entry = castTargetCatalog[index]
                                 matches[#matches + 1] = { insert = "[" .. entry[1], detail = entry[2] }
                             end
-                            matches[#matches + 1] = { label = "Add reset condition…", insert = "reset=", detail = "Choose when the sequence returns to its first spell" }
-                            matches[#matches + 1] = { label = "Skip target and reset → first spell", insert = "", detail = "Continue without target or reset options", skipReset = true }
+                            matches[#matches + 1] = { label = "Add reset condition...", insert = "reset=", detail = "Choose when the sequence returns to its first spell" }
+                            matches[#matches + 1] = { label = "Skip target and reset; start first spell", insert = "", detail = "Continue without target or reset options", skipReset = true }
                             suggestionTitle:SetText("CASTSEQUENCE  ·  OPTIONAL TARGET OR RESET")
                         else
-                            matches[#matches + 1] = { label = "Add reset condition…", insert = "reset=", detail = "Choose when the sequence returns to its first spell" }
-                            matches[#matches + 1] = { label = "Skip reset → first spell", insert = "", detail = "Keep the target conditions and choose a spell", skipReset = true }
+                            matches[#matches + 1] = { label = "Add reset condition...", insert = "reset=", detail = "Choose when the sequence returns to its first spell" }
+                            matches[#matches + 1] = { label = "Skip reset; start first spell", insert = "", detail = "Keep the target conditions and choose a spell", skipReset = true }
                             suggestionTitle:SetText("CASTSEQUENCE  ·  CHOOSE RESET OR CONTINUE")
                         end
                     else
@@ -1270,7 +1283,7 @@ local function BuildUI()
                         end
                         if isCastSequence and completeSpell then
                             table.insert(matches, 1, { label = "+ Add next spell", insert = ", ", detail = "Insert comma and continue the sequence", replaceStart = cursor + 1, replaceEnd = cursor })
-                            table.insert(matches, 2, { label = "✓ END MACRO", insert = "", detail = "Keep this as the final spell and stop guidance", replaceStart = cursor + 1, replaceEnd = cursor, endSequence = true })
+                            table.insert(matches, 2, { label = "END MACRO", insert = "", detail = "Keep this as the final spell and stop guidance", replaceStart = cursor + 1, replaceEnd = cursor, endSequence = true })
                             while #matches > 8 do table.remove(matches) end
                         end
                     end
@@ -1310,8 +1323,8 @@ local function BuildUI()
         local x = 10 + (textWidth % innerWidth)
         local lineHeight = (fontSize or 13) + 4
         local lineTop = 8 + (visualLine * lineHeight)
-        local popupWidth = math.max(340, math.min(520, (macroBody:GetWidth() or 400) - 16))
-        local footerHeight = showSequenceSyntax and 24 or 0
+        local popupWidth = math.max(340, math.min(620, (macroBody:GetWidth() or 400) - 16))
+        local footerHeight = showSequenceSyntax and 42 or 0
         local popupHeight = (infoOnly and 78 or (42 + (#matches * 23))) + footerHeight
         suggestionPopup:SetSize(popupWidth, popupHeight)
         for _, button in ipairs(suggestionButtons) do button:SetWidth(popupWidth - 20) end

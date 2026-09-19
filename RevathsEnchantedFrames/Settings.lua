@@ -107,6 +107,14 @@ local function AddDropdown(panel, y, labelText, optionsProvider, getter, setter,
     Label(panel, labelText, y)
     local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     button:SetPoint("TOPLEFT", 24, y - 24); button:SetSize(300, 30)
+    local arrow = button:CreateTexture(nil, "ARTWORK")
+    arrow:SetSize(17, 17); arrow:SetPoint("RIGHT", -9, 0)
+    local atlasLoaded = arrow.SetAtlas and pcall(arrow.SetAtlas, arrow, "common-dropdown-icon")
+    if not atlasLoaded then arrow:SetTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Up") end
+    local buttonText = button:GetFontString()
+    if buttonText then
+        buttonText:ClearAllPoints(); buttonText:SetPoint("LEFT", 12, 0); buttonText:SetPoint("RIGHT", -32, 0); buttonText:SetJustifyH("CENTER")
+    end
     local menu = CreateFrame("Frame", nil, panel, "BackdropTemplate")
     menu:SetSize(320, 306); menu:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0, -4)
     menu:SetFrameStrata("FULLSCREEN_DIALOG"); menu:SetClampedToScreen(true)
@@ -140,12 +148,17 @@ local function AddDropdown(panel, y, labelText, optionsProvider, getter, setter,
             choice.optionKey = option and option.key
             choice:SetShown(option ~= nil)
             if option then
-                choice:SetText((option.key == getter() and "✓  " or "") .. option.label)
+                local selected = option.key == getter()
+                choice:SetText(option.label)
                 local fontString = choice:GetFontString()
                 if fontString and option.path then
                     local ok, loaded = pcall(fontString.SetFont, fontString, option.path, 12, option.flags or "")
                     if not ok or loaded == false then fontString:SetFont(STANDARD_TEXT_FONT, 12, "") end
                 elseif fontString then fontString:SetFont(STANDARD_TEXT_FONT, 12, "") end
+                if fontString then
+                    if selected then fontString:SetTextColor(1, 0.82, 0.18, 1)
+                    else fontString:SetTextColor(1, 1, 1, 1) end
+                end
             end
         end
         previous:SetEnabled(self.page > 1); nextButton:SetEnabled(self.page < pages)
@@ -165,7 +178,7 @@ local function AddDropdown(panel, y, labelText, optionsProvider, getter, setter,
         local key = getter()
         for _, option in ipairs(options) do
             if option.key == key then
-                button:SetText(option.label .. "  ▾")
+                button:SetText(option.label)
                 local fontString = button:GetFontString()
                 if fontString and option.path then
                     local ok, loaded = pcall(fontString.SetFont, fontString, option.path, 12, option.flags or "")
@@ -174,7 +187,7 @@ local function AddDropdown(panel, y, labelText, optionsProvider, getter, setter,
                 return
             end
         end
-        button:SetText(options[1].label .. "  ▾")
+        button:SetText(options[1].label)
     end
     button.Refresh = Refresh
     button:SetScript("OnClick", function()
@@ -226,7 +239,7 @@ end
 local function AddModuleStatus(panel, y, title, addonID, description)
     local enabled = not C_AddOns or not C_AddOns.IsAddOnEnabled or C_AddOns.IsAddOnEnabled(addonID)
     local name = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    name:SetPoint("TOPLEFT", 24, y); name:SetText((enabled and "|cff55dd88●|r  " or "|cffdd5555●|r  ") .. title)
+    name:SetPoint("TOPLEFT", 24, y); name:SetText((enabled and "|cff55dd88ENABLED|r  " or "|cffdd5555DISABLED|r  ") .. title)
     local detail = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     detail:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 20, -5); detail:SetWidth(560); detail:SetJustifyH("LEFT"); detail:SetText(description)
 end
@@ -243,9 +256,7 @@ function ns:RegisterSettings()
     Label(overview, self.author, -360, "GameFontHighlight")
     Label(overview, "VERSION", -402, "GameFontNormalSmall")
     Label(overview, tostring(self.version), -424, "GameFontHighlight")
-    Label(overview, "SUPPORT", -466, "GameFontNormalSmall")
-    Label(overview, self.support, -488, "GameFontHighlight")
-    Label(overview, "Open these settings with /ref or /enchantedframes.", -536, "GameFontHighlightSmall")
+    Label(overview, "Open these settings with /ref or /enchantedframes.", -472, "GameFontHighlightSmall")
 
     local mailboxPanel = CreatePanel("Revath's Enchanted Mailbox", "Account-wide appearance and mailbox behavior. Changes apply immediately when the mailbox module is loaded.")
     AddDropdown(mailboxPanel, -96, "Skin", function() return SKINS end, function() return EnsureMailboxSettings().skin end, function(v) EnsureMailboxSettings().skin = v end, ApplyMailbox)

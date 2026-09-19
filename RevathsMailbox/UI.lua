@@ -254,6 +254,15 @@ local function Button(parent, label, width, height)
     return b
 end
 
+local function AddDropdownArrow(button)
+    local arrow = button:CreateTexture(nil, "ARTWORK")
+    arrow:SetSize(17, 17); arrow:SetPoint("RIGHT", -9, 0)
+    local atlasLoaded = arrow.SetAtlas and pcall(arrow.SetAtlas, arrow, "common-dropdown-icon")
+    if not atlasLoaded then arrow:SetTexture("Interface\\Buttons\\UI-ScrollBar-ScrollDownButton-Up") end
+    button.label:ClearAllPoints(); button.label:SetPoint("LEFT", 10, 0); button.label:SetPoint("RIGHT", -31, 0); button.label:SetJustifyH("CENTER")
+    button.dropdownArrow = arrow
+end
+
 local function EditBox(parent, multiline)
     local box = CreateFrame("EditBox", nil, parent, "BackdropTemplate")
     ApplyBackdrop(box, C.input, "input")
@@ -498,7 +507,7 @@ function ns:SelectTab(name)
     local settingsSelected = name == "Settings"
     headerSettings:SetBackdropColor(unpack(settingsSelected and C.buttonHover or C.button))
     headerSettings:SetBackdropBorderColor(unpack(settingsSelected and C.accent or C.border))
-    headerSettings.label:SetText((settingsSelected and "✓  " or "") .. "Settings")
+    headerSettings.label:SetText("Settings")
     if self.mailOpen then SetSendMailShowing(name == "Compose") end
     if name == "Inbox" then self:RefreshInbox()
     elseif name == "Compose" then self:RefreshCompose()
@@ -528,7 +537,7 @@ inboxHeader:SetText("LOADED MAIL")
 
 local refresh = Button(inboxList, "Refresh", 78, 26)
 refresh:SetPoint("TOPRIGHT", -12, -9)
-refresh:SetScript("OnClick", function() CheckInbox(); ns:SetStatus("Checking for mail…") end)
+refresh:SetScript("OnClick", function() CheckInbox(); ns:SetStatus("Checking for mail...") end)
 
 local openAll = Button(inboxList, "Open all", 90, 26)
 openAll:SetPoint("RIGHT", refresh, "LEFT", -6, 0)
@@ -676,7 +685,7 @@ function ns:ContinueOpenAll()
         inbox.openAll.checkAttempts = 0
         inbox.openAll.waiting = true
         openAll.label:SetText("Stop")
-        self:SetStatus(string.format("Opening mail… %d collected", inbox.openAll.processed))
+        self:SetStatus(string.format("Opening mail... %d collected", inbox.openAll.processed))
         AutoLootMailItem(index)
         C_Timer.After(2, function()
             if inbox.openAll.active and inbox.openAll.waiting then
@@ -728,7 +737,7 @@ openAll:SetScript("OnClick", function()
     inbox.openAll.checkAttempts = 0
     openAll.label:SetText("Stop")
     SetOpeningAllState(true)
-    ns:SetStatus("Opening all mail…")
+    ns:SetStatus("Opening all mail...")
     ns:ContinueOpenAll()
 end)
 
@@ -1265,7 +1274,7 @@ local attachBoE = Button(moneyPanel, "All bind-on-equip", 238, 30)
 attachBoE:SetPoint("TOPLEFT", 16, -276)
 attachBoE:SetScript("OnClick", function() AttachMatchingItems("boe", nil, "bind-on-equip items") end)
 
-local materialButton = Button(moneyPanel, "Material type…", 238, 30)
+local materialButton = Button(moneyPanel, "Material type...", 238, 30)
 materialButton:SetPoint("TOPLEFT", 16, -312)
 
 local materialMenu = CreateFrame("Frame", nil, moneyPanel, "BackdropTemplate")
@@ -1321,7 +1330,7 @@ send:SetScript("OnClick", function()
     if subjectText == "" then ns:SetStatus("Add a subject.", true); subjectBox:SetFocus(); return end
     local amount = ((tonumber(compose.gold:GetText()) or 0) * 10000) + ((tonumber(compose.silver:GetText()) or 0) * 100) + (tonumber(compose.copper:GetText()) or 0)
     if cod:GetChecked() then SetSendMailMoney(0); SetSendMailCOD(amount) else SetSendMailCOD(0); SetSendMailMoney(amount) end
-    ns:SetStatus("Sending…")
+    ns:SetStatus("Sending...")
     SendMail(recipient, subjectText, bodyBox:GetText() or "")
 end)
 frame.composeSidebarButtons = { attachProfession, attachBoE, materialButton, send }
@@ -1468,7 +1477,7 @@ function ns:RefreshContacts()
         local color = contact.classFile and RAID_CLASS_COLORS[contact.classFile]
         row.name:SetText(contact.name)
         row.name:SetTextColor(color and color.r or C.text[1], color and color.g or C.text[2], color and color.b or C.text[3])
-        row.kind:SetText((contact.online and "●  " or "○  ") .. contact.kind)
+        row.kind:SetText((contact.online and "ONLINE - " or "OFFLINE - ") .. contact.kind)
         row.detail:SetText(contact.detail or "")
         row:SetScript("OnClick", function()
             compose.to:SetText(contact.name)
@@ -1598,14 +1607,16 @@ end)
 local paletteLabel = Font(appearanceCard, 12, C.muted)
 paletteLabel:SetPoint("TOPLEFT", 22, -158)
 paletteLabel:SetText("MODERN PALETTE")
-local paletteButton = Button(appearanceCard, "☰  Midnight Cyan", 250, 34)
+local paletteButton = Button(appearanceCard, "Midnight Cyan", 250, 34)
 paletteButton:SetPoint("TOPLEFT", 22, -177)
+AddDropdownArrow(paletteButton)
 
 local fontLabel = Font(appearanceCard, 12, C.muted)
 fontLabel:SetPoint("TOPLEFT", 292, -158)
 fontLabel:SetText("ADDON FONT")
-local fontButton = Button(appearanceCard, "☰  Friz Quadrata", 250, 34)
+local fontButton = Button(appearanceCard, "Friz Quadrata", 250, 34)
 fontButton:SetPoint("TOPLEFT", 292, -177)
+AddDropdownArrow(fontButton)
 
 local function SettingsSlider(label, x, y, width)
     local labelText = Font(appearanceCard, 12, C.muted)
@@ -1839,7 +1850,7 @@ function ns:RefreshSettings()
         if name == skin then
             button:SetBackdropColor(C.accent[1], C.accent[2], C.accent[3], 0.25)
             button:SetBackdropBorderColor(unpack(C.accent))
-            button.label:SetText("✓  " .. (name == "modern" and "Modern" or "Classic"))
+            button.label:SetText(name == "modern" and "Modern" or "Classic")
             if activeSkin == "classic" and button:GetNormalTexture() then button:GetNormalTexture():SetVertexColor(0.76, 0.53, 0.10, 1) end
         else
             button:SetBackdropColor(unpack(C.panelAlt))
@@ -1848,8 +1859,8 @@ function ns:RefreshSettings()
             if activeSkin == "classic" and button:GetNormalTexture() then button:GetNormalTexture():SetVertexColor(0.78, 0.20, 0.08, 1) end
         end
     end
-    paletteButton.label:SetText("☰  " .. (MODERN_PALETTES[paletteKey] or MODERN_PALETTES.midnight).label)
-    fontButton.label:SetText("☰  " .. (FONT_OPTIONS[fontKey] or FONT_OPTIONS.friz).label)
+    paletteButton.label:SetText((MODERN_PALETTES[paletteKey] or MODERN_PALETTES.midnight).label)
+    fontButton.label:SetText((FONT_OPTIONS[fontKey] or FONT_OPTIONS.friz).label)
     if fontMenu then fontMenu:Refresh() end
     settingsRefreshing = true
     opacitySlider:SetValue(math.max(0.55, math.min(1, tonumber(self.db and self.db.settings.modernOpacity) or 0.96)))
