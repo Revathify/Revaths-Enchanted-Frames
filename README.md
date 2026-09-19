@@ -1,5 +1,7 @@
 # Revath's Enchanted Frames
 
+<p align="center"><img src="RevathsEnchantedFrames/Media/RevathsEnchantedFrames.png" alt="Revath's Enchanted Frames" width="360"></p>
+
 Revath's Enchanted Frames is a modular World of Warcraft Retail addon suite that combines a customizable mailbox replacement, an advanced macro workshop, and account-wide item-count tooltips under one shared parent addon and one Blizzard Settings category.
 
 ## Modules

@@ -873,6 +873,7 @@ local function BuildUI()
     local suggestionPopup = CreateFrame("Frame", nil, editorPane, "BackdropTemplate"); suggestionPopup:SetSize(500, 224); suggestionPopup:SetFrameLevel(editorPane:GetFrameLevel() + 10); RegisterBackdrop(suggestionPopup, "panel"); suggestionPopup:Hide()
     local suggestionTitle = Text(suggestionPopup, 10, "muted"); suggestionTitle:SetPoint("TOPLEFT", 10, -8); suggestionTitle:SetText("SYNTAX SUGGESTIONS  ·  TAB TO SELECT  ·  ENTER TO INSERT")
     local suggestionHint = Text(suggestionPopup, 12, "muted"); suggestionHint:SetPoint("TOPLEFT", 14, -42); suggestionHint:SetWidth(340); suggestionHint:SetText("Start typing spell name"); suggestionHint:Hide()
+    local suggestionSyntax = Text(suggestionPopup, 9, "accent2"); suggestionSyntax:SetPoint("BOTTOMLEFT", 12, 9); suggestionSyntax:SetPoint("RIGHT", -12, 0); suggestionSyntax:SetWordWrap(false); suggestionSyntax:SetText("Syntax: /castsequence [conditions] reset=target/combat/5 Spell One, Spell Two"); suggestionSyntax:Hide()
     local caretMeasure = macroBody:CreateFontString(nil, "OVERLAY"); caretMeasure:SetAlpha(0); caretMeasure:SetPoint("TOPLEFT", macroBody, "TOPLEFT")
     local commandCatalog = {
         { "/cast ", "Cast a spell" }, { "/castsequence ", "Cast spells in sequence" }, { "/castrandom ", "Cast one listed spell" },
@@ -1029,7 +1030,7 @@ local function BuildUI()
         for index, button in ipairs(suggestionButtons) do
             local item = matches[index]
             button:SetShown(item ~= nil); button.selected = index == selectedSuggestion
-            if item then button.label:SetText(item.insert); button.detail:SetText(item.detail or "") end
+            if item then button.label:SetText(item.label or item.insert); button.detail:SetText(item.detail or "") end
         end
         for index, button in ipairs(suggestionButtons) do button:SetBackdropBorderColor(Color(index == selectedSuggestion and "accent" or "border")) end
     end
@@ -1037,8 +1038,9 @@ local function BuildUI()
         item = item or matches[selectedSuggestion]
         if not item then return end
         local text = macroBody:GetText() or ""
-        local updated = text:sub(1, replaceStart - 1) .. item.insert .. text:sub(replaceEnd + 1)
-        macroBody:SetText(updated); macroBody:SetCursorPosition(replaceStart - 1 + #item.insert); suggestionPopup:Hide(); matches = {}
+        local itemStart, itemEnd = item.replaceStart or replaceStart, item.replaceEnd or replaceEnd
+        local updated = text:sub(1, itemStart - 1) .. item.insert .. text:sub(itemEnd + 1)
+        macroBody:SetText(updated); macroBody:SetCursorPosition(itemStart - 1 + #item.insert); suggestionPopup:Hide(); matches = {}
         if UpdateSuggestions then C_Timer.After(0, function() if macroBody:HasFocus() then UpdateSuggestions() end end) end
     end
     for index, button in ipairs(suggestionButtons) do button:SetScript("OnClick", function() selectedSuggestion = index; macroBody:SetFocus(); AcceptSuggestion() end) end
@@ -1049,6 +1051,14 @@ local function BuildUI()
                 matches[#matches + 1] = { insert = entry[1], detail = entry[2] }
                 if #matches >= (limit or 8) then return end
             end
+        end
+    end
+    local function StripLeadingConditionBlocks(value)
+        local remainder = value or ""
+        while true do
+            local _, finish = remainder:find("^%s*%b[]%s*")
+            if not finish then return remainder end
+            remainder = remainder:sub(finish + 1)
         end
     end
     local function ValidateMacro(text)
@@ -1064,13 +1074,14 @@ local function BuildUI()
             local sequenceArguments = trimmed:match("^/castsequence%s+(.+)$")
             if sequenceArguments then
                 for clause in (sequenceArguments .. ";"):gmatch("(.-);") do
-                    local firstComma = clause:find(",", 1, true)
+                    local actionClause = StripLeadingConditionBlocks(clause)
+                    local firstComma = actionClause:find(",", 1, true)
                     if firstComma then
-                        local laterActions = clause:sub(firstComma + 1)
+                        local laterActions = actionClause:sub(firstComma + 1)
                         if laterActions:find("reset=", 1, true) then return "castsequence reset= belongs before the first action" end
                         if laterActions:find("%[") then return "castsequence conditions apply to the whole clause" end
                     end
-                    local resetValue = clause:match("reset=([^%s]+)")
+                    local resetValue = actionClause:match("reset=([^%s]+)")
                     if resetValue then
                         for condition in resetValue:gmatch("[^/]+") do
                             local validWord = condition == "target" or condition == "combat" or condition == "shift" or condition == "ctrl" or condition == "alt"
@@ -1088,7 +1099,7 @@ local function BuildUI()
         local line = before:match("([^\n]*)$") or ""; local lineStart = cursor - #line + 1
         matches, selectedSuggestion = {}, 1
         suggestionHint:Hide()
-        local infoOnly = false
+        local infoOnly, showSequenceSyntax = false, false
         local openBracket = line:match(".*()%[")
         if openBracket and not line:sub(openBracket):find("%]") then
             local conditionText = line:sub(openBracket + 1)
@@ -1144,13 +1155,14 @@ local function BuildUI()
                     suggestionTitle:SetText("CONSOLE COMMANDS & CVARS  ·  TAB TO SELECT  ·  ENTER TO INSERT")
                 elseif command and suggestionCommands then
                     local isCastSequence = commandLower == "/castsequence"
+                    showSequenceSyntax = isCastSequence
                     local wantsSpells = castCommands[commandLower] or tooltipCommands[commandLower]
                     local wantsItems = itemCommands[commandLower] or tooltipCommands[commandLower]
                     if wantsSpells then BuildSpellNames() end
                     if wantsItems then BuildItemNames() end
                     local segmentStart = 1
                     for position in arguments:gmatch("()[;,]") do segmentStart = position + 1 end
-                    local segment = arguments:sub(segmentStart); local afterConditions = segment:match(".*%]%s*(.*)$") or segment
+                    local segment = arguments:sub(segmentStart); local afterConditions = StripLeadingConditionBlocks(segment)
                     local leading = #segment - #afterConditions; local prefix = afterConditions:match("^%s*(.-)%s*$") or ""
                     replaceStart, replaceEnd = cursor - #segment + leading + (afterConditions:find("%S") or (#afterConditions + 1)), cursor
                     local resetCatalog = {
@@ -1164,7 +1176,8 @@ local function BuildUI()
                     local clauseStart = 1
                     for position in arguments:gmatch("();") do clauseStart = position + 1 end
                     currentClause = arguments:sub(clauseStart)
-                    local hasActionComma = currentClause:find(",", 1, true) ~= nil
+                    local clauseAfterConditions = StripLeadingConditionBlocks(currentClause)
+                    local hasActionComma = clauseAfterConditions:find(",", 1, true) ~= nil
                     local resetToken = isCastSequence and not hasActionComma and afterConditions:match("^%s*(reset=[^%s]*)%s*$") or nil
                     local sequenceAction = isCastSequence and not hasActionComma and afterConditions:match("^%s*reset=[^%s]+%s+(.*)$") or nil
                     if sequenceAction ~= nil then
@@ -1205,12 +1218,19 @@ local function BuildUI()
                             end
                             suggestionTitle:SetText("STEP 1/3  ·  CAST TARGET  ·  TAB TO SELECT  ·  ENTER TO INSERT")
                         end
+                        local completeSpell = false
                         if prefix ~= "" and wantsSpells then
                             for _, name in ipairs(spellNames) do
-                                if name:sub(1, #prefix):lower() == prefix:lower() and name:lower() ~= prefix:lower() then
+                                if name:lower() == prefix:lower() then
+                                    completeSpell = true
+                                elseif name:sub(1, #prefix):lower() == prefix:lower() then
                                     matches[#matches + 1] = { insert = name, detail = "Known spell" }; if #matches >= 8 then break end
                                 end
                             end
+                        end
+                        if isCastSequence and completeSpell then
+                            table.insert(matches, 1, { label = "+ Add next spell", insert = ", ", detail = "Insert comma and continue the sequence", replaceStart = cursor + 1, replaceEnd = cursor })
+                            while #matches > 8 do table.remove(matches) end
                         end
                     end
                     if #matches < 8 and prefix ~= "" and wantsItems then
@@ -1232,6 +1252,7 @@ local function BuildUI()
             end
         end
         if #matches == 0 and not infoOnly then suggestionPopup:Hide(); return end
+        suggestionSyntax:SetShown(showSequenceSyntax)
         local currentLine = before:match("([^\n]*)$") or ""
         local fontPath, fontSize, fontFlags = macroBody:GetFont()
         caretMeasure:SetFont(fontPath or STANDARD_TEXT_FONT, fontSize or 13, fontFlags or ""); caretMeasure:SetText(currentLine)
@@ -1249,7 +1270,8 @@ local function BuildUI()
         local lineHeight = (fontSize or 13) + 4
         local lineTop = 8 + (visualLine * lineHeight)
         local popupWidth = math.max(340, math.min(520, (macroBody:GetWidth() or 400) - 16))
-        local popupHeight = infoOnly and 78 or (42 + (#matches * 23))
+        local footerHeight = showSequenceSyntax and 24 or 0
+        local popupHeight = (infoOnly and 78 or (42 + (#matches * 23))) + footerHeight
         suggestionPopup:SetSize(popupWidth, popupHeight)
         for _, button in ipairs(suggestionButtons) do button:SetWidth(popupWidth - 20) end
         x = math.max(8, math.min(x, (macroBody:GetWidth() or 400) - popupWidth - 8))

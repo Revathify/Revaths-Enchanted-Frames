@@ -5,7 +5,7 @@
 ## Version: 3.0.4
 ## SavedVariables: RevathsEnchantedFramesDB
 ## Category: User Interface
-## IconTexture: Interface\AddOns\RevathsMailbox\Media\Icon
+## IconTexture: Interface\AddOns\RevathsEnchantedFrames\Media\Icon.png
 
 Core.lua
 Settings.lua

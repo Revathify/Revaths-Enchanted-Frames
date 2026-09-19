@@ -327,6 +327,14 @@ close:SetPoint("TOPRIGHT", -14, -14)
 close.label:SetFont(STANDARD_TEXT_FONT, 20, "")
 close:SetScript("OnClick", function() ns:Hide(false) end)
 
+local headerSettings = Button(frame, "Settings", 76, 30)
+headerSettings:SetPoint("RIGHT", close, "LEFT", -7, 0)
+headerSettings:SetScript("OnClick", function()
+    ns:SelectTab(frame.currentTab == "Settings" and "Inbox" or "Settings")
+end)
+status:ClearAllPoints()
+status:SetPoint("RIGHT", headerSettings, "LEFT", -10, 0)
+
 frame.tabs = {}
 frame.pages = {}
 local tabDefinitions = {
@@ -334,7 +342,6 @@ local tabDefinitions = {
     { label = "New Mail", page = "Compose" },
     { label = "Contacts", page = "Contacts" },
     { label = "Alts", page = "Alts" },
-    { label = "Settings", page = "Settings" },
 }
 for i, definition in ipairs(tabDefinitions) do
     local tab = Button(frame, definition.label, 112, 32)
@@ -376,16 +383,19 @@ local function ApplyGeometry(skin)
 
     status:ClearAllPoints()
     status:SetWidth(isClassic and 180 or 260)
-    status:SetPoint("TOPRIGHT", isClassic and -70 or -54, isClassic and -34 or -28)
     close:ClearAllPoints()
     close:SetSize(isClassic and 34 or 30, isClassic and 34 or 30)
     close:SetPoint("TOPRIGHT", isClassic and -24 or -14, isClassic and -23 or -14)
+    headerSettings:ClearAllPoints()
+    headerSettings:SetSize(isClassic and 82 or 76, isClassic and 34 or 30)
+    headerSettings:SetPoint("RIGHT", close, "LEFT", -7, 0)
+    status:SetPoint("RIGHT", headerSettings, "LEFT", -10, 0)
 
     for i, definition in ipairs(tabDefinitions) do
         local tab = frame.tabs[definition.page]
         tab:ClearAllPoints()
         tab:SetSize(isClassic and 124 or 112, isClassic and 34 or 32)
-        local x = isClassic and (139 + ((i - 1) * 132)) or (24 + ((i - 1) * 120))
+        local x = isClassic and (205 + ((i - 1) * 132)) or (24 + ((i - 1) * 120))
         tab:SetPoint("TOPLEFT", x, isClassic and -99 or -83)
     end
 
@@ -470,6 +480,10 @@ function ns:SelectTab(name)
             end
         end
     end
+    local settingsSelected = name == "Settings"
+    headerSettings:SetBackdropColor(unpack(settingsSelected and C.buttonHover or C.button))
+    headerSettings:SetBackdropBorderColor(unpack(settingsSelected and C.accent or C.border))
+    headerSettings.label:SetText((settingsSelected and "✓  " or "") .. "Settings")
     if self.mailOpen then SetSendMailShowing(name == "Compose") end
     if name == "Inbox" then self:RefreshInbox()
     elseif name == "Compose" then self:RefreshCompose()

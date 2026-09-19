@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.0.5 — Sequence workflow and layout fixes
+
+- Moved the Mailbox Settings button into the header beside Close, matching Enchanted Macros.
+- Fixed commas inside castsequence condition blocks being mistaken for action separators.
+- Restored the optional reset stage after selecting a cast target and filters.
+- Added an explicit **Add next spell** suggestion after completing a known sequence spell.
+- Added a full `/castsequence` syntax preview to the suggestion footer.
+- Removed the false condition-placement warning for valid condition blocks.
+- Added a new transparent Enchanted Frames suite emblem and parent-addon icon.
+- Added a detailed, website-ready feature description.
+
 ## 3.0.4 — Settings cleanup
 
 - Removed the duplicate Tooltip Helper control from the Mailbox window.
