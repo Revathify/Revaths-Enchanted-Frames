@@ -1019,8 +1019,8 @@ local function BuildUI()
     end
     local suggestionButtons, matches, selectedSuggestion = {}, {}, 1
     local replaceStart, replaceEnd = 1, 0
-    local sequenceSkipResetKey
-    local UpdateSuggestions
+    local sequenceSkipResetKey, sequenceEndedKey
+    local UpdateSuggestions, QueueSuggestionRefresh
     for index = 1, 8 do
         local button = Button(suggestionPopup, "", 480, 21); button:SetPoint("TOPLEFT", 10, -25 - (index - 1) * 23)
         button.label:SetJustifyH("LEFT"); button.label:ClearAllPoints(); button.label:SetPoint("LEFT", 7, 0); button.label:SetPoint("RIGHT", button, "CENTER", -6, 0)
@@ -1035,6 +1035,12 @@ local function BuildUI()
         end
         for index, button in ipairs(suggestionButtons) do button:SetBackdropBorderColor(Color(index == selectedSuggestion and "accent" or "border")) end
     end
+    local function SuggestionStateKey(value, cursor)
+        local before = value:sub(1, cursor)
+        local line = before:match("([^\n]*)$") or ""
+        local lineStart = cursor - #line + 1
+        return value .. "\030" .. lineStart .. "\030" .. line
+    end
     local function AcceptSuggestion(item)
         item = item or matches[selectedSuggestion]
         if not item then return end
@@ -1042,11 +1048,19 @@ local function BuildUI()
         local itemStart, itemEnd = item.replaceStart or replaceStart, item.replaceEnd or replaceEnd
         local updated = text:sub(1, itemStart - 1) .. item.insert .. text:sub(itemEnd + 1)
         local updatedCursor = itemStart - 1 + #item.insert
+        sequenceEndedKey = item.endSequence and SuggestionStateKey(updated, updatedCursor) or nil
         macroBody:SetText(updated); macroBody:SetCursorPosition(updatedCursor); suggestionPopup:Hide(); matches = {}
         if item.skipReset then sequenceSkipResetKey = updated .. "\031" .. updatedCursor end
-        if not item.endSequence and UpdateSuggestions then C_Timer.After(0, function() if macroBody:HasFocus() then UpdateSuggestions() end end) end
+        if not item.endSequence and QueueSuggestionRefresh then QueueSuggestionRefresh() end
     end
-    for index, button in ipairs(suggestionButtons) do button:SetScript("OnClick", function() selectedSuggestion = index; macroBody:SetFocus(); AcceptSuggestion() end) end
+    for index, button in ipairs(suggestionButtons) do
+        button:SetScript("OnClick", function()
+            local item = matches[index]
+            selectedSuggestion = index
+            macroBody:SetFocus()
+            AcceptSuggestion(item)
+        end)
+    end
     local function AddMatches(catalog, prefix, limit)
         prefix = (prefix or ""):lower()
         for _, entry in ipairs(catalog) do
@@ -1116,6 +1130,7 @@ local function BuildUI()
         local line = before:match("([^\n]*)$") or ""; local lineStart = cursor - #line + 1
         matches, selectedSuggestion = {}, 1
         suggestionHint:Hide()
+        if sequenceEndedKey == SuggestionStateKey(text, cursor) then suggestionPopup:Hide(); return end
         local infoOnly, showSequenceSyntax = false, false
         local openBracket = line:match(".*()%[")
         if openBracket and not line:sub(openBracket):find("%]") then
@@ -1255,7 +1270,7 @@ local function BuildUI()
                         end
                         if isCastSequence and completeSpell then
                             table.insert(matches, 1, { label = "+ Add next spell", insert = ", ", detail = "Insert comma and continue the sequence", replaceStart = cursor + 1, replaceEnd = cursor })
-                            table.insert(matches, 2, { label = "✓ End sequence", insert = "", detail = "Keep this as the final spell", replaceStart = cursor + 1, replaceEnd = cursor, endSequence = true })
+                            table.insert(matches, 2, { label = "✓ END MACRO", insert = "", detail = "Keep this as the final spell and stop guidance", replaceStart = cursor + 1, replaceEnd = cursor, endSequence = true })
                             while #matches > 8 do table.remove(matches) end
                         end
                     end
@@ -1306,11 +1321,23 @@ local function BuildUI()
         local y = belowY <= maxY and belowY or math.max(8, lineTop - popupHeight - 3)
         suggestionPopup:ClearAllPoints(); suggestionPopup:SetPoint("TOPLEFT", macroBody, "TOPLEFT", x, -y); suggestionPopup:Show(); PaintSuggestions()
     end
+    local refreshPending = false
+    QueueSuggestionRefresh = function()
+        if refreshPending then return end
+        refreshPending = true
+        C_Timer.After(0, function()
+            refreshPending = false
+            if macroBody:HasFocus() then UpdateSuggestions() end
+        end)
+    end
     macroBody:SetScript("OnTextChanged", function(self, userInput)
         local text = self:GetText() or ""; local problem = ValidateMacro(text)
         bodyLabel:SetText(string.format("MACRO BODY  %d / 255%s", string.len(text), problem and ("  ·  " .. problem) or "")); bodyLabel:SetTextColor(Color(problem and "danger" or "muted"))
-        if userInput then UpdateSuggestions() end
+        if userInput then sequenceEndedKey = nil end
+        if self:HasFocus() then QueueSuggestionRefresh() end
     end)
+    macroBody:SetScript("OnEditFocusGained", QueueSuggestionRefresh)
+    macroBody:SetScript("OnCursorChanged", QueueSuggestionRefresh)
     macroBody:SetScript("OnTabPressed", function()
         if not suggestionPopup:IsShown() or #matches == 0 then return end
         local delta = IsShiftKeyDown and IsShiftKeyDown() and -1 or 1

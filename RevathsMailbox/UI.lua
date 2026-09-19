@@ -569,6 +569,19 @@ ClassicInk(detailSubject, "text")
 ClassicInk(detailMeta, "muted")
 ClassicInk(body, "text")
 
+local detailMoneyIcon = detail:CreateTexture(nil, "ARTWORK")
+detailMoneyIcon:SetSize(30, 30)
+detailMoneyIcon:SetPoint("BOTTOMLEFT", 16, 108)
+detailMoneyIcon:SetTexture("Interface\\MoneyFrame\\UI-GoldIcon")
+local detailMoneyLabel = Font(detail, 10, C.muted)
+detailMoneyLabel:SetPoint("BOTTOMLEFT", 52, 132)
+detailMoneyLabel:SetText("GOLD ATTACHED")
+local detailMoneyValue = Font(detail, 18, { 1, 0.82, 0.18, 1 })
+detailMoneyValue:SetPoint("BOTTOMLEFT", 52, 108)
+detailMoneyIcon:Hide()
+detailMoneyLabel:Hide()
+detailMoneyValue:Hide()
+
 inbox.attachments = {}
 for i = 1, MAX_RECEIVE do
     local item = CreateFrame("Button", nil, detail, "BackdropTemplate")
@@ -766,15 +779,22 @@ function ns:SelectMessage(index, skipListRefresh)
         inbox.selected = nil
         inbox.selectedCOD = 0
         ClearInboxAttachments()
+        detailMoneyIcon:Hide()
+        detailMoneyLabel:Hide()
+        detailMoneyValue:Hide()
         return
     end
     inbox.selectedCOD = cod or 0
     detailFrom:SetText("FROM  " .. sender)
     detailSubject:SetText(subject or "(No subject)")
     local pieces = { string.format("%.1f days left", days or 0) }
-    if money and money > 0 then pieces[#pieces + 1] = ns:FormatMoney(money) end
     if cod and cod > 0 then pieces[#pieces + 1] = "COD " .. ns:FormatMoney(cod) end
     detailMeta:SetText(table.concat(pieces, "  ·  "))
+    local hasMoney = (money or 0) > 0
+    detailMoneyIcon:SetShown(hasMoney)
+    detailMoneyLabel:SetShown(hasMoney)
+    detailMoneyValue:SetShown(hasMoney)
+    detailMoneyValue:SetText(hasMoney and ns:FormatMoney(money) or "")
     local mailBody = GetInboxText(index)
     body:SetText((mailBody and mailBody ~= "") and mailBody or "No message body.")
     for slot, item in ipairs(inbox.attachments) do
@@ -831,8 +851,16 @@ function ns:RefreshInbox(keepSelection)
             row.subject = Font(row, 11, C.muted)
             row.subject:SetPoint("TOPLEFT", row.sender, "BOTTOMLEFT", 0, -5)
             row.subject:SetWidth(305)
-            row.meta = Font(row, 11, C.muted, "RIGHT")
-            row.meta:SetPoint("TOPRIGHT", -10, -11)
+            row.moneyIcon = row:CreateTexture(nil, "ARTWORK")
+            row.moneyIcon:SetSize(17, 17)
+            row.moneyIcon:SetPoint("TOPRIGHT", -9, -8)
+            row.moneyIcon:SetTexture("Interface\\MoneyFrame\\UI-GoldIcon")
+            row.money = Font(row, 13, { 1, 0.82, 0.18, 1 }, "RIGHT")
+            row.money:SetPoint("RIGHT", row.moneyIcon, "LEFT", -4, 0)
+            row.money:SetWidth(145)
+            row.meta = Font(row, 10, C.muted, "RIGHT")
+            row.meta:SetPoint("BOTTOMRIGHT", -10, 9)
+            row.meta:SetWidth(150)
             row.dot = row:CreateTexture(nil, "OVERLAY")
             row.dot:SetSize(6, 41)
             row.dot:SetPoint("LEFT", 0, 0)
@@ -842,10 +870,13 @@ function ns:RefreshInbox(keepSelection)
         row.sender:SetText(sender or UNKNOWN)
         row.subject:SetText(subject or "(No subject)")
         local flags = {}
-        if money and money > 0 then flags[#flags + 1] = ns:FormatMoney(money) end
         if cod and cod > 0 then flags[#flags + 1] = "COD" end
         if hasItem then flags[#flags + 1] = "Item" end
-        if #flags == 0 then flags[1] = string.format("%.0fd", days or 0) end
+        flags[#flags + 1] = string.format("%.0fd", days or 0)
+        local hasMoney = (money or 0) > 0
+        row.moneyIcon:SetShown(hasMoney)
+        row.money:SetShown(hasMoney)
+        row.money:SetText(hasMoney and ns:FormatMoney(money) or "")
         row.meta:SetText(table.concat(flags, " · "))
         if keepSelection == i or inbox.selected == i then
             row:SetBackdropBorderColor(unpack(C.accent))
@@ -865,6 +896,9 @@ function ns:RefreshInbox(keepSelection)
         detailSubject:SetText("No mail to display")
         detailMeta:SetText("")
         body:SetText("New messages will appear here when they arrive.")
+        detailMoneyIcon:Hide()
+        detailMoneyLabel:Hide()
+        detailMoneyValue:Hide()
     else
         local selection = tonumber(keepSelection) or inbox.selected or 1
         selection = math.min(selection, loaded)

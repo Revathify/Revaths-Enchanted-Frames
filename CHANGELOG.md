@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.8 — Mail gold visibility and persistent macro guidance
+
+- Added larger gold-colored incoming-money amounts with coin icons to Mailbox inbox rows.
+- Added a prominent **Gold Attached** block near the bottom of the selected message pane.
+- Made macro suggestions refresh when the editor gains focus or the caret moves, including loaded macros.
+- Kept castsequence guidance active throughout the workflow until **END MACRO** is explicitly selected.
+- Fixed mouse selection so focusing the editor cannot replace the clicked suggestion before insertion.
+
 ## 3.0.7 — Castsequence state-machine fixes
 
 - Made castsequence parsing ignore commas inside conditional blocks such as `[@mouseover,help,nodead]`.
