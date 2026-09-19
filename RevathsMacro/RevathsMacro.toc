@@ -1,11 +1,11 @@
 ## Interface: 120100
-## Title: Revath's Enchanted Mailbox
-## Notes: Custom mailbox, contacts, quick attachments, and account-wide alt tracking.
+## Title: Revath's Enchanted Macros
+## Notes: Account, character, and curated macro editor with syntax assistance.
 ## Author: Revath#2331 (Revathify)
 ## Version: 3.0.0
 ## Dependencies: RevathsEnchantedFrames
 ## OptionalDeps: EllesmereUI, SharedMedia, SharedMediaAdditionalFonts, LibSharedMedia-3.0
-## SavedVariables: RevathsMailboxDB, RevathsMailDB, AltMailDB
+## SavedVariables: RevathsMacroDB
 ## Category: User Interface
 ## IconTexture: Interface\AddOns\RevathsMailbox\Media\Icon
 

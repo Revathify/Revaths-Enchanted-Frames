@@ -312,7 +312,7 @@ headerIcon:SetTexture("Interface\\AddOns\\RevathsMailbox\\Media\\IconSmall")
 
 local title = Font(frame, 23, C.text)
 title:SetPoint("TOPLEFT", 76, -18)
-title:SetText("REVATH'S |cff2eb8c7MAILBOX|r")
+title:SetText("REVATH'S |cff2eb8c7ENCHANTED MAILBOX|r")
 local subtitle = Font(frame, 11, C.muted)
 subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 1, -4)
 subtitle:SetText("MAILBOX & CHARACTER COURIER")
@@ -430,10 +430,10 @@ function ns:ApplySkin(skin)
     ApplySelectedFont()
     glow:SetColorTexture(C.accent[1], C.accent[2], C.accent[3], skin == "classic" and 0.20 or 0.12)
     if skin == "classic" then
-        title:SetText("REVATH'S |cfff5b833MAILBOX|r")
+        title:SetText("REVATH'S |cfff5b833ENCHANTED MAILBOX|r")
         subtitle:SetText("MAILBOX & CHARACTER COURIER  ·  CLASSIC")
     else
-        title:SetText("REVATH'S |c" .. HexColor(C.accent) .. "MAILBOX|r")
+        title:SetText("REVATH'S |c" .. HexColor(C.accent) .. "ENCHANTED MAILBOX|r")
         subtitle:SetText("MAILBOX & CHARACTER COURIER")
     end
     if compose and compose.body then compose.body:SetTextColor(unpack(skin == "classic" and C.ink or C.text)) end
@@ -1582,7 +1582,9 @@ tooltipHelper:SetScript("OnClick", function(self)
     local enabled = self:GetChecked()
     if not ns.db then return end
     ns.db.settings.tooltipHelperEnabled = enabled
-    if RevathsMailboxTooltipHelper_SetEnabled then
+    if RevathsEnchantedTooltips_SetEnabled then
+        RevathsEnchantedTooltips_SetEnabled(enabled)
+    elseif RevathsMailboxTooltipHelper_SetEnabled then
         RevathsMailboxTooltipHelper_SetEnabled(enabled)
     end
     ns:SetStatus(enabled and "Tooltip Helper enabled." or "Tooltip Helper disabled.")
@@ -1757,7 +1759,7 @@ aboutCard:SetPoint("BOTTOMRIGHT")
 ApplyBackdrop(aboutCard)
 local aboutTitle = Font(aboutCard, 18, C.text)
 aboutTitle:SetPoint("TOPLEFT", 22, -20)
-aboutTitle:SetText("About Revath's Mailbox")
+aboutTitle:SetText("About Revath's Enchanted Mailbox")
 local aboutDescription = Font(aboutCard, 12, C.muted)
 aboutDescription:SetPoint("TOPLEFT", aboutTitle, "BOTTOMLEFT", 0, -12)
 aboutDescription:SetWidth(790)
@@ -1844,3 +1846,11 @@ end)
 
 table.insert(UISpecialFrames, frame:GetName())
 ns:SelectTab("Inbox")
+
+function RevathsEnchantedMailbox_ApplySettings()
+    if not ns.db or not ns.db.settings then return end
+    frame:SetScale(math.max(0.65, math.min(1.10, tonumber(ns.db.settings.scale) or 1)))
+    ns:ApplySkinSafe(ns.db.settings.skin or "modern")
+    if ns.RefreshSettings then ns:RefreshSettings() end
+    if ns.RefreshContacts then ns:RefreshContacts() end
+end

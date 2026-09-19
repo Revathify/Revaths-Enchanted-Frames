@@ -307,12 +307,6 @@ events:SetScript("OnEvent", function(_, event, arg1)
         if arg1 == "Blizzard_UIMailPanel" then ns:DisableBlizzardMailbox() end
     elseif event == "PLAYER_LOGIN" then
         ns:InitDatabase()
-        local tooltipHelperEnabled = not C_AddOns or not C_AddOns.IsAddOnEnabled or C_AddOns.IsAddOnEnabled("RevathsMailboxTooltipHelper")
-        if tooltipHelperEnabled and C_AddOns and C_AddOns.LoadAddOn then
-            C_AddOns.LoadAddOn("RevathsMailboxTooltipHelper")
-        elseif tooltipHelperEnabled and LoadAddOn then
-            LoadAddOn("RevathsMailboxTooltipHelper")
-        end
         if C_AddOns and C_AddOns.LoadAddOn then
             C_AddOns.LoadAddOn("Blizzard_UIMailPanel")
         elseif LoadAddOn then
@@ -373,5 +367,5 @@ end)
 SLASH_REVATHSMAILBOX1 = "/revathsmailbox"
 SLASH_REVATHSMAILBOX2 = "/rmail"
 SlashCmdList.REVATHSMAILBOX = function()
-    if ns.mailOpen then ns:Show() else print("|cff2eb8c7Revath's Mailbox:|r Visit a mailbox to open the interface.") end
+    if ns.mailOpen then ns:Show() else print("|cff2eb8c7Revath's Enchanted Mailbox:|r Visit a mailbox to open the interface.") end
 end

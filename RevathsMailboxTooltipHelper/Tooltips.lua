@@ -86,7 +86,7 @@ local function addTooltipCount(tooltip, data)
     if not itemID or not database.characters then return end
     local total, currentCount, warbandCount, characterCounts = getTotals(itemID)
     if total == 0 then return end
-    tooltip:AddLine(string.format("RTH Total: %d", total), 0.45, 0.8, 1)
+    tooltip:AddLine(string.format("Enchanted Total: %d", total), 0.45, 0.8, 1)
     if IsShiftKeyDown() then
         tooltip:AddLine(string.format("This character: %d", currentCount), 0.75, 0.75, 0.75)
         if warbandCount > 0 then tooltip:AddLine(string.format("Warbound Bank: %d", warbandCount), 0.75, 0.75, 0.75) end
@@ -101,9 +101,11 @@ local function addTooltipCount(tooltip, data)
     tooltip:Show()
 end
 
-function RevathsMailboxTooltipHelper_SetEnabled(enabled)
+function RevathsEnchantedTooltips_SetEnabled(enabled)
     database.enabled = enabled == true
 end
+
+RevathsMailboxTooltipHelper_SetEnabled = RevathsEnchantedTooltips_SetEnabled
 
 local function rescan()
     if database and currentCharacterKey then
@@ -116,7 +118,8 @@ local function initialize()
     local parentSettings = type(RevathsMailboxDB) == "table" and RevathsMailboxDB.settings
     local defaultEnabled = not parentSettings or parentSettings.tooltipHelperEnabled ~= false
     database = RevathsMailboxTooltipHelperDB or { version = 1, enabled = defaultEnabled, characters = {} }
-    database.enabled = parentSettings and parentSettings.tooltipHelperEnabled ~= false or database.enabled ~= false
+    if parentSettings then database.enabled = parentSettings.tooltipHelperEnabled ~= false
+    else database.enabled = database.enabled ~= false end
     database.characters = database.characters or {}
     RevathsMailboxTooltipHelperDB = database
     currentCharacterKey = getCharacterKey()

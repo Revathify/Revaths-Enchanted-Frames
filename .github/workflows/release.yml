@@ -1,49 +1,90 @@
-name: Package and release addon
+name: Build and release Enchanted Frames
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
   workflow_dispatch:
-    inputs:
-      tag:
-        description: "Release tag, for example v2.1.6"
-        required: true
-        default: "v2.1.6"
 
 permissions:
   contents: write
 
+concurrency:
+  group: enchanted-frames-release
+  cancel-in-progress: false
+
 jobs:
   release:
-    name: Build release ZIP
+    name: Bump version, package, and publish
     runs-on: ubuntu-latest
-    env:
-      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Package addon
-        id: package
-        shell: pwsh
+      - name: Bump suite patch version
+        id: version
+        shell: bash
         run: |
-          $staging = Join-Path $env:RUNNER_TEMP "revaths-mailbox-release"
-          $addonTarget = Join-Path $staging "RevathsMailbox"
-          $tooltipTarget = Join-Path $staging "RevathsMailboxTooltipHelper"
-          $zipName = "RevathsMailbox-$env:RELEASE_TAG.zip"
-          $zipPath = Join-Path $env:RUNNER_TEMP $zipName
+          version=$(sed -nE 's/^## Version:[[:space:]]*([0-9]+)\.([0-9]+)\.([0-9]+)[[:space:]]*$/\1 \2 \3/p' RevathsEnchantedFrames/RevathsEnchantedFrames.toc)
+          if [ -z "$version" ]; then
+            echo "Could not find a semantic version in the parent manifest." >&2
+            exit 1
+          fi
+          read -r major minor patch <<< "$version"
+          next_version="$major.$minor.$((patch + 1))"
+          release_tag="v$next_version"
 
-          New-Item -ItemType Directory -Path $staging -Force | Out-Null
-          Copy-Item -LiteralPath "RevathsMailbox" -Destination $addonTarget -Recurse
-          Copy-Item -LiteralPath "RevathsMailboxTooltipHelper" -Destination $tooltipTarget -Recurse
-          Compress-Archive -LiteralPath $addonTarget,$tooltipTarget -DestinationPath $zipPath -CompressionLevel Optimal
+          if git ls-remote --exit-code origin "refs/tags/$release_tag" >/dev/null 2>&1; then
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
-          "zip_name=$zipName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "zip_path=$zipPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          for toc in \
+            RevathsEnchantedFrames/RevathsEnchantedFrames.toc \
+            RevathsMailbox/RevathsMailbox.toc \
+            RevathsMacro/RevathsMacro.toc \
+            RevathsMailboxTooltipHelper/RevathsMailboxTooltipHelper.toc; do
+            sed -i -E "s/^## Version:.*/## Version: $next_version/" "$toc"
+          done
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RevathsEnchantedFrames/*.toc RevathsMailbox/*.toc RevathsMacro/*.toc RevathsMailboxTooltipHelper/*.toc
+          git commit -m "Bump addon suite version to $next_version [skip ci]"
+          git tag "$release_tag"
+          git push origin HEAD:main "$release_tag"
+
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+
+      - name: Validate Lua syntax
+        if: steps.version.outputs.should_release == 'true'
+        shell: bash
+        run: |
+          npx --yes luaparse \
+            RevathsEnchantedFrames/Core.lua RevathsEnchantedFrames/Settings.lua \
+            RevathsMailbox/Core.lua RevathsMailbox/UI.lua \
+            RevathsMacro/Core.lua RevathsMacro/UI.lua \
+            RevathsMailboxTooltipHelper/Tooltips.lua >/dev/null
+
+      - name: Package suite
+        if: steps.version.outputs.should_release == 'true'
+        id: package
+        shell: bash
+        run: |
+          staging="$RUNNER_TEMP/revaths-enchanted-frames-release"
+          zip_name="RevathsEnchantedFrames-${{ steps.version.outputs.release_tag }}.zip"
+          zip_path="$RUNNER_TEMP/$zip_name"
+          mkdir -p "$staging"
+          cp -R RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper "$staging/"
+          (cd "$staging" && zip -r "$zip_path" RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper)
+          echo "zip_name=$zip_name" >> "$GITHUB_OUTPUT"
+          echo "zip_path=$zip_path" >> "$GITHUB_OUTPUT"
 
       - name: Upload workflow artifact
+        if: steps.version.outputs.should_release == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package.outputs.zip_name }}
@@ -51,17 +92,13 @@ jobs:
           if-no-files-found: error
 
       - name: Publish GitHub release
-        shell: bash
+        if: steps.version.outputs.should_release == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.version.outputs.release_tag }}
           ZIP_PATH: ${{ steps.package.outputs.zip_path }}
         run: |
-          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" "$ZIP_PATH" --clobber --repo "$GITHUB_REPOSITORY"
-          else
-            gh release create "$RELEASE_TAG" "$ZIP_PATH" \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "Revath's Mailbox $RELEASE_TAG" \
-              --generate-notes
-          fi
+          gh release create "$RELEASE_TAG" "$ZIP_PATH" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Revath's Enchanted Frames $RELEASE_TAG" \
+            --generate-notes

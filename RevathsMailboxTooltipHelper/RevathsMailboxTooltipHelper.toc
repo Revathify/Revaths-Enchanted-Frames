@@ -1,11 +1,10 @@
 ## Interface: 120100
-## Title: Revath's Mailbox [|cffeda55fTooltip Helper|r]
-## Notes: Account-wide item totals for Revath's Mailbox. Enable or disable in Mailbox Settings.
-## Author: Revathify
-## Version: 1.0.1
-## LoadOnDemand: 1
-## Dependencies: RevathsMailbox
+## Title: Revath's Enchanted Tooltips
+## Notes: Account-wide bag, bank, and Warband-bank item totals in item tooltips.
+## Author: Revath#2331 (Revathify)
+## Version: 3.0.0
+## Dependencies: RevathsEnchantedFrames
 ## SavedVariables: RevathsMailboxTooltipHelperDB
 ## Category: User Interface
 
-RevathsMailboxTooltipHelper.lua
+Tooltips.lua

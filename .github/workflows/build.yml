@@ -1,9 +1,6 @@
-name: Build addon
+name: Build Enchanted Frames
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
   workflow_dispatch:
 
@@ -12,36 +9,44 @@ permissions:
 
 jobs:
   package:
-    name: Build addon ZIP
+    name: Validate and package suite
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Read addon version
+      - name: Read suite version
         id: version
-        shell: pwsh
+        shell: bash
         run: |
-          $version = (Select-String -Path "RevathsMailbox/RevathsMailbox.toc" -Pattern '^## Version:\s*(.+)$').Matches.Groups[1].Value.Trim()
-          if ([string]::IsNullOrWhiteSpace($version)) { throw "Addon version was not found." }
-          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          version=$(sed -nE 's/^## Version:[[:space:]]*(.+)$/\1/p' RevathsEnchantedFrames/RevathsEnchantedFrames.toc)
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Package addon
-        shell: pwsh
+      - name: Validate manifests and Lua syntax
+        shell: bash
         run: |
-          $staging = Join-Path $env:RUNNER_TEMP "revaths-mailbox-build"
-          $zipName = "RevathsMailbox-v${{ steps.version.outputs.version }}-${{ github.run_number }}.zip"
-          $zipPath = Join-Path $env:RUNNER_TEMP $zipName
+          for addon in RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper; do
+            test -f "$addon/$addon.toc"
+          done
+          npx --yes luaparse \
+            RevathsEnchantedFrames/Core.lua RevathsEnchantedFrames/Settings.lua \
+            RevathsMailbox/Core.lua RevathsMailbox/UI.lua \
+            RevathsMacro/Core.lua RevathsMacro/UI.lua \
+            RevathsMailboxTooltipHelper/Tooltips.lua >/dev/null
 
-          New-Item -ItemType Directory -Path $staging -Force | Out-Null
-          Copy-Item -LiteralPath "RevathsMailbox" -Destination (Join-Path $staging "RevathsMailbox") -Recurse
-          Copy-Item -LiteralPath "RevathsMailboxTooltipHelper" -Destination (Join-Path $staging "RevathsMailboxTooltipHelper") -Recurse
-          Compress-Archive -LiteralPath (Join-Path $staging "RevathsMailbox"),(Join-Path $staging "RevathsMailboxTooltipHelper") -DestinationPath $zipPath -CompressionLevel Optimal
+      - name: Package suite
+        shell: bash
+        run: |
+          staging="$RUNNER_TEMP/revaths-enchanted-frames"
+          zip_path="$RUNNER_TEMP/RevathsEnchantedFrames-v${{ steps.version.outputs.version }}-${{ github.run_number }}.zip"
+          mkdir -p "$staging"
+          cp -R RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper "$staging/"
+          (cd "$staging" && zip -r "$zip_path" RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper)
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: RevathsMailbox-v${{ steps.version.outputs.version }}-${{ github.run_number }}
-          path: ${{ runner.temp }}/RevathsMailbox-v${{ steps.version.outputs.version }}-${{ github.run_number }}.zip
+          name: RevathsEnchantedFrames-v${{ steps.version.outputs.version }}-${{ github.run_number }}
+          path: ${{ runner.temp }}/RevathsEnchantedFrames-v${{ steps.version.outputs.version }}-${{ github.run_number }}.zip
           if-no-files-found: error
