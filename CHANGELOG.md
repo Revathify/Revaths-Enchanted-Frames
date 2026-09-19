@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.7 — Castsequence state-machine fixes
+
+- Made castsequence parsing ignore commas inside conditional blocks such as `[@mouseover,help,nodead]`.
+- Added an explicit **Skip reset → first spell** choice after selecting target conditions.
+- Added a clear `reset=` decision after the target step, followed by the reset-condition catalog.
+- Added explicit **Add next spell** and **End sequence** choices after every completed spell.
+- Preserved the guided flow after both keyboard and mouse selections.
+
 ## 3.0.6 — Unified Mailbox framing
 
 - Rebuilt the Mailbox modern skin with the same softly rounded tooltip borders used by Enchanted Macros.

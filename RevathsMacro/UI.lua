@@ -1019,6 +1019,7 @@ local function BuildUI()
     end
     local suggestionButtons, matches, selectedSuggestion = {}, {}, 1
     local replaceStart, replaceEnd = 1, 0
+    local sequenceSkipResetKey
     local UpdateSuggestions
     for index = 1, 8 do
         local button = Button(suggestionPopup, "", 480, 21); button:SetPoint("TOPLEFT", 10, -25 - (index - 1) * 23)
@@ -1040,8 +1041,10 @@ local function BuildUI()
         local text = macroBody:GetText() or ""
         local itemStart, itemEnd = item.replaceStart or replaceStart, item.replaceEnd or replaceEnd
         local updated = text:sub(1, itemStart - 1) .. item.insert .. text:sub(itemEnd + 1)
-        macroBody:SetText(updated); macroBody:SetCursorPosition(itemStart - 1 + #item.insert); suggestionPopup:Hide(); matches = {}
-        if UpdateSuggestions then C_Timer.After(0, function() if macroBody:HasFocus() then UpdateSuggestions() end end) end
+        local updatedCursor = itemStart - 1 + #item.insert
+        macroBody:SetText(updated); macroBody:SetCursorPosition(updatedCursor); suggestionPopup:Hide(); matches = {}
+        if item.skipReset then sequenceSkipResetKey = updated .. "\031" .. updatedCursor end
+        if not item.endSequence and UpdateSuggestions then C_Timer.After(0, function() if macroBody:HasFocus() then UpdateSuggestions() end end) end
     end
     for index, button in ipairs(suggestionButtons) do button:SetScript("OnClick", function() selectedSuggestion = index; macroBody:SetFocus(); AcceptSuggestion() end) end
     local function AddMatches(catalog, prefix, limit)
@@ -1060,6 +1063,20 @@ local function BuildUI()
             if not finish then return remainder end
             remainder = remainder:sub(finish + 1)
         end
+    end
+    local function LastTopLevelSeparator(value, separators)
+        local depth, last = 0, 0
+        for index = 1, #(value or "") do
+            local character = value:sub(index, index)
+            if character == "[" then
+                depth = depth + 1
+            elseif character == "]" then
+                depth = math.max(0, depth - 1)
+            elseif depth == 0 and separators[character] then
+                last = index
+            end
+        end
+        return last
     end
     local function ValidateMacro(text)
         local openCount = select(2, text:gsub("%[", "")); local closeCount = select(2, text:gsub("%]", ""))
@@ -1160,8 +1177,7 @@ local function BuildUI()
                     local wantsItems = itemCommands[commandLower] or tooltipCommands[commandLower]
                     if wantsSpells then BuildSpellNames() end
                     if wantsItems then BuildItemNames() end
-                    local segmentStart = 1
-                    for position in arguments:gmatch("()[;,]") do segmentStart = position + 1 end
+                    local segmentStart = LastTopLevelSeparator(arguments, { [","] = true, [";"] = true }) + 1
                     local segment = arguments:sub(segmentStart); local afterConditions = StripLeadingConditionBlocks(segment)
                     local leading = #segment - #afterConditions; local prefix = afterConditions:match("^%s*(.-)%s*$") or ""
                     replaceStart, replaceEnd = cursor - #segment + leading + (afterConditions:find("%S") or (#afterConditions + 1)), cursor
@@ -1173,11 +1189,10 @@ local function BuildUI()
                         { "reset=shift ", "Shift is pressed" }, { "reset=ctrl ", "Ctrl is pressed" }, { "reset=alt ", "Alt is pressed" },
                     }
                     local currentClause = arguments
-                    local clauseStart = 1
-                    for position in arguments:gmatch("();") do clauseStart = position + 1 end
+                    local clauseStart = LastTopLevelSeparator(arguments, { [";"] = true }) + 1
                     currentClause = arguments:sub(clauseStart)
                     local clauseAfterConditions = StripLeadingConditionBlocks(currentClause)
-                    local hasActionComma = clauseAfterConditions:find(",", 1, true) ~= nil
+                    local hasActionComma = LastTopLevelSeparator(clauseAfterConditions, { [","] = true }) > 0
                     local resetToken = isCastSequence and not hasActionComma and afterConditions:match("^%s*(reset=[^%s]*)%s*$") or nil
                     local sequenceAction = isCastSequence and not hasActionComma and afterConditions:match("^%s*reset=[^%s]+%s+(.*)$") or nil
                     if sequenceAction ~= nil then
@@ -1186,7 +1201,7 @@ local function BuildUI()
                         replaceStart, replaceEnd = cursor - #segment + actionLeading + (sequenceAction:find("%S") or (#sequenceAction + 1)), cursor
                     end
                     local partialReset = isCastSequence and not hasActionComma and sequenceAction == nil and prefix ~= "" and string.sub("reset=", 1, #prefix):lower() == prefix:lower()
-                    local wantsReset = isCastSequence and (resetToken ~= nil or partialReset)
+                    local wantsReset = isCastSequence and sequenceAction == nil and (resetToken ~= nil or partialReset)
                     local showingTargets, sequenceSetup = false, false
                     if wantsReset then
                         local typedReset = resetToken or prefix
@@ -1196,15 +1211,25 @@ local function BuildUI()
                     elseif isCastSequence and not hasActionComma and prefix == "" and sequenceAction == nil then
                         sequenceSetup = true
                         replaceStart, replaceEnd = cursor + 1, cursor
-                        if not segment:find("%]") then
+                        local skippedReset = sequenceSkipResetKey == (text .. "\031" .. cursor)
+                        if skippedReset then
+                            infoOnly = true
+                            suggestionHint:SetText("Start typing the first spell name")
+                            suggestionHint:Show()
+                            suggestionTitle:SetText("CASTSEQUENCE FIRST SPELL")
+                        elseif not segment:find("%]") then
                             for index = 1, 4 do
                                 local entry = castTargetCatalog[index]
                                 matches[#matches + 1] = { insert = "[" .. entry[1], detail = entry[2] }
                             end
+                            matches[#matches + 1] = { label = "Add reset condition…", insert = "reset=", detail = "Choose when the sequence returns to its first spell" }
+                            matches[#matches + 1] = { label = "Skip target and reset → first spell", insert = "", detail = "Continue without target or reset options", skipReset = true }
+                            suggestionTitle:SetText("CASTSEQUENCE  ·  OPTIONAL TARGET OR RESET")
+                        else
+                            matches[#matches + 1] = { label = "Add reset condition…", insert = "reset=", detail = "Choose when the sequence returns to its first spell" }
+                            matches[#matches + 1] = { label = "Skip reset → first spell", insert = "", detail = "Keep the target conditions and choose a spell", skipReset = true }
+                            suggestionTitle:SetText("CASTSEQUENCE  ·  CHOOSE RESET OR CONTINUE")
                         end
-                        local remaining = 8 - #matches
-                        for index = 1, remaining do matches[#matches + 1] = { insert = resetCatalog[index][1], detail = resetCatalog[index][2] } end
-                        suggestionTitle:SetText(segment:find("%]") and "CASTSEQUENCE  ·  OPTIONAL RESET OR TYPE FIRST SPELL" or "CASTSEQUENCE  ·  OPTIONAL TARGET/RESET OR TYPE SPELL")
                     else
                         local supportsConditions = castCommands[commandLower]
                         if supportsConditions and not segment:find("%]") and (prefix == "" or prefix:sub(1, 1) == "@" or prefix:sub(1, 1) == "(") then
@@ -1230,6 +1255,7 @@ local function BuildUI()
                         end
                         if isCastSequence and completeSpell then
                             table.insert(matches, 1, { label = "+ Add next spell", insert = ", ", detail = "Insert comma and continue the sequence", replaceStart = cursor + 1, replaceEnd = cursor })
+                            table.insert(matches, 2, { label = "✓ End sequence", insert = "", detail = "Keep this as the final spell", replaceStart = cursor + 1, replaceEnd = cursor, endSequence = true })
                             while #matches > 8 do table.remove(matches) end
                         end
                     end
