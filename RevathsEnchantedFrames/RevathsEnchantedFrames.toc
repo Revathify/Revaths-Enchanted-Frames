@@ -2,7 +2,7 @@
 ## Title: Revath's Enchanted Frames
 ## Notes: Shared settings and module framework for Revath's Enchanted addon suite.
 ## Author: Revath#2331 (Revathify)
-## Version: 3.0.3
+## Version: 3.0.4
 ## SavedVariables: RevathsEnchantedFramesDB
 ## Category: User Interface
 ## IconTexture: Interface\AddOns\RevathsMailbox\Media\Icon
