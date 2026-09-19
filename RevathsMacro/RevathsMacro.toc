@@ -2,7 +2,7 @@
 ## Title: Revath's Enchanted Macros
 ## Notes: Account, character, and curated macro editor with syntax assistance.
 ## Author: Revath#2331 (Revathify)
-## Version: 3.0.8
+## Version: 3.0.9
 ## Dependencies: RevathsEnchantedFrames
 ## OptionalDeps: EllesmereUI, SharedMedia, SharedMediaAdditionalFonts, LibSharedMedia-3.0
 ## SavedVariables: RevathsMacroDB
