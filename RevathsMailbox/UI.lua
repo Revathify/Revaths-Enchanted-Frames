@@ -198,7 +198,13 @@ local function SetFrameBackdrop(frame, role)
         if frame.revathsClassicTexture then frame.revathsClassicTexture:Hide() end
         return
     else
-        frame:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+        local outer = role == "bg"
+        frame:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            edgeSize = outer and 16 or 12,
+            insets = { left = 3, right = 3, top = 3, bottom = 3 },
+        })
         if role == "button" and frame.SetNormalTexture then
             local normal = frame:GetNormalTexture()
             local pushed = frame:GetPushedTexture()
@@ -295,8 +301,8 @@ frame:Hide()
 
 local glow = frame:CreateTexture(nil, "BACKGROUND")
 glow:SetColorTexture(C.accent[1], C.accent[2], C.accent[3], 0.12)
-glow:SetPoint("TOPLEFT", 1, -1)
-glow:SetPoint("TOPRIGHT", -1, -1)
+glow:SetPoint("TOPLEFT", 4, -4)
+glow:SetPoint("TOPRIGHT", -4, -4)
 glow:SetHeight(72)
 
 local classicTitlePlate = frame:CreateTexture(nil, "ARTWORK", nil, 1)
@@ -316,6 +322,13 @@ title:SetText("REVATH'S |cff2eb8c7ENCHANTED MAILBOX|r")
 local subtitle = Font(frame, 11, C.muted)
 subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 1, -4)
 subtitle:SetText("MAILBOX & CHARACTER COURIER")
+
+local headerLine = frame:CreateTexture(nil, "ARTWORK")
+headerLine:SetHeight(2)
+headerLine:SetPoint("TOPLEFT", 22, -69)
+headerLine:SetPoint("RIGHT", -22, 0)
+headerLine:SetColorTexture(unpack(C.accent))
+headerLine:SetAlpha(0.45)
 
 local status = Font(frame, 11, C.muted, "RIGHT")
 status:SetPoint("TOPRIGHT", -54, -28)
@@ -364,6 +377,7 @@ local function ApplyGeometry(skin)
 
     glow:SetHeight(isClassic and 94 or 72)
     classicTitlePlate:SetShown(isClassic)
+    headerLine:SetShown(not isClassic)
 
     headerIcon:ClearAllPoints()
     headerIcon:SetSize(isClassic and 48 or 46, isClassic and 48 or 46)
@@ -439,6 +453,7 @@ function ns:ApplySkin(skin)
     end
     ApplySelectedFont()
     glow:SetColorTexture(C.accent[1], C.accent[2], C.accent[3], skin == "classic" and 0.20 or 0.12)
+    headerLine:SetColorTexture(unpack(C.accent))
     if skin == "classic" then
         title:SetText("REVATH'S |cfff5b833ENCHANTED MAILBOX|r")
         subtitle:SetText("MAILBOX & CHARACTER COURIER  ·  CLASSIC")

@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.6 — Unified Mailbox framing
+
+- Rebuilt the Mailbox modern skin with the same softly rounded tooltip borders used by Enchanted Macros.
+- Added matching layered outer, panel, input, button, and tab edges throughout the Mailbox.
+- Added the Macros-style accent divider beneath the Mailbox header.
+- Inset the header glow so it follows the curved outer frame instead of clipping through its border.
+- Preserved the parchment-framed Classic skin and the existing Mailbox layout.
+
 ## 3.0.5 — Sequence workflow and layout fixes
 
 - Moved the Mailbox Settings button into the header beside Close, matching Enchanted Macros.
