@@ -231,6 +231,9 @@ local modernSkinButton, classicSkinButton, headerLine
 local rowButtons, tabs, styledFrames, styledText, fontObjects = {}, {}, {}, {}, {}
 local selectedRecord, selectedIcon, activeSource = nil, nil, "account"
 local settingsRefreshing = false
+local function NotifySharedSettings()
+    if RevathsEnchantedFrames_RefreshSettings then RevathsEnchantedFrames_RefreshSettings() end
+end
 local selectedInternetClass
 local pendingScale, scaleDragging, scaleCommitToken
 local iconPopup, iconButtons, iconChoices, iconScrollBar = nil, {}, {}, nil
@@ -413,6 +416,7 @@ local function ChangeEditorFontSize(delta)
     if not ns.db then return end
     ns.db.fontSize = math.max(10, math.min(24, (tonumber(ns.db.fontSize) or 13) + delta))
     ApplyAppearance()
+    NotifySharedSettings()
 end
 
 local function PreserveWindowCenterAtScale(value)
@@ -713,8 +717,8 @@ local function BuildSettings()
     local skinTitle = Text(settingsPage, 11, "muted"); skinTitle:SetPoint("TOPLEFT", 28, -82); skinTitle:SetText("WINDOW SKIN")
     modernSkinButton = Button(settingsPage, "Modern", 145, 34); modernSkinButton:SetPoint("TOPLEFT", 28, -103)
     classicSkinButton = Button(settingsPage, "Classic", 145, 34); classicSkinButton:SetPoint("LEFT", modernSkinButton, "RIGHT", 10, 0)
-    modernSkinButton:SetScript("OnClick", function() ns.db.skin = "modern"; ApplyAppearance(); settingsPage:Refresh() end)
-    classicSkinButton:SetScript("OnClick", function() ns.db.skin = "classic"; ApplyAppearance(); settingsPage:Refresh() end)
+    modernSkinButton:SetScript("OnClick", function() ns.db.skin = "modern"; ApplyAppearance(); settingsPage:Refresh(); NotifySharedSettings() end)
+    classicSkinButton:SetScript("OnClick", function() ns.db.skin = "classic"; ApplyAppearance(); settingsPage:Refresh(); NotifySharedSettings() end)
     local paletteTitle = Text(settingsPage, 11, "muted"); paletteTitle:SetPoint("TOPLEFT", 360, -82); paletteTitle:SetText("MODERN COLOR PALETTE")
     local paletteButton = Button(settingsPage, "", 280, 34); paletteButton:SetPoint("TOPLEFT", 360, -103)
     local paletteMenu = CreateFrame("Frame", nil, settingsPage, "BackdropTemplate")
@@ -725,7 +729,7 @@ local function BuildSettings()
         local option = PALETTES[key]
         local choice = Button(paletteMenu, option.label, 280, 27); choice:SetPoint("TOPLEFT", 12, -31 - (index - 1) * 29)
         choice:SetScript("OnClick", function()
-            ns.db.palette = key; paletteMenu:Hide(); ApplyAppearance(); settingsPage:Refresh()
+            ns.db.palette = key; paletteMenu:Hide(); ApplyAppearance(); settingsPage:Refresh(); NotifySharedSettings()
         end)
     end
     paletteButton:SetScript("OnClick", function()
@@ -759,7 +763,7 @@ local function BuildSettings()
                 button.label:SetText(option.label .. (option.key == ns.db.font and "  ✓" or ""))
                 button.label:SetFont(option.path, 11, option.flags or "")
                 button:SetScript("OnClick", function()
-                    ns.db.font = option.key; fontMenu:Hide(); settingsPage:Refresh(); ApplyAppearance()
+                    ns.db.font = option.key; fontMenu:Hide(); settingsPage:Refresh(); ApplyAppearance(); NotifySharedSettings()
                 end)
             end
         end
@@ -774,7 +778,7 @@ local function BuildSettings()
     local opacity, opacityValue = Slider(settingsPage, "WINDOW OPACITY", -263, 0.55, 1, 0.05)
     opacity:SetScript("OnValueChanged", function(_, value)
         value = math.floor(value * 20 + 0.5) / 20; opacityValue:SetText(string.format("%d%%", value * 100))
-        if not settingsRefreshing then ns.db.opacity = value; ApplyAppearance() end
+        if not settingsRefreshing then ns.db.opacity = value; ApplyAppearance(); NotifySharedSettings() end
     end)
     local version = Text(settingsPage, 11, "muted", "RIGHT"); version:SetPoint("BOTTOMRIGHT", -28, 31); version:SetText("Revath's Enchanted Macros  ·  " .. tostring(ns.version))
     function settingsPage:Refresh()

@@ -1486,6 +1486,10 @@ function ns:RefreshAlts()
 end
 
 -- Settings
+local function NotifySharedSettings()
+    if RevathsEnchantedFrames_RefreshSettings then RevathsEnchantedFrames_RefreshSettings() end
+end
+
 local settingsPage = CreateFrame("Frame", nil, content)
 settingsPage:SetAllPoints()
 frame.pages.Settings = settingsPage
@@ -1520,10 +1524,12 @@ classicDescription:SetText("Old-WoW frames and parchment.")
 modernButton:SetScript("OnClick", function()
     if ns:ApplySkinSafe("modern") then ns:SetStatus("Modern skin selected.")
     else ns:SetStatus("The skin could not be loaded.", true) end
+    NotifySharedSettings()
 end)
 classicButton:SetScript("OnClick", function()
     if ns:ApplySkinSafe("classic") then ns:SetStatus("Classic skin selected.")
     else ns:SetStatus("Classic could not load and was reset to Modern.", true) end
+    NotifySharedSettings()
 end)
 
 local paletteLabel = Font(appearanceCard, 12, C.muted)
@@ -1588,6 +1594,7 @@ tooltipHelper:SetScript("OnClick", function(self)
         RevathsMailboxTooltipHelper_SetEnabled(enabled)
     end
     ns:SetStatus(enabled and "Tooltip Helper enabled." or "Tooltip Helper disabled.")
+    NotifySharedSettings()
 end)
 
 local settingsHelp = Font(appearanceCard, 11, C.muted)
@@ -1625,6 +1632,7 @@ paletteMenu = ChoiceMenu(paletteButton, PALETTE_ORDER, MODERN_PALETTES, function
     ns.db.settings.palette = key
     if activeSkin == "modern" then ns:ApplySkinSafe("modern") else ns:RefreshSettings() end
     ns:SetStatus(MODERN_PALETTES[key].label .. " palette selected.")
+    NotifySharedSettings()
 end)
 
 local function PagedFontMenu(anchor)
@@ -1649,6 +1657,7 @@ local function PagedFontMenu(anchor)
             ApplySelectedFont()
             ns:RefreshSettings()
             ns:SetStatus(selected.label .. " font selected.")
+            NotifySharedSettings()
             menu:Hide()
         end)
         menu.buttons[slot] = option
@@ -1723,6 +1732,7 @@ opacitySlider:SetScript("OnValueChanged", function(_, value)
     if settingsRefreshing or not ns.db then return end
     ns.db.settings.modernOpacity = value
     if activeSkin == "modern" then ns:ApplySkinSafe("modern") end
+    NotifySharedSettings()
 end)
 local pendingScale, scaleDragging, scaleCommitToken
 local function CommitWindowScale()
@@ -1730,6 +1740,7 @@ local function CommitWindowScale()
     ns.db.settings.scale = pendingScale
     frame:SetScale(pendingScale)
     pendingScale = nil
+    NotifySharedSettings()
 end
 scaleSlider:SetScript("OnMouseDown", function() scaleDragging = true end)
 scaleSlider:SetScript("OnMouseUp", function()

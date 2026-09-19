@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.2 — Shared settings improvements
+
+- Replaced cycling settings buttons with clear dropdown selectors.
+- Added immediate initial values for every shared appearance control.
+- Added the full LibSharedMedia font catalog with pagination and mouse-wheel navigation.
+- Synchronized Mailbox and Macros appearance values between their in-addon settings and Blizzard Options.
+- Renamed the tooltip summary to **Owned Total** and increased its visual contrast.
+
 ## 3.0.0 — Enchanted Frames suite
 
 - Renamed the project to **Revath's Enchanted Frames**.

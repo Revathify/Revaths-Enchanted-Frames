@@ -86,7 +86,7 @@ local function addTooltipCount(tooltip, data)
     if not itemID or not database.characters then return end
     local total, currentCount, warbandCount, characterCounts = getTotals(itemID)
     if total == 0 then return end
-    tooltip:AddLine(string.format("Enchanted Total: %d", total), 0.45, 0.8, 1)
+    tooltip:AddLine(string.format("|cffffd24aOwned Total:|r |cffffffff%d|r", total), 1, 1, 1)
     if IsShiftKeyDown() then
         tooltip:AddLine(string.format("This character: %d", currentCount), 0.75, 0.75, 0.75)
         if warbandCount > 0 then tooltip:AddLine(string.format("Warbound Bank: %d", warbandCount), 0.75, 0.75, 0.75) end
