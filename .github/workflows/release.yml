@@ -49,15 +49,26 @@ jobs:
             sed -i -E "s/^## Version:.*/## Version: $next_version/" "$toc"
           done
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add RevathsEnchantedFrames/*.toc RevathsMailbox/*.toc RevathsMacro/*.toc RevathsMailboxTooltipHelper/*.toc
-          git commit -m "Bump addon suite version to $next_version [skip ci]"
-          git tag "$release_tag"
-          git push origin HEAD:main "$release_tag"
-
+          echo "next_version=$next_version" >> "$GITHUB_OUTPUT"
           echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
           echo "should_release=true" >> "$GITHUB_OUTPUT"
+
+      - name: Validate synchronized manifest versions
+        if: steps.version.outputs.should_release == 'true'
+        shell: bash
+        run: |
+          expected="${{ steps.version.outputs.next_version }}"
+          for toc in \
+            RevathsEnchantedFrames/RevathsEnchantedFrames.toc \
+            RevathsMailbox/RevathsMailbox.toc \
+            RevathsMacro/RevathsMacro.toc \
+            RevathsMailboxTooltipHelper/RevathsMailboxTooltipHelper.toc; do
+            actual=$(sed -nE 's/^## Version:[[:space:]]*(.+)$/\1/p' "$toc")
+            if [ "$actual" != "$expected" ]; then
+              echo "$toc has version '$actual'; expected '$expected'." >&2
+              exit 1
+            fi
+          done
 
       - name: Validate Lua syntax
         if: steps.version.outputs.should_release == 'true'
@@ -80,8 +91,30 @@ jobs:
           mkdir -p "$staging"
           cp -R RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper "$staging/"
           (cd "$staging" && zip -r "$zip_path" RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper)
+          expected="${{ steps.version.outputs.next_version }}"
+          for addon in RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper; do
+            actual=$(unzip -p "$zip_path" "$addon/$addon.toc" | sed -nE 's/^## Version:[[:space:]]*(.+)$/\1/p' | tr -d '\r')
+            if [ "$actual" != "$expected" ]; then
+              echo "Packaged $addon has version '$actual'; expected '$expected'." >&2
+              exit 1
+            fi
+          done
           echo "zip_name=$zip_name" >> "$GITHUB_OUTPUT"
           echo "zip_path=$zip_path" >> "$GITHUB_OUTPUT"
+
+      - name: Commit synchronized version and create tag
+        if: steps.version.outputs.should_release == 'true'
+        env:
+          NEXT_VERSION: ${{ steps.version.outputs.next_version }}
+          RELEASE_TAG: ${{ steps.version.outputs.release_tag }}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RevathsEnchantedFrames/*.toc RevathsMailbox/*.toc RevathsMacro/*.toc RevathsMailboxTooltipHelper/*.toc
+          git commit -m "Bump addon suite version to $NEXT_VERSION [skip ci]"
+          git tag "$RELEASE_TAG"
+          git push origin HEAD:main "$RELEASE_TAG"
 
       - name: Upload workflow artifact
         if: steps.version.outputs.should_release == 'true'

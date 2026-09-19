@@ -2,7 +2,10 @@ local addonName, ns = ...
 
 ns.name = addonName
 ns.db = nil
-ns.version = (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version"))
+ns.version = _G.RevathsEnchantedFramesVersion
+    or (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata("RevathsEnchantedFrames", "Version"))
+    or (GetAddOnMetadata and GetAddOnMetadata("RevathsEnchantedFrames", "Version"))
+    or (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version"))
     or (GetAddOnMetadata and GetAddOnMetadata(addonName, "Version")) or "unknown"
 
 local events = CreateFrame("Frame")

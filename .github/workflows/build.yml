@@ -28,6 +28,11 @@ jobs:
         run: |
           for addon in RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper; do
             test -f "$addon/$addon.toc"
+            addon_version=$(sed -nE 's/^## Version:[[:space:]]*(.+)$/\1/p' "$addon/$addon.toc")
+            if [ "$addon_version" != "${{ steps.version.outputs.version }}" ]; then
+              echo "$addon manifest is $addon_version; expected ${{ steps.version.outputs.version }}." >&2
+              exit 1
+            fi
           done
           npx --yes luaparse \
             RevathsEnchantedFrames/Core.lua RevathsEnchantedFrames/Settings.lua \
@@ -43,6 +48,13 @@ jobs:
           mkdir -p "$staging"
           cp -R RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper "$staging/"
           (cd "$staging" && zip -r "$zip_path" RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper)
+          for addon in RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper; do
+            addon_version=$(unzip -p "$zip_path" "$addon/$addon.toc" | sed -nE 's/^## Version:[[:space:]]*(.+)$/\1/p' | tr -d '\r')
+            if [ "$addon_version" != "${{ steps.version.outputs.version }}" ]; then
+              echo "Packaged $addon is $addon_version; expected ${{ steps.version.outputs.version }}." >&2
+              exit 1
+            fi
+          done
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

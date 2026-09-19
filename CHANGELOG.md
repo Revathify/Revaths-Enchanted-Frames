@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.9 — Version synchronization safeguards
+
+- Made every in-game module display the parent Enchanted Frames suite version as the canonical version.
+- Added release checks requiring all four addon manifests to contain the same version.
+- Added post-package checks that inspect every manifest inside the finished ZIP.
+- Moved tag creation and the version-bump push until after validation and packaging succeed.
+- Added the same manifest and archive consistency checks to manual and pull-request builds.
+
 ## 3.0.8 — Mail gold visibility and persistent macro guidance
 
 - Added larger gold-colored incoming-money amounts with coin icons to Mailbox inbox rows.

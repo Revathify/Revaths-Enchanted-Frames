@@ -2,7 +2,11 @@ local addonName, ns = ...
 local MAX_RECEIVE = ATTACHMENTS_MAX_RECEIVE or 16
 
 ns.name = addonName
-ns.version = (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version")) or (GetAddOnMetadata and GetAddOnMetadata(addonName, "Version")) or "unknown"
+ns.version = _G.RevathsEnchantedFramesVersion
+    or (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata("RevathsEnchantedFrames", "Version"))
+    or (GetAddOnMetadata and GetAddOnMetadata("RevathsEnchantedFrames", "Version"))
+    or (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version"))
+    or (GetAddOnMetadata and GetAddOnMetadata(addonName, "Version")) or "unknown"
 ns.colors = {
     bg = { 0.035, 0.047, 0.071, 0.98 },
     panel = { 0.065, 0.082, 0.115, 0.98 },

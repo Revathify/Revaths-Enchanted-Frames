@@ -6,6 +6,7 @@ ns.author = "Revath#2331 (Revathify)"
 ns.support = "https://buymeacoffee.com/revath"
 ns.version = (C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version"))
     or (GetAddOnMetadata and GetAddOnMetadata(addonName, "Version")) or "unknown"
+_G.RevathsEnchantedFramesVersion = ns.version
 
 local function InitializeDatabase()
     if type(RevathsEnchantedFramesDB) ~= "table" then RevathsEnchantedFramesDB = {} end
