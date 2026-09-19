@@ -1575,28 +1575,6 @@ scaleSlider:SetMinMaxValues(0.65, 1.10)
 scaleSlider:SetValueStep(0.05)
 scaleSlider:SetObeyStepOnDrag(true)
 
-local tooltipHelper = CreateFrame("CheckButton", nil, appearanceCard, "UICheckButtonTemplate")
-tooltipHelper:SetPoint("TOPLEFT", 570, -218)
-tooltipHelper:SetSize(26, 26)
-local tooltipHelperLabel = Font(appearanceCard, 12, C.text)
-tooltipHelperLabel:SetPoint("LEFT", tooltipHelper, "RIGHT", 8, 0)
-tooltipHelperLabel:SetText("Tooltip Helper")
-local tooltipHelperHint = Font(appearanceCard, 11, C.muted)
-tooltipHelperHint:SetPoint("TOPLEFT", tooltipHelperLabel, "BOTTOMLEFT", 0, -2)
-tooltipHelperHint:SetText("Show account-wide item totals in tooltips.")
-tooltipHelper:SetScript("OnClick", function(self)
-    local enabled = self:GetChecked()
-    if not ns.db then return end
-    ns.db.settings.tooltipHelperEnabled = enabled
-    if RevathsEnchantedTooltips_SetEnabled then
-        RevathsEnchantedTooltips_SetEnabled(enabled)
-    elseif RevathsMailboxTooltipHelper_SetEnabled then
-        RevathsMailboxTooltipHelper_SetEnabled(enabled)
-    end
-    ns:SetStatus(enabled and "Tooltip Helper enabled." or "Tooltip Helper disabled.")
-    NotifySharedSettings()
-end)
-
 local settingsHelp = Font(appearanceCard, 11, C.muted)
 settingsHelp:SetPoint("BOTTOMLEFT", 22, 20)
 settingsHelp:SetText("Tip: 80–85% scale is designed to fit comfortably on 1080p displays.")
@@ -1813,7 +1791,6 @@ function ns:RefreshSettings()
     settingsRefreshing = true
     opacitySlider:SetValue(math.max(0.55, math.min(1, tonumber(self.db and self.db.settings.modernOpacity) or 0.96)))
     scaleSlider:SetValue(math.max(0.65, math.min(1.10, tonumber(self.db and self.db.settings.scale) or 1)))
-    tooltipHelper:SetChecked(self.db and self.db.settings.tooltipHelperEnabled ~= false)
     settingsRefreshing = false
     versionValue:SetText(self.version)
 end

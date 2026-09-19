@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.4 — Settings cleanup
+
+- Removed the duplicate Tooltip Helper control from the Mailbox window.
+- Tooltip totals are now managed exclusively from Blizzard Options → AddOns → Revath's Enchanted Frames → Tooltips.
+
 ## 3.0.3 — Castsequence syntax assistance
 
 - Added syntax-aware `/castsequence` setup, reset, and action stages.
