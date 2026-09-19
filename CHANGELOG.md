@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.3 — Castsequence syntax assistance
+
+- Added syntax-aware `/castsequence` setup, reset, and action stages.
+- Added combined reset suggestions such as `reset=target/combat/5`.
+- Kept conditionals at the sequence-clause level instead of suggesting them between individual actions.
+- Added separate guidance for the first spell and each comma-separated next spell.
+- Rebuilt suggestion rows into aligned action and description columns.
+- Anchored the suggestion popup below the active visual line, with an above-line fallback near the editor bottom.
+
 ## 3.0.2 — Shared settings improvements
 
 - Replaced cycling settings buttons with clear dropdown selectors.

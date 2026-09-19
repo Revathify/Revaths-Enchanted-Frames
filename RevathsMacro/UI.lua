@@ -870,7 +870,7 @@ local function BuildUI()
     local fontPlus = Button(editorPane, "+", 27, 23); fontPlus:SetPoint("TOPRIGHT", -20, -111)
     fontMinus:SetScript("OnClick", function() ChangeEditorFontSize(-1) end); fontPlus:SetScript("OnClick", function() ChangeEditorFontSize(1) end)
     macroBody = Edit(editorPane, true); macroBody.styleRole = "parchment"; ApplyFrameBackdrop(macroBody); macroBody:SetPoint("TOPLEFT", bodyLabel, "BOTTOMLEFT", 0, -6); macroBody:SetPoint("BOTTOMRIGHT", -20, 139); macroBody:SetMaxLetters(255)
-    local suggestionPopup = CreateFrame("Frame", nil, editorPane, "BackdropTemplate"); suggestionPopup:SetSize(370, 224); suggestionPopup:SetFrameLevel(editorPane:GetFrameLevel() + 10); RegisterBackdrop(suggestionPopup, "panel"); suggestionPopup:Hide()
+    local suggestionPopup = CreateFrame("Frame", nil, editorPane, "BackdropTemplate"); suggestionPopup:SetSize(500, 224); suggestionPopup:SetFrameLevel(editorPane:GetFrameLevel() + 10); RegisterBackdrop(suggestionPopup, "panel"); suggestionPopup:Hide()
     local suggestionTitle = Text(suggestionPopup, 10, "muted"); suggestionTitle:SetPoint("TOPLEFT", 10, -8); suggestionTitle:SetText("SYNTAX SUGGESTIONS  ·  TAB TO SELECT  ·  ENTER TO INSERT")
     local suggestionHint = Text(suggestionPopup, 12, "muted"); suggestionHint:SetPoint("TOPLEFT", 14, -42); suggestionHint:SetWidth(340); suggestionHint:SetText("Start typing spell name"); suggestionHint:Hide()
     local caretMeasure = macroBody:CreateFontString(nil, "OVERLAY"); caretMeasure:SetAlpha(0); caretMeasure:SetPoint("TOPLEFT", macroBody, "TOPLEFT")
@@ -1020,13 +1020,16 @@ local function BuildUI()
     local replaceStart, replaceEnd = 1, 0
     local UpdateSuggestions
     for index = 1, 8 do
-        local button = Button(suggestionPopup, "", 348, 21); button:SetPoint("TOPLEFT", 10, -25 - (index - 1) * 23); button.label:SetJustifyH("LEFT"); button.label:ClearAllPoints(); button.label:SetPoint("LEFT", 7, 0); button.label:SetPoint("RIGHT", -7, 0); suggestionButtons[index] = button
+        local button = Button(suggestionPopup, "", 480, 21); button:SetPoint("TOPLEFT", 10, -25 - (index - 1) * 23)
+        button.label:SetJustifyH("LEFT"); button.label:ClearAllPoints(); button.label:SetPoint("LEFT", 7, 0); button.label:SetPoint("RIGHT", button, "CENTER", -6, 0)
+        button.detail = Text(button, 9, "muted", "LEFT"); button.detail:SetPoint("LEFT", button, "CENTER", 6, 0); button.detail:SetPoint("RIGHT", -7, 0); button.detail:SetWordWrap(false)
+        suggestionButtons[index] = button
     end
     local function PaintSuggestions()
         for index, button in ipairs(suggestionButtons) do
             local item = matches[index]
             button:SetShown(item ~= nil); button.selected = index == selectedSuggestion
-            if item then button.label:SetText(item.insert .. (item.detail and ("  |cff8899aa— " .. item.detail .. "|r") or "")) end
+            if item then button.label:SetText(item.insert); button.detail:SetText(item.detail or "") end
         end
         for index, button in ipairs(suggestionButtons) do button:SetBackdropBorderColor(Color(index == selectedSuggestion and "accent" or "border")) end
     end
@@ -1058,6 +1061,25 @@ local function BuildUI()
             if command and not commandLookup[command:lower()] then return "unknown command " .. command end
             if trimmed:lower():match("^/cast[%w]*%s+%(") then return "conditions use [square brackets], not (parentheses)" end
             if trimmed:sub(-1) == ";" then return "trailing ; creates an unconditional empty action" end
+            local sequenceArguments = trimmed:match("^/castsequence%s+(.+)$")
+            if sequenceArguments then
+                for clause in (sequenceArguments .. ";"):gmatch("(.-);") do
+                    local firstComma = clause:find(",", 1, true)
+                    if firstComma then
+                        local laterActions = clause:sub(firstComma + 1)
+                        if laterActions:find("reset=", 1, true) then return "castsequence reset= belongs before the first action" end
+                        if laterActions:find("%[") then return "castsequence conditions apply to the whole clause" end
+                    end
+                    local resetValue = clause:match("reset=([^%s]+)")
+                    if resetValue then
+                        for condition in resetValue:gmatch("[^/]+") do
+                            local validWord = condition == "target" or condition == "combat" or condition == "shift" or condition == "ctrl" or condition == "alt"
+                            local validTime = condition:match("^%d+%.?%d*$") ~= nil
+                            if not validWord and not validTime then return "unsupported castsequence reset: " .. condition end
+                        end
+                    end
+                end
+            end
         end
         return nil
     end
@@ -1121,6 +1143,7 @@ local function BuildUI()
                     AddMatches(consoleNames, prefix)
                     suggestionTitle:SetText("CONSOLE COMMANDS & CVARS  ·  TAB TO SELECT  ·  ENTER TO INSERT")
                 elseif command and suggestionCommands then
+                    local isCastSequence = commandLower == "/castsequence"
                     local wantsSpells = castCommands[commandLower] or tooltipCommands[commandLower]
                     local wantsItems = itemCommands[commandLower] or tooltipCommands[commandLower]
                     if wantsSpells then BuildSpellNames() end
@@ -1130,12 +1153,45 @@ local function BuildUI()
                     local segment = arguments:sub(segmentStart); local afterConditions = segment:match(".*%]%s*(.*)$") or segment
                     local leading = #segment - #afterConditions; local prefix = afterConditions:match("^%s*(.-)%s*$") or ""
                     replaceStart, replaceEnd = cursor - #segment + leading + (afterConditions:find("%S") or (#afterConditions + 1)), cursor
-                    local resetCatalog = { { "reset=target ", "Reset when target changes" }, { "reset=combat ", "Reset when combat ends" }, { "reset=shift ", "Reset when Shift is held" }, { "reset=ctrl ", "Reset when Ctrl is held" }, { "reset=alt ", "Reset when Alt is held" }, { "reset=5 ", "Reset after five idle seconds" } }
-                    local wantsReset = commandLower == "/castsequence" and (prefix == "" or string.sub("reset=", 1, #prefix):lower() == prefix:lower())
-                    local showingTargets = false
+                    local resetCatalog = {
+                        { "reset=target ", "Target changes" }, { "reset=combat ", "Combat state changes" },
+                        { "reset=5 ", "Five seconds without pressing" }, { "reset=target/5 ", "Target changes or five seconds" },
+                        { "reset=combat/5 ", "Combat changes or five seconds" }, { "reset=target/combat ", "Target or combat changes" },
+                        { "reset=target/combat/5 ", "Target, combat, or five seconds" },
+                        { "reset=shift ", "Shift is pressed" }, { "reset=ctrl ", "Ctrl is pressed" }, { "reset=alt ", "Alt is pressed" },
+                    }
+                    local currentClause = arguments
+                    local clauseStart = 1
+                    for position in arguments:gmatch("();") do clauseStart = position + 1 end
+                    currentClause = arguments:sub(clauseStart)
+                    local hasActionComma = currentClause:find(",", 1, true) ~= nil
+                    local resetToken = isCastSequence and not hasActionComma and afterConditions:match("^%s*(reset=[^%s]*)%s*$") or nil
+                    local sequenceAction = isCastSequence and not hasActionComma and afterConditions:match("^%s*reset=[^%s]+%s+(.*)$") or nil
+                    if sequenceAction ~= nil then
+                        local actionLeading = #segment - #sequenceAction
+                        prefix = sequenceAction:match("^%s*(.-)%s*$") or ""
+                        replaceStart, replaceEnd = cursor - #segment + actionLeading + (sequenceAction:find("%S") or (#sequenceAction + 1)), cursor
+                    end
+                    local partialReset = isCastSequence and not hasActionComma and sequenceAction == nil and prefix ~= "" and string.sub("reset=", 1, #prefix):lower() == prefix:lower()
+                    local wantsReset = isCastSequence and (resetToken ~= nil or partialReset)
+                    local showingTargets, sequenceSetup = false, false
                     if wantsReset then
-                        AddMatches(resetCatalog, prefix)
-                        suggestionTitle:SetText("SEQUENCE RESET  ·  TAB TO SELECT  ·  ENTER TO INSERT")
+                        local typedReset = resetToken or prefix
+                        replaceStart, replaceEnd = cursor - #typedReset + 1, cursor
+                        AddMatches(resetCatalog, typedReset)
+                        suggestionTitle:SetText("CASTSEQUENCE RESET  ·  / COMBINES CONDITIONS")
+                    elseif isCastSequence and not hasActionComma and prefix == "" and sequenceAction == nil then
+                        sequenceSetup = true
+                        replaceStart, replaceEnd = cursor + 1, cursor
+                        if not segment:find("%]") then
+                            for index = 1, 4 do
+                                local entry = castTargetCatalog[index]
+                                matches[#matches + 1] = { insert = "[" .. entry[1], detail = entry[2] }
+                            end
+                        end
+                        local remaining = 8 - #matches
+                        for index = 1, remaining do matches[#matches + 1] = { insert = resetCatalog[index][1], detail = resetCatalog[index][2] } end
+                        suggestionTitle:SetText(segment:find("%]") and "CASTSEQUENCE  ·  OPTIONAL RESET OR TYPE FIRST SPELL" or "CASTSEQUENCE  ·  OPTIONAL TARGET/RESET OR TYPE SPELL")
                     else
                         local supportsConditions = castCommands[commandLower]
                         if supportsConditions and not segment:find("%]") and (prefix == "" or prefix:sub(1, 1) == "@" or prefix:sub(1, 1) == "(") then
@@ -1166,11 +1222,11 @@ local function BuildUI()
                     end
                     if not wantsReset and prefix == "" and #matches == 0 then
                         infoOnly = true
-                        suggestionHint:SetText(wantsItems and wantsSpells and "Start typing spell or item name" or wantsItems and "Start typing item name" or "Start typing spell name")
+                        suggestionHint:SetText(isCastSequence and hasActionComma and "Start typing the next spell name" or isCastSequence and "Start typing the first spell name" or wantsItems and wantsSpells and "Start typing spell or item name" or wantsItems and "Start typing item name" or "Start typing spell name")
                         suggestionHint:Show()
                     end
-                    if not wantsReset and not showingTargets then
-                        suggestionTitle:SetText(wantsItems and wantsSpells and "KNOWN SPELLS & USABLE ITEMS  ·  TAB TO SELECT  ·  ENTER TO INSERT" or wantsItems and "USABLE ITEMS  ·  TAB TO SELECT  ·  ENTER TO INSERT" or "KNOWN SPELLS  ·  TAB TO SELECT  ·  ENTER TO INSERT")
+                    if not wantsReset and not showingTargets and not sequenceSetup then
+                        suggestionTitle:SetText(isCastSequence and "CASTSEQUENCE ACTIONS  ·  COMMA STARTS THE NEXT ACTION" or wantsItems and wantsSpells and "KNOWN SPELLS & USABLE ITEMS  ·  TAB TO SELECT  ·  ENTER TO INSERT" or wantsItems and "USABLE ITEMS  ·  TAB TO SELECT  ·  ENTER TO INSERT" or "KNOWN SPELLS  ·  TAB TO SELECT  ·  ENTER TO INSERT")
                     end
                 end
             end
@@ -1181,12 +1237,25 @@ local function BuildUI()
         caretMeasure:SetFont(fontPath or STANDARD_TEXT_FONT, fontSize or 13, fontFlags or ""); caretMeasure:SetText(currentLine)
         local innerWidth = math.max(1, (macroBody:GetWidth() or 400) - 20)
         local textWidth = caretMeasure:GetStringWidth() or 0
-        local wrappedLines = math.floor(textWidth / innerWidth)
-        local visualLine = select(2, before:gsub("\n", "")) + wrappedLines
+        local visualLine = 0
+        local completedText = before:sub(1, math.max(0, #before - #currentLine))
+        for previousLine in completedText:gmatch("([^\n]*)\n") do
+            caretMeasure:SetText(previousLine)
+            local previousWidth = caretMeasure:GetStringWidth() or 0
+            visualLine = visualLine + math.max(1, math.ceil(math.max(1, previousWidth) / innerWidth))
+        end
+        visualLine = visualLine + math.floor(textWidth / innerWidth)
         local x = 10 + (textWidth % innerWidth)
-        local y = 8 + (visualLine + 1) * ((fontSize or 13) + 4)
-        x = math.min(x, math.max(8, (macroBody:GetWidth() or 400) - suggestionPopup:GetWidth() - 8))
-        y = math.min(y, math.max(8, (macroBody:GetHeight() or 300) + 130 - suggestionPopup:GetHeight()))
+        local lineHeight = (fontSize or 13) + 4
+        local lineTop = 8 + (visualLine * lineHeight)
+        local popupWidth = math.max(340, math.min(520, (macroBody:GetWidth() or 400) - 16))
+        local popupHeight = infoOnly and 78 or (42 + (#matches * 23))
+        suggestionPopup:SetSize(popupWidth, popupHeight)
+        for _, button in ipairs(suggestionButtons) do button:SetWidth(popupWidth - 20) end
+        x = math.max(8, math.min(x, (macroBody:GetWidth() or 400) - popupWidth - 8))
+        local belowY = lineTop + lineHeight + 3
+        local maxY = math.max(8, (macroBody:GetHeight() or 300) - popupHeight - 8)
+        local y = belowY <= maxY and belowY or math.max(8, lineTop - popupHeight - 3)
         suggestionPopup:ClearAllPoints(); suggestionPopup:SetPoint("TOPLEFT", macroBody, "TOPLEFT", x, -y); suggestionPopup:Show(); PaintSuggestions()
     end
     macroBody:SetScript("OnTextChanged", function(self, userInput)
