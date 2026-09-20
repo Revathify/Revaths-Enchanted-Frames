@@ -578,6 +578,28 @@ ClassicInk(detailSubject, "text")
 ClassicInk(detailMeta, "muted")
 ClassicInk(body, "text")
 
+local copyPanel = CreateFrame("Frame", nil, detail, "BackdropTemplate")
+copyPanel:SetPoint("TOPLEFT", 8, -8)
+copyPanel:SetPoint("BOTTOMRIGHT", -8, 52)
+copyPanel:SetFrameLevel(detail:GetFrameLevel() + 20)
+ApplyBackdrop(copyPanel, C.panel, "panel")
+copyPanel:Hide()
+local copyTitle = Font(copyPanel, 15, C.text)
+copyTitle:SetPoint("TOPLEFT", 14, -14)
+copyTitle:SetText("COPY MESSAGE TEXT")
+local copyHelp = Font(copyPanel, 11, C.muted)
+copyHelp:SetPoint("TOPLEFT", copyTitle, "BOTTOMLEFT", 0, -6)
+copyHelp:SetText("Select any part, or press Ctrl+A then Ctrl+C to copy the full message.")
+local copyBox = EditBox(copyPanel, true)
+copyBox:SetPoint("TOPLEFT", 12, -62)
+copyBox:SetPoint("BOTTOMRIGHT", -12, 48)
+copyBox:SetJustifyV("TOP")
+copyBox:SetScript("OnEscapePressed", function(self) self:ClearFocus(); copyPanel:Hide() end)
+ClassicInk(copyBox, "text")
+local closeCopy = Button(copyPanel, "Close", 72, 28)
+closeCopy:SetPoint("BOTTOMRIGHT", -12, 10)
+closeCopy:SetScript("OnClick", function() copyBox:ClearFocus(); copyPanel:Hide() end)
+
 local detailMoneyIcon = detail:CreateTexture(nil, "ARTWORK")
 detailMoneyIcon:SetSize(30, 30)
 detailMoneyIcon:SetPoint("BOTTOMLEFT", 16, 108)
@@ -617,16 +639,25 @@ local function ClearInboxAttachments()
     end
 end
 
-local takeAll = Button(detail, "Take contents", 112, 28)
+local takeAll = Button(detail, "Take contents", 108, 28)
 takeAll:SetPoint("BOTTOMLEFT", 16, 15)
-local replyMail = Button(detail, "Reply", 64, 28)
-replyMail:SetPoint("LEFT", takeAll, "RIGHT", 5, 0)
-local returnMail = Button(detail, "Return", 68, 28)
-returnMail:SetPoint("LEFT", replyMail, "RIGHT", 5, 0)
-local deleteMail = Button(detail, "Delete", 68, 28)
-deleteMail:SetPoint("LEFT", returnMail, "RIGHT", 5, 0)
+local replyMail = Button(detail, "Reply", 60, 28)
+replyMail:SetPoint("LEFT", takeAll, "RIGHT", 4, 0)
+local returnMail = Button(detail, "Return", 64, 28)
+returnMail:SetPoint("LEFT", replyMail, "RIGHT", 4, 0)
+local copyMail = Button(detail, "Copy", 56, 28)
+copyMail:SetPoint("LEFT", returnMail, "RIGHT", 4, 0)
+local deleteMail = Button(detail, "Delete", 64, 28)
+deleteMail:SetPoint("LEFT", copyMail, "RIGHT", 4, 0)
 deleteMail.label:SetTextColor(unpack(C.danger))
 styledText[deleteMail.label] = "danger"
+copyMail:SetScript("OnClick", function()
+    if not inbox.selected then return end
+    copyBox:SetText(body:GetText() or "")
+    copyPanel:Show()
+    copyBox:SetFocus()
+    copyBox:HighlightText()
+end)
 
 inbox.openAll = { active = false, waiting = false, queued = false, processed = 0, checkAttempts = 0 }
 
@@ -767,7 +798,7 @@ replyMail:SetScript("OnClick", function()
     if not inbox.selected then return end
     local _, _, sender, subject = GetInboxHeaderInfo(inbox.selected)
     if not sender then return end
-    compose.to:SetText(sender)
+    if compose.SetRecipient then compose:SetRecipient(sender) else compose.to:SetText(sender) end
     local prefix = MAIL_REPLY_PREFIX .. " "
     if string.sub(subject or "", 1, string.len(prefix)) ~= prefix then subject = prefix .. (subject or "") end
     compose.subject:SetText(subject)
@@ -783,6 +814,8 @@ end)
 
 function ns:SelectMessage(index, skipListRefresh)
     inbox.selected = index
+    copyBox:ClearFocus()
+    copyPanel:Hide()
     local _, _, sender, subject, money, cod, days, hasItem, wasRead, wasReturned, _, canReply = GetInboxHeaderInfo(index)
     if not sender then
         inbox.selected = nil
@@ -947,6 +980,7 @@ ApplyBackdrop(recipientSuggestions, C.panelAlt)
 recipientSuggestions:Hide()
 recipientSuggestions.rows = {}
 recipientSuggestions.selected = 0
+local suppressRecipientSuggestions = false
 
 local function HideRecipientSuggestions()
     recipientSuggestions:Hide()
@@ -973,6 +1007,7 @@ local function UpdateRecipientSuggestionSelection()
 end
 
 local function ShowRecipientSuggestions()
+    if suppressRecipientSuggestions then HideRecipientSuggestions(); return end
     local query = string.lower(strtrim(toBox:GetText() or ""))
     if query == "" then HideRecipientSuggestions(); return end
 
@@ -1049,6 +1084,19 @@ local subjectBox = EditBox(composeCard)
 subjectBox:SetSize(574, 35)
 subjectBox:SetPoint("TOPLEFT", subjectLabel, "BOTTOMLEFT", 0, -6)
 compose.subject = subjectBox
+
+function compose:SetRecipient(name, focusSubject)
+    suppressRecipientSuggestions = true
+    toBox:SetText(name or "")
+    toBox:SetCursorPosition(string.len(name or ""))
+    suppressRecipientSuggestions = false
+    HideRecipientSuggestions()
+    if focusSubject then
+        ns:SelectTab("Compose")
+        HideRecipientSuggestions()
+        subjectBox:SetFocus()
+    end
+end
 
 local bodyLabel = Label("MESSAGE", subjectBox, "BOTTOMLEFT", 0, -14)
 local bodyContainer = CreateFrame("Frame", nil, composeCard, "BackdropTemplate")
@@ -1480,9 +1528,7 @@ function ns:RefreshContacts()
         row.kind:SetText((contact.online and "ONLINE - " or "OFFLINE - ") .. contact.kind)
         row.detail:SetText(contact.detail or "")
         row:SetScript("OnClick", function()
-            compose.to:SetText(contact.name)
-            ns:SelectTab("Compose")
-            compose.subject:SetFocus()
+            compose:SetRecipient(contact.name, true)
         end)
         row:Show()
     end
@@ -1548,9 +1594,7 @@ function ns:RefreshAlts()
         row.seen:SetText(self:FormatAge(character.lastSeen))
         local recipient = self:GetRecipientName(character)
         row:SetScript("OnClick", function()
-            compose.to:SetText(recipient)
-            ns:SelectTab("Compose")
-            compose.subject:SetFocus()
+            compose:SetRecipient(recipient, true)
         end)
         row:Show()
     end

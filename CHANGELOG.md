@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.12 — Faster mail addressing and item macros
+
+- Clicking an alt, friend, or guild member now commits the recipient immediately, suppresses the redundant name suggestion, and focuses the subject field.
+- Added a Copy view for received mail with selectable message text and straightforward Ctrl+A / Ctrl+C support for text and URLs.
+- Shift-clicking an item while Enchanted Macros is open now inserts a `/use Item Name` command at the macro cursor.
+
 ## 3.0.11 — Readable syntax assistant
 
 - Increased the syntax-helper heading, suggestion labels, explanations, prompts, and full command preview for comfortable reading at normal gameplay scale.

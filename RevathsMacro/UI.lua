@@ -1400,7 +1400,42 @@ local function BuildUI()
     BuildSettings(); table.insert(UISpecialFrames, frame:GetName()); ApplyAppearance(); SetEditor(nil); SelectSource("account"); frame:Hide()
 end
 
-function ns:Initialize() BuildUI() end
+local function InsertItemUseCommand(itemLink)
+    if not frame or not frame:IsShown() or not macroBody or type(itemLink) ~= "string" then return end
+    if not itemLink:find("|Hitem:", 1, true) then return end
+    local itemName = GetItemInfo and GetItemInfo(itemLink)
+    if not itemName then itemName = itemLink:match("%[(.-)%]") end
+    if not itemName or itemName == "" then return end
+
+    local text = macroBody:GetText() or ""
+    local cursor = macroBody:GetCursorPosition() or string.len(text)
+    local before, after = text:sub(1, cursor), text:sub(cursor + 1)
+    local insertion = "/use " .. itemName
+    if before ~= "" and before:sub(-1) ~= "\n" then insertion = "\n" .. insertion end
+    if after ~= "" and after:sub(1, 1) ~= "\n" then insertion = insertion .. "\n" end
+    if string.len(text) + string.len(insertion) > 255 then
+        SetStatus("That item command would exceed the 255-character macro limit.", true)
+        return
+    end
+
+    macroBody:SetFocus()
+    macroBody:SetCursorPosition(cursor)
+    macroBody:Insert(insertion)
+    SetStatus("Added /use " .. itemName .. ".")
+end
+
+function ns:InstallItemLinkHook()
+    if self.itemLinkHookInstalled or type(HandleModifiedItemClick) ~= "function" then return end
+    hooksecurefunc("HandleModifiedItemClick", function(itemLink)
+        if IsShiftKeyDown and IsShiftKeyDown() then InsertItemUseCommand(itemLink) end
+    end)
+    self.itemLinkHookInstalled = true
+end
+
+function ns:Initialize()
+    BuildUI()
+    self:InstallItemLinkHook()
+end
 
 function ns:RedirectBlizzardMacroFrame()
     if self.macroRedirectInstalled then return end
