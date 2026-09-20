@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.14 — Enchanted Macros icon
+
+- Added a dedicated Enchanted Macros emblem featuring a cyan-lit macro scroll and silver quill in the suite's visual style.
+- Added the emblem to the Macros window header and addon metadata instead of reusing the Mailbox icon.
+
 ## 3.0.13 — Recipient autocomplete correction
 
 - Recipient suggestions now open only while the player is actually typing.
