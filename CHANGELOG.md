@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.13 — Recipient autocomplete correction
+
+- Recipient suggestions now open only while the player is actually typing.
+- Selecting an alt, friend, guild member, or reply recipient no longer reopens autocomplete after the addon fills the name.
+
 ## 3.0.12 — Faster mail addressing and item macros
 
 - Clicking an alt, friend, or guild member now commits the recipient immediately, suppresses the redundant name suggestion, and focuses the subject field.

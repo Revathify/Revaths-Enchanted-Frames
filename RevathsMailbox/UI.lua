@@ -1006,8 +1006,8 @@ local function UpdateRecipientSuggestionSelection()
     end
 end
 
-local function ShowRecipientSuggestions()
-    if suppressRecipientSuggestions then HideRecipientSuggestions(); return end
+local function ShowRecipientSuggestions(_, userInput)
+    if suppressRecipientSuggestions or not userInput then HideRecipientSuggestions(); return end
     local query = string.lower(strtrim(toBox:GetText() or ""))
     if query == "" then HideRecipientSuggestions(); return end
 
