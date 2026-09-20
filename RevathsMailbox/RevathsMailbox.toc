@@ -2,7 +2,7 @@
 ## Title: Revath's Enchanted Mailbox
 ## Notes: Custom mailbox, contacts, quick attachments, and account-wide alt tracking.
 ## Author: Revath#2331 (Revathify)
-## Version: 3.0.11
+## Version: 3.0.12
 ## Dependencies: RevathsEnchantedFrames
 ## OptionalDeps: EllesmereUI, SharedMedia, SharedMediaAdditionalFonts, LibSharedMedia-3.0
 ## SavedVariables: RevathsMailboxDB, RevathsMailDB, AltMailDB
