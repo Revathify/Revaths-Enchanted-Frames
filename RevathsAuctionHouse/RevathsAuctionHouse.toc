@@ -2,7 +2,7 @@
 ## Title: Revath's Enchanted Auction House
 ## Notes: A full-size auction window with search, selling preparation, shopping lists, prices, and auction management.
 ## Author: Revath#2331 (Revathify)
-## Version: 3.0.16
+## Version: 3.0.17
 ## Dependencies: RevathsEnchantedFrames
 ## OptionalDeps: LibSharedMedia-3.0
 ## SavedVariables: RevathsAuctionHouseDB
