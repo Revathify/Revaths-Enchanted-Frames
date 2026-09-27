@@ -44,15 +44,16 @@ See how many copies of an item you own without searching every character and sto
 Shop and review auctions in a full-size Revath-styled window that opens in place of Blizzard's Auction House view.
 
 - Search live listings and revisit recent searches.
-- Select auctionable bag items and prepare quantity, buyout price, and duration in the Sell tab.
+- Queue auctionable BoE stacks, or explicitly mark crafted items to queue, and match the lowest current listing before reviewing each post.
+- See missing materials for recipes tracked in Professions, then search and open secure checkout for each reagent.
 - Right-click a result to add it to an account-wide shopping list with a maximum price.
 - Compare watched items with prices observed during your own searches.
 - Inspect active auctions, check the market, and cancel an auction with confirmation.
-- See locally observed last-seen prices on item tooltips and browse a short daily history.
+- Run a full Auction House scan on demand and see observed item values in tooltips and a short daily history.
 - Choose Modern or Classic styling, colors, fonts, transparency, and scale.
 - Switch back to Blizzard's view at any time, or use `/rah` or `/rauction` while at an auctioneer.
 
-Final purchases and postings use Blizzard's protected checkout and confirmation controls. The module does not automate trading or scan the market in the background.
+Final purchases and postings use Blizzard's protected checkout and confirmation controls. The sell queue never posts unattended. Full scans are manual and subject to the game's cooldown.
 
 ## Shared settings and appearance
 

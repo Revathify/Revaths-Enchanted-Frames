@@ -1,5 +1,12 @@
 # Changelog
 
+## Upcoming — Familiar Auction House, smarter workflows
+
+- Made Buy, Sell, and Auctions the primary tabs, with Crafting, Shopping, Prices, and Settings alongside them.
+- Added a reviewed sell queue for auctionable BoE stacks and explicitly marked crafted items; each queued item can match the lowest current listing before the protected final post.
+- Added tracked-recipe materials with owned/missing counts, reagent-quality selection, search, and secure checkout.
+- Added a manual full-market scan that records observed item values for price views and tooltips; scans remain subject to Blizzard's cooldown.
+
 ## Upcoming — Full-size Auction House window
 
 - Promoted Enchanted Auction House from a sidecar to the default, full-size auction window.

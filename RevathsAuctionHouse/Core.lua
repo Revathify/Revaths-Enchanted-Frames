@@ -17,6 +17,12 @@ local function InitializeDatabase()
     db.searches = type(db.searches) == "table" and db.searches or {}
     db.shopping = type(db.shopping) == "table" and db.shopping or {}
     db.prices = type(db.prices) == "table" and db.prices or {}
+    local priceCount = 0
+    for _ in pairs(db.prices) do priceCount = priceCount + 1 end
+    db.priceCount = priceCount
+    db.craftSelections = type(db.craftSelections) == "table" and db.craftSelections or {}
+    db.reagentChoices = type(db.reagentChoices) == "table" and db.reagentChoices or {}
+    db.marketScan = type(db.marketScan) == "table" and db.marketScan or {}
     if db.showTooltipPrice == nil then db.showTooltipPrice = true end
     if db.useReplacement == nil then db.useReplacement = true end
     ns.db = db
@@ -51,6 +57,7 @@ function ns:RememberPrice(itemID, name, copper)
     record.name = name or record.name or ("Item " .. key)
     record.last = copper
     record.updated = time()
+    record.source = "Browse"
     local points = record.points
     local today = date("%Y-%m-%d")
     if points[#points] and points[#points].day == today then
@@ -61,12 +68,14 @@ function ns:RememberPrice(itemID, name, copper)
     end
     self.db.prices[key] = record
     if newRecord then
-        local count, oldestKey, oldestTime = 0, nil, math.huge
-        for id, entry in pairs(self.db.prices) do
-            count = count + 1
-            if (entry.updated or 0) < oldestTime then oldestKey, oldestTime = id, entry.updated or 0 end
+        self.db.priceCount = (self.db.priceCount or 0) + 1
+        if self.db.priceCount > 22000 then
+            local entries = {}
+            for id, entry in pairs(self.db.prices) do entries[#entries + 1] = { id = id, updated = entry.updated or 0 } end
+            table.sort(entries, function(a, b) return a.updated > b.updated end)
+            for i = 20001, #entries do self.db.prices[entries[i].id] = nil end
+            self.db.priceCount = math.min(#entries, 20000)
         end
-        if count > 600 and oldestKey then self.db.prices[oldestKey] = nil end
     end
 end
 
@@ -89,6 +98,9 @@ events:RegisterEvent("AUCTION_CANCELED")
 events:RegisterEvent("AUCTION_HOUSE_AUCTION_CREATED")
 events:RegisterEvent("BAG_UPDATE_DELAYED")
 events:RegisterEvent("AUCTION_HOUSE_SHOW_ERROR")
+events:RegisterEvent("REPLICATE_ITEM_LIST_UPDATE")
+events:RegisterEvent("ITEM_SEARCH_RESULTS_UPDATED")
+events:RegisterEvent("COMMODITY_SEARCH_RESULTS_UPDATED")
 events:SetScript("OnEvent", function(_, event, loadedName)
     if event == "ADDON_LOADED" then
         if loadedName ~= addonName then return end
@@ -113,10 +125,15 @@ events:SetScript("OnEvent", function(_, event, loadedName)
     elseif event == "AUCTION_HOUSE_AUCTION_CREATED" then
         if ns.RefreshOwned then ns:RefreshOwned() end
         if ns.RefreshSell then ns:RefreshSell() end
+        if ns.OnAuctionCreated then ns:OnAuctionCreated() end
     elseif event == "BAG_UPDATE_DELAYED" then
         if ns.RefreshSell then ns:RefreshSell() end
     elseif event == "AUCTION_HOUSE_SHOW_ERROR" then
         if ns.OnAuctionError then ns:OnAuctionError(loadedName) end
+    elseif event == "REPLICATE_ITEM_LIST_UPDATE" then
+        if ns.OnReplicateListUpdate then ns:OnReplicateListUpdate() end
+    elseif event == "ITEM_SEARCH_RESULTS_UPDATED" or event == "COMMODITY_SEARCH_RESULTS_UPDATED" then
+        if ns.OnSellPriceResults then ns:OnSellPriceResults(event, loadedName) end
     end
 end)
 

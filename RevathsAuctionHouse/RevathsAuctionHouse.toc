@@ -10,4 +10,6 @@
 ## IconTexture: Interface\AddOns\RevathsAuctionHouse\Media\Icon.png
 
 Core.lua
+Market.lua
+Crafting.lua
 UI.lua

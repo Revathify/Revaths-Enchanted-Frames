@@ -13,14 +13,14 @@ local FONT_PATHS = {
     skurri = "Fonts\\SKURRI.TTF", skurriOutline = "Fonts\\SKURRI.TTF",
 }
 local frame, status, title, subtitle, tabButtons, nativeReturn, nativeBlocker = nil, nil, nil, nil, {}, nil, nil
-local panes, activeTab, searchBox, browseRows, shoppingRows, ownedRows, historyRows, sellRows = {}, "Browse", nil, {}, {}, {}, {}, {}
-local browseOffset, shoppingOffset, ownedOffset, historyOffset = 0, 0, 0, 0
+local panes, activeTab, searchBox, browseRows, shoppingRows, ownedRows, historyRows, sellRows, craftRows = {}, "Browse", nil, {}, {}, {}, {}, {}, {}
+local browseOffset, shoppingOffset, ownedOffset, historyOffset, craftOffset = 0, 0, 0, 0, 0
 local browseResults, ownedAuctions = {}, {}
-local selectedWatch, selectedAuction, selectedHistory, selectedBrowse, selectedSell
+local selectedWatch, selectedAuction, selectedHistory, selectedBrowse, selectedSell, selectedMaterial, selectedCraftResult
 local usingNative = false
-local watchPriceBox, watchDetails, auctionDetails, historyDetails, historyPoints
-local browseDetails, browseCheckout, sellDetails, sellQuantity, sellPrice, sellDuration, sellEstimate
-local refreshBrowse, refreshShopping, refreshOwned, refreshHistory, refreshSell, applyAppearance
+local watchPriceBox, watchDetails, auctionDetails, historyDetails, historyPoints, marketDetails
+local browseDetails, browseCheckout, sellDetails, sellQuantity, sellPrice, sellDuration, sellEstimate, craftDetails, craftCheckout
+local refreshBrowse, refreshShopping, refreshOwned, refreshHistory, refreshSell, refreshCrafting, applyAppearance
 local allText, allPanels = {}, {}
 
 local function Accent()
@@ -173,6 +173,7 @@ local function SelectTab(name)
     end
     if name == "Browse" then refreshBrowse()
     elseif name == "Sell" then refreshSell(true)
+    elseif name == "Crafting" then refreshCrafting()
     elseif name == "Shopping" then refreshShopping()
     elseif name == "Auctions" then
         if C_AuctionHouse and C_AuctionHouse.QueryOwnedAuctions then pcall(C_AuctionHouse.QueryOwnedAuctions, {}) end
@@ -263,8 +264,60 @@ refreshBrowse = function()
     end
 end
 
-local sellItems = {}
-local function UpdateSellEstimate()
+local sellItems, sellQueue = {}, {}
+local pendingPriceQuery, pendingQueueItem
+local queuePriceReady = false
+local UpdateSellEstimate
+local function SelectSellItem(record)
+    selectedSell = record
+    if not record then return end
+    local marked = ns.db.craftSelections[tostring(record.itemID)]
+    sellDetails:SetText(record.name .. "\nAvailable in stack: " .. record.quantity
+        .. (record.boe and "\nBind on equip" or "") .. (marked and "\nMarked for crafted-item queue" or ""))
+    sellQuantity:SetText(tostring(record.quantity))
+    local price = ns.db.prices[tostring(record.itemID)]
+    sellPrice:SetText(price and price.last and string.format("%.4f", price.last / 10000) or "")
+    UpdateSellEstimate()
+end
+local function QueueItems(predicate)
+    local existing = {}
+    for _, item in ipairs(sellQueue) do existing[item.bag .. ":" .. item.slot] = true end
+    local added = 0
+    for _, item in ipairs(sellItems) do
+        local key = item.bag .. ":" .. item.slot
+        if predicate(item) and not existing[key] then
+            sellQueue[#sellQueue + 1] = item
+            existing[key] = true; added = added + 1
+        end
+    end
+    SetStatus(string.format("Added %d stacks; %d waiting for review. Prices are checked live, one at a time.", added, #sellQueue))
+    queuePriceReady = false
+    if sellQueue[1] then SelectSellItem(sellQueue[1]) end
+end
+local function PriceQueueHead()
+    local item = sellQueue[1]
+    if not item then SetStatus("The sell queue is empty."); return end
+    SelectSellItem(item)
+    queuePriceReady = false
+    if C_Container.GetContainerItemID(item.bag, item.slot) ~= item.itemID then
+        SetStatus("That stack moved. Rescan and rebuild the sell queue."); return
+    end
+    local ok, valid = pcall(C_AuctionHouse.IsSellItemValid, item.location, false)
+    if not ok or not valid then SetStatus("The first queued stack is no longer auctionable. Rescan your bags."); return end
+    local keyOk, itemKey = pcall(C_AuctionHouse.GetItemKeyFromItem, item.location)
+    if not keyOk or not itemKey then SetStatus("Could not identify this item for a live price search."); return end
+    local infoOk, keyInfo = pcall(C_AuctionHouse.GetItemKeyInfo, itemKey)
+    local commodity = infoOk and keyInfo and keyInfo.isCommodity
+    if not AuctionHouseFrame or not AuctionHouseFrame.QueryItem then
+        SetStatus("Live pricing is unavailable; check the price in Blizzard's Sell view."); return
+    end
+    local context = commodity and AuctionHouseSearchContext.SellCommodities or AuctionHouseSearchContext.SellItems
+    local sent = pcall(AuctionHouseFrame.QueryItem, AuctionHouseFrame, context, itemKey)
+    if not sent then SetStatus("Could not start a live price search. Try again in a moment."); return end
+    pendingPriceQuery = { itemID = item.itemID, key = itemKey, commodity = commodity, bag = item.bag, slot = item.slot }
+    SetStatus("Checking the lowest current listing for " .. item.name .. "…")
+end
+UpdateSellEstimate = function()
     if not sellEstimate then return end
     if not selectedSell then sellEstimate:SetText("Select an item to see its estimated deposit."); return end
     local quantity = tonumber(sellQuantity:GetText())
@@ -297,7 +350,13 @@ local function ScanSellItems()
                 if ok and valid then
                     sellItems[#sellItems + 1] = { location = location, itemID = info.itemID,
                         name = info.itemName or (C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(info.itemID)) or ("Item #" .. info.itemID),
-                        quantity = info.stackCount or 1 }
+                        quantity = info.stackCount or 1, bag = bag, slot = slot,
+                        boe = not info.isBound and (function()
+                            local loaded, bindType = pcall(function()
+                                return select(14, C_Item.GetItemInfo(info.hyperlink or info.itemID))
+                            end)
+                            return loaded and bindType == (Enum.ItemBind and Enum.ItemBind.OnEquip or 2)
+                        end)() }
                 end
             end
         end
@@ -308,17 +367,19 @@ local function BuildSell()
     local pane = panes.Sell
     local heading = Font(pane, 18); heading:SetPoint("TOPLEFT", 18, -16); heading:SetText("Sell from your bags")
     local hint = Font(pane, 11, true); hint:SetPoint("TOPLEFT", 18, -43)
-    hint:SetText("Select an auctionable item, set your price, then confirm one posting at a time.")
+    hint:SetText("Queue BoE stacks or right-click to mark crafted items. Review and confirm each posting.")
     sellRows = PageRows(pane, -74, 9, 39)
     for _, row in ipairs(sellRows) do
-        row:SetScript("OnClick", function(self)
-            selectedSell = self.record
-            if not selectedSell then return end
-            sellDetails:SetText(selectedSell.name .. "\nAvailable in stack: " .. selectedSell.quantity)
-            sellQuantity:SetText(tostring(selectedSell.quantity))
-            local record = ns.db.prices[tostring(selectedSell.itemID)]
-            if record and record.last then sellPrice:SetText(string.format("%.2f", record.last / 10000)) end
-            UpdateSellEstimate()
+        row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+        row:SetScript("OnClick", function(self, button)
+            if not self.record then return end
+            if button == "RightButton" then
+                local key = tostring(self.record.itemID)
+                ns.db.craftSelections[key] = not ns.db.craftSelections[key] or nil
+                SetStatus(ns.db.craftSelections[key] and "Marked for crafted-item queue." or "Removed crafted-item mark.")
+                refreshSell()
+            end
+            SelectSellItem(self.record)
         end)
     end
     local detailsPanel = Panel(pane); detailsPanel:SetPoint("TOPLEFT", 570, -16); detailsPanel:SetPoint("BOTTOMRIGHT", -16, 16)
@@ -345,6 +406,11 @@ local function BuildSell()
     local post = Button(detailsPanel, "Review & post", 250, 35); post:SetPoint("BOTTOMLEFT", 17, 61)
     post:SetScript("OnClick", function()
         if not selectedSell then SetStatus("Choose an item first."); return end
+        if sellQueue[1] and sellQueue[1].bag == selectedSell.bag and sellQueue[1].slot == selectedSell.slot
+            and not queuePriceReady then
+            SetStatus("Use Price next to check the lowest current listing before reviewing this queued auction.")
+            return
+        end
         local quantity = tonumber(sellQuantity:GetText())
         local gold = tonumber(sellPrice:GetText())
         if not quantity or quantity < 1 or quantity > selectedSell.quantity or quantity ~= math.floor(quantity) then
@@ -354,6 +420,9 @@ local function BuildSell()
         local copper = math.floor(gold * 10000 + 0.5)
         if copper < 1 then SetStatus("Price must be at least one copper."); return end
         local location = selectedSell.location
+        if C_Container.GetContainerItemID(selectedSell.bag, selectedSell.slot) ~= selectedSell.itemID then
+            SetStatus("That stack moved. Rescan your bags before posting."); return
+        end
         local ok, valid = pcall(C_AuctionHouse.IsSellItemValid, location, false)
         if not ok or not valid then SetStatus("This item cannot be posted now."); return end
         ShowNative("Sell")
@@ -369,12 +438,21 @@ local function BuildSell()
         if sellFrame.PriceInput then sellFrame.PriceInput:SetAmount(copper) end
         if sellFrame.Duration then sellFrame.Duration:SetDuration(sellDuration) end
         if sellFrame.UpdatePostState then sellFrame:UpdatePostState() end
+        if sellQueue[1] and sellQueue[1].bag == selectedSell.bag and sellQueue[1].slot == selectedSell.slot then
+            pendingQueueItem = { bag = selectedSell.bag, slot = selectedSell.slot }
+        end
         SetStatus("Review the deposit and confirm posting in Blizzard's Sell view.")
     end)
     local native = Button(detailsPanel, "Use Blizzard Sell", 250, 33); native:SetPoint("BOTTOMLEFT", 17, 17)
     native:SetScript("OnClick", function() ShowNative("Sell") end)
-    local prev = Button(pane, "Previous", 84, 28); prev:SetPoint("BOTTOMLEFT", 18, 13)
-    local nextButton = Button(pane, "Next", 84, 28); nextButton:SetPoint("LEFT", prev, "RIGHT", 7, 0)
+    local queueBoe = Button(pane, "Queue BoE", 104, 28); queueBoe:SetPoint("BOTTOMLEFT", 18, 13)
+    queueBoe:SetScript("OnClick", function() ScanSellItems(); QueueItems(function(item) return item.boe end); refreshSell() end)
+    local queueMarked = Button(pane, "Queue marked", 113, 28); queueMarked:SetPoint("LEFT", queueBoe, "RIGHT", 6, 0)
+    queueMarked:SetScript("OnClick", function() ScanSellItems(); QueueItems(function(item) return ns.db.craftSelections[tostring(item.itemID)] end); refreshSell() end)
+    local priceNext = Button(pane, "Price next", 96, 28); priceNext:SetPoint("LEFT", queueMarked, "RIGHT", 6, 0)
+    priceNext:SetScript("OnClick", PriceQueueHead)
+    local prev = Button(pane, "‹", 52, 28); prev:SetPoint("LEFT", priceNext, "RIGHT", 6, 0)
+    local nextButton = Button(pane, "›", 52, 28); nextButton:SetPoint("LEFT", prev, "RIGHT", 6, 0)
     prev:SetScript("OnClick", function() pane.sellOffset = math.max(0, (pane.sellOffset or 0) - #sellRows); refreshSell() end)
     nextButton:SetScript("OnClick", function() pane.sellOffset = (pane.sellOffset or 0) + #sellRows; refreshSell() end)
     pane:EnableMouseWheel(true)
@@ -394,8 +472,90 @@ refreshSell = function(rescan)
         row.record = record; row:SetShown(record ~= nil)
         if record then
             row.name:SetText(record.name)
-            row.meta:SetText("x" .. record.quantity)
+            row.meta:SetText("x" .. record.quantity .. (record.boe and " · BoE" or "")
+                .. (ns.db.craftSelections[tostring(record.itemID)] and " · MARKED" or ""))
         end
+    end
+end
+
+local trackedMaterials, trackedRecipeCount = {}, 0
+local function ShowMaterial(material)
+    selectedMaterial, selectedCraftResult = material, nil
+    if craftCheckout then craftCheckout:SetEnabled(false) end
+    if not material then
+        craftDetails:SetText("Select a material from a tracked recipe.")
+        return
+    end
+    local price = (ns.db.prices[tostring(material.itemID)] or {}).last
+    craftDetails:SetText(material.recipeName .. "\n\n" .. material.name
+        .. "\nRequired: " .. tostring(material.required) .. "    Owned: " .. tostring(material.held)
+        .. "\nMissing: " .. tostring(material.missing)
+        .. "\nLast observed: " .. ns:Money(price)
+        .. "\nEstimated missing cost: " .. ns:Money(price and price * material.missing)
+        .. (#material.variants > 1 and "\n\nMultiple reagent qualities are available." or ""))
+end
+
+local function BuildCrafting()
+    local pane = panes.Crafting
+    local heading = Font(pane, 18); heading:SetPoint("TOPLEFT", 18, -16); heading:SetText("Tracked recipe materials")
+    local hint = Font(pane, 11, true); hint:SetPoint("TOPLEFT", 18, -43)
+    hint:SetText("Recipes tracked in Professions. Review missing materials and search each one here.")
+    craftRows = PageRows(pane, -74, 9, 39)
+    for _, row in ipairs(craftRows) do
+        row:SetScript("OnClick", function(self) ShowMaterial(self.material) end)
+    end
+    local detailsPanel = Panel(pane); detailsPanel:SetPoint("TOPLEFT", 570, -16); detailsPanel:SetPoint("BOTTOMRIGHT", -16, 16)
+    craftDetails = Font(detailsPanel, 14); craftDetails:SetPoint("TOPLEFT", 17, -20); craftDetails:SetWidth(310)
+    craftDetails:SetJustifyV("TOP"); craftDetails:SetText("Select a material from a tracked recipe.")
+    local quality = Button(detailsPanel, "Change reagent quality", 250, 32); quality:SetPoint("TOPLEFT", 17, -252)
+    quality:SetScript("OnClick", function()
+        if not selectedMaterial or #selectedMaterial.variants <= 1 then return end
+        local slotKey = selectedMaterial.slotKey
+        ns:CycleReagentVariant(selectedMaterial)
+        refreshCrafting()
+        for _, material in ipairs(trackedMaterials) do
+            if material.slotKey == slotKey then ShowMaterial(material); break end
+        end
+    end)
+    local find = Button(detailsPanel, "Search material", 250, 34); find:SetPoint("TOPLEFT", 17, -302)
+    find:SetScript("OnClick", function()
+        if not selectedMaterial then return end
+        selectedCraftResult = nil
+        craftCheckout:SetEnabled(false)
+        Search(selectedMaterial.name)
+        SetStatus("Finding listings for " .. selectedMaterial.name .. "...")
+    end)
+    craftCheckout = Button(detailsPanel, "Open secure checkout", 250, 34)
+    craftCheckout:SetPoint("TOPLEFT", 17, -347); craftCheckout:SetEnabled(false)
+    craftCheckout:SetScript("OnClick", function()
+        if not selectedCraftResult then return end
+        local ok = pcall(AuctionHouseFrame.SelectBrowseResult, AuctionHouseFrame, selectedCraftResult)
+        if ok then ShowNative() else SetStatus("That listing is unavailable. Search again.") end
+    end)
+    local refresh = Button(pane, "Refresh recipes", 124, 28); refresh:SetPoint("BOTTOMLEFT", 18, 13)
+    refresh:SetScript("OnClick", function() refreshCrafting() end)
+    local prev = Button(pane, "Previous", 84, 28); prev:SetPoint("LEFT", refresh, "RIGHT", 7, 0)
+    local nextButton = Button(pane, "Next", 84, 28); nextButton:SetPoint("LEFT", prev, "RIGHT", 7, 0)
+    prev:SetScript("OnClick", function() craftOffset = math.max(0, craftOffset - #craftRows); refreshCrafting() end)
+    nextButton:SetScript("OnClick", function() craftOffset = craftOffset + #craftRows; refreshCrafting() end)
+end
+
+refreshCrafting = function()
+    if not panes.Crafting or not panes.Crafting:IsShown() then return end
+    trackedMaterials, trackedRecipeCount = ns:GetTrackedMaterials()
+    craftOffset = math.min(craftOffset, math.max(0, #trackedMaterials - #craftRows))
+    for index, row in ipairs(craftRows) do
+        local material = trackedMaterials[craftOffset + index]
+        row.material = material; row:SetShown(material ~= nil)
+        if material then
+            row.name:SetText(material.name)
+            row.meta:SetText(string.format("Need %d · Own %d", material.required, material.held))
+        end
+    end
+    if trackedRecipeCount == 0 then
+        craftDetails:SetText("No tracked recipes found. Track a recipe in the Professions window, then click Refresh recipes.")
+    elseif #trackedMaterials == 0 then
+        craftDetails:SetText("Tracked recipes have no basic item reagents available to list.")
     end
 end
 
@@ -563,6 +723,12 @@ local function BuildHistory()
     historyPoints = Font(detailsPanel, 13, true); historyPoints:SetPoint("TOPLEFT", 17, -115)
     historyPoints:SetWidth(310)
     historyPoints:SetJustifyV("TOP")
+    local scanButton = Button(detailsPanel, "Scan full Auction House", 250, 34)
+    scanButton:SetPoint("BOTTOMLEFT", 17, 79)
+    scanButton:SetScript("OnClick", function() ns:StartMarketScan() end)
+    marketDetails = Font(detailsPanel, 11, true)
+    marketDetails:SetPoint("BOTTOMLEFT", 17, 20); marketDetails:SetWidth(310)
+    marketDetails:SetText("No full scan has been saved yet.")
     local prev = Button(pane, "Previous", 84, 28); prev:SetPoint("BOTTOMLEFT", 18, 13)
     local nextButton = Button(pane, "Next", 84, 28); nextButton:SetPoint("LEFT", prev, "RIGHT", 7, 0)
     prev:SetScript("OnClick", function() historyOffset = math.max(0, historyOffset - #historyRows); refreshHistory() end)
@@ -666,7 +832,10 @@ local function AddTooltipPrice()
     local id = link and tonumber(link:match("item:(%d+)"))
     local record = id and ns.db.prices[tostring(id)]
     if not record or not record.last then return end
-    GameTooltip:AddLine("Enchanted AH last seen: " .. ns:Money(record.last), 0.32, 0.85, 0.9)
+    GameTooltip:AddLine("Enchanted AH: " .. ns:Money(record.last), 0.32, 0.85, 0.9)
+    if record.updated then
+        GameTooltip:AddLine((record.source or "Observed") .. " · " .. date("%d %b %H:%M", record.updated), 0.70, 0.78, 0.82)
+    end
 end
 
 function ns:Initialize()
@@ -697,10 +866,16 @@ function ns:Initialize()
     end)
     local blizzard = Button(frame, "Blizzard view", 110, 26); blizzard:SetPoint("RIGHT", close, "LEFT", -8, 0)
     blizzard:SetScript("OnClick", function() ShowNative() end)
-    local tabNames = { "Browse", "Sell", "Shopping", "Auctions", "Prices", "Settings" }
-    for i, name in ipairs(tabNames) do
-        local tab = Button(frame, name, 145, 29)
-        tab:SetPoint("TOPLEFT", 15 + (i - 1) * 153, -74)
+    local tabSpecs = {
+        { "Browse", "Buy", 15, 140 }, { "Sell", "Sell", 163, 140 },
+        { "Auctions", "Auctions", 311, 140 }, { "Crafting", "Crafting", 470, 110 },
+        { "Shopping", "Shopping", 588, 110 }, { "Prices", "Prices", 706, 100 },
+        { "Settings", "Settings", 814, 120 },
+    }
+    for _, spec in ipairs(tabSpecs) do
+        local name, label, x, width = unpack(spec)
+        local tab = Button(frame, label, width, 29)
+        tab:SetPoint("TOPLEFT", x, -74)
         tab:SetScript("OnClick", function() SelectTab(name) end)
         tabButtons[name] = tab
         local pane = Panel(frame)
@@ -710,7 +885,7 @@ function ns:Initialize()
     status = Font(frame, 11, true)
     status:SetPoint("BOTTOMLEFT", 20, 15); status:SetPoint("RIGHT", -20, 0)
     status:SetText("Open an auctioneer to search the live market.")
-    BuildBrowse(); BuildSell(); BuildShopping(); BuildOwned(); BuildHistory(); BuildSettings()
+    BuildBrowse(); BuildSell(); BuildOwned(); BuildCrafting(); BuildShopping(); BuildHistory(); BuildSettings()
     StaticPopupDialogs.REVATHS_AUCTION_CANCEL = {
         text = "Cancel this auction? Estimated cost: %s", button1 = YES, button2 = NO,
         OnAccept = function(_, auctionID)
@@ -740,6 +915,7 @@ function ns:Initialize()
     end
     applyAppearance()
     SelectTab("Browse")
+    self:RefreshMarket()
     frame:Hide()
 end
 
@@ -787,6 +963,26 @@ function ns:OnBrowseResults()
     local ok, results = pcall(C_AuctionHouse.GetBrowseResults)
     if not ok or type(results) ~= "table" then return end
     browseResults = results
+    if activeTab == "Crafting" and selectedMaterial then
+        selectedCraftResult = nil
+        for _, result in ipairs(results) do
+            if result.itemKey and result.itemKey.itemID == selectedMaterial.itemID then
+                if not selectedCraftResult or (SafeNumber(result.minPrice) or math.huge) < (SafeNumber(selectedCraftResult.minPrice) or math.huge) then
+                    selectedCraftResult = result
+                end
+            end
+        end
+        local match = selectedCraftResult
+        ShowMaterial(selectedMaterial)
+        selectedCraftResult = match
+        if match then
+            local result = match
+            craftDetails:SetText(craftDetails:GetText() .. "\n\nLive lowest: " .. ns:Money(SafeNumber(result.minPrice)))
+            craftCheckout:SetEnabled(true)
+        else
+            craftDetails:SetText(craftDetails:GetText() .. "\n\nNo matching listing found in this search.")
+        end
+    end
     for i = 1, math.min(#results, 300) do
         local result = results[i]
         local id = result.itemKey and result.itemKey.itemID
@@ -802,6 +998,66 @@ end
 function ns:RefreshShopping() if refreshShopping then refreshShopping() end end
 function ns:RefreshOwned() if refreshOwned then refreshOwned() end end
 function ns:RefreshSell() if refreshSell then refreshSell(true) end end
+function ns:OnSellPriceResults(event, loadedKey)
+    local query = pendingPriceQuery
+    if not query or ((event == "COMMODITY_SEARCH_RESULTS_UPDATED") ~= (query.commodity == true)) then return end
+    local loadedID = type(loadedKey) == "table" and loadedKey.itemID or loadedKey
+    if loadedID and loadedID ~= query.itemID then return end
+    pendingPriceQuery = nil
+    local lowest
+    if query.commodity then
+        local ok, result = pcall(C_AuctionHouse.GetCommoditySearchResultInfo, query.itemID, 1)
+        if ok and result then lowest = SafeNumber(result.unitPrice) end
+    else
+        local ok, count = pcall(C_AuctionHouse.GetNumItemSearchResults, query.key)
+        if ok and count then
+            for index = 1, math.min(count, 100) do
+                local got, result = pcall(C_AuctionHouse.GetItemSearchResultInfo, query.key, index)
+                local price = got and result and SafeNumber(result.buyoutAmount)
+                if price and price > 0 then lowest = math.min(lowest or price, price) end
+            end
+        end
+    end
+    if not lowest then SetStatus("No current buyout found. Enter a price manually or try Blizzard's Sell view."); return end
+    self:RememberPrice(query.itemID, selectedSell and selectedSell.name or ("Item #" .. query.itemID), lowest)
+    if selectedSell and selectedSell.bag == query.bag and selectedSell.slot == query.slot then
+        sellPrice:SetText(string.format("%.4f", lowest / 10000))
+        queuePriceReady = true
+    end
+    SetStatus("Matched the lowest current listing: " .. self:Money(lowest) .. " per item. Review before posting.")
+end
+function ns:OnAuctionCreated()
+    if not pendingQueueItem then return end
+    local posted = pendingQueueItem
+    pendingQueueItem = nil
+    queuePriceReady = false
+    if sellQueue[1] and sellQueue[1].bag == posted.bag and sellQueue[1].slot == posted.slot then
+        table.remove(sellQueue, 1)
+    end
+    C_Timer.After(0.1, function()
+        if AuctionHouseFrame and AuctionHouseFrame:IsShown() then
+            ns:ShowForAuctionHouse(true)
+            SelectTab("Sell")
+            ScanSellItems(); refreshSell()
+            if sellQueue[1] then SelectSellItem(sellQueue[1]) end
+            SetStatus(string.format("Auction posted. %d queued stacks remain; price the next one when ready.", #sellQueue))
+        end
+    end)
+end
+function ns:RefreshMarket()
+    if marketDetails and self.db then
+        local snapshot = self.db.marketScan or {}
+        if snapshot.at then
+            marketDetails:SetText(string.format("Last scan: %s\n%d auctions · %d item values",
+                date("%d %b %H:%M", snapshot.at), snapshot.auctions or 0, snapshot.items or 0))
+        else
+            marketDetails:SetText("No full scan has been saved yet.")
+        end
+    end
+    if refreshHistory then refreshHistory() end
+    if refreshShopping then refreshShopping() end
+end
+function ns:SetStatus(message) SetStatus(message) end
 function ns:OnAuctionError(errorID)
     SetStatus("The Auction House declined that action. Check the price, item, or available funds.")
 end
