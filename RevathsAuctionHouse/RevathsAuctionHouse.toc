@@ -1,0 +1,13 @@
+## Interface: 120100
+## Title: Revath's Enchanted Auction House
+## Notes: Auction search, shopping lists, price history, and auction management in Revath's style.
+## Author: Revath#2331 (Revathify)
+## Version: 3.0.14
+## Dependencies: RevathsEnchantedFrames
+## OptionalDeps: LibSharedMedia-3.0
+## SavedVariables: RevathsAuctionHouseDB
+## Category: User Interface
+## IconTexture: Interface\AddOns\RevathsAuctionHouse\Media\Icon.png
+
+Core.lua
+UI.lua

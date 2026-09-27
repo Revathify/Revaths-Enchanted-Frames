@@ -1,5 +1,13 @@
 # Changelog
 
+## Upcoming — Enchanted Auction House
+
+- Added Revath's Enchanted Auction House as a fifth, independently configurable addon folder with a new cyan-and-silver auction icon.
+- Added a styled auction companion with live browse results, recent searches, an account-wide shopping list and price limits, locally observed price history, and active-auction review.
+- Added price-history information to item tooltips and a confirmation before cancelling one of your own auctions.
+- Kept purchases and posting in Blizzard's protected Auction House flow; no background scanning or automated trading.
+- Added Auction House settings to the shared Blizzard AddOns category and synchronized the new module with build and release packaging.
+
 ## 3.0.14 — Enchanted Macros icon
 
 - Added a dedicated Enchanted Macros emblem featuring a cyan-lit macro scroll and silver quill in the suite's visual style.

@@ -45,7 +45,8 @@ jobs:
             RevathsEnchantedFrames/RevathsEnchantedFrames.toc \
             RevathsMailbox/RevathsMailbox.toc \
             RevathsMacro/RevathsMacro.toc \
-            RevathsMailboxTooltipHelper/RevathsMailboxTooltipHelper.toc; do
+            RevathsMailboxTooltipHelper/RevathsMailboxTooltipHelper.toc \
+            RevathsAuctionHouse/RevathsAuctionHouse.toc; do
             sed -i -E "s/^## Version:.*/## Version: $next_version/" "$toc"
           done
 
@@ -62,7 +63,8 @@ jobs:
             RevathsEnchantedFrames/RevathsEnchantedFrames.toc \
             RevathsMailbox/RevathsMailbox.toc \
             RevathsMacro/RevathsMacro.toc \
-            RevathsMailboxTooltipHelper/RevathsMailboxTooltipHelper.toc; do
+            RevathsMailboxTooltipHelper/RevathsMailboxTooltipHelper.toc \
+            RevathsAuctionHouse/RevathsAuctionHouse.toc; do
             actual=$(sed -nE 's/^## Version:[[:space:]]*(.+)$/\1/p' "$toc")
             if [ "$actual" != "$expected" ]; then
               echo "$toc has version '$actual'; expected '$expected'." >&2
@@ -78,7 +80,8 @@ jobs:
             RevathsEnchantedFrames/Core.lua RevathsEnchantedFrames/Settings.lua \
             RevathsMailbox/Core.lua RevathsMailbox/UI.lua \
             RevathsMacro/Core.lua RevathsMacro/UI.lua \
-            RevathsMailboxTooltipHelper/Tooltips.lua >/dev/null
+            RevathsMailboxTooltipHelper/Tooltips.lua \
+            RevathsAuctionHouse/Core.lua RevathsAuctionHouse/UI.lua >/dev/null
 
       - name: Package suite
         if: steps.version.outputs.should_release == 'true'
@@ -89,10 +92,10 @@ jobs:
           zip_name="RevathsEnchantedFrames-${{ steps.version.outputs.release_tag }}.zip"
           zip_path="$RUNNER_TEMP/$zip_name"
           mkdir -p "$staging"
-          cp -R RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper "$staging/"
-          (cd "$staging" && zip -r "$zip_path" RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper)
+          cp -R RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper RevathsAuctionHouse "$staging/"
+          (cd "$staging" && zip -r "$zip_path" RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper RevathsAuctionHouse)
           expected="${{ steps.version.outputs.next_version }}"
-          for addon in RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper; do
+          for addon in RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper RevathsAuctionHouse; do
             actual=$(unzip -p "$zip_path" "$addon/$addon.toc" | sed -nE 's/^## Version:[[:space:]]*(.+)$/\1/p' | tr -d '\r')
             if [ "$actual" != "$expected" ]; then
               echo "Packaged $addon has version '$actual'; expected '$expected'." >&2
@@ -111,7 +114,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add RevathsEnchantedFrames/*.toc RevathsMailbox/*.toc RevathsMacro/*.toc RevathsMailboxTooltipHelper/*.toc
+          git add RevathsEnchantedFrames/*.toc RevathsMailbox/*.toc RevathsMacro/*.toc RevathsMailboxTooltipHelper/*.toc RevathsAuctionHouse/*.toc
           git commit -m "Bump addon suite version to $NEXT_VERSION [skip ci]"
           git tag "$RELEASE_TAG"
           git push origin HEAD:main "$RELEASE_TAG"

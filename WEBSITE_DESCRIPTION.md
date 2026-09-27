@@ -1,6 +1,6 @@
 # Revath's Enchanted Frames
 
-Revath's Enchanted Frames is a modular quality-of-life suite for World of Warcraft Retail. It brings an enhanced mailbox, a powerful macro workshop, and account-wide item ownership information together under one visual identity and one organized Blizzard AddOns settings category.
+Revath's Enchanted Frames is a modular quality-of-life suite for World of Warcraft Retail. It brings an enhanced mailbox, a powerful macro workshop, account-wide item ownership information, and an auction-house companion together under one visual identity and one organized Blizzard AddOns settings category.
 
 Each module can be managed independently, while shared appearance settings keep the suite consistent. Choose between Modern and Classic-inspired skins, select color palettes and fonts, adjust transparency and sizing, and apply changes immediately from either the addon windows or Blizzard Options.
 
@@ -39,25 +39,40 @@ See how many copies of an item you own without searching every character and sto
 - Hold Shift to see the per-character breakdown.
 - Enable or disable totals from the suite's Tooltips settings page.
 
+## Revath's Enchanted Auction House
+
+Shop and review auctions in a Revath-styled companion window beside Blizzard's Auction House.
+
+- Search live listings and revisit recent searches.
+- Right-click a result to add it to an account-wide shopping list with a maximum price.
+- Compare watched items with prices observed during your own searches.
+- Inspect active auctions, check the market, and cancel an auction with confirmation.
+- See locally observed last-seen prices on item tooltips and browse a short daily history.
+- Choose Modern or Classic styling, colors, fonts, transparency, and scale.
+- Use `/rah` or `/rauction` while at an auctioneer.
+
+Purchases and posting stay in Blizzard's protected Auction House interface. The module does not automate trading or scan the market in the background.
+
 ## Shared settings and appearance
 
-Open **Options → AddOns → Revath's Enchanted Frames** to access the suite overview and separate Mailbox, Macros, and Tooltips pages.
+Open **Options → AddOns → Revath's Enchanted Frames** to access the suite overview and separate Mailbox, Macros, Tooltips, and Auction House pages.
 
 - Current values appear immediately when a settings page opens.
 - Dropdown selectors provide clear skin, palette, and font choices.
 - LibSharedMedia fonts from compatible installed addons are discovered automatically.
 - Settings changed inside an addon window stay synchronized with Blizzard Options.
-- Author, version, module status, and support information are available from the suite overview.
+- Author, version, and module status are available from the suite overview.
 - `/ref` or `/enchantedframes` opens the shared settings directly.
 
 ## Modular installation
 
-The release ZIP contains one parent addon and three feature modules:
+The release ZIP contains one parent addon and four feature modules:
 
 - `RevathsEnchantedFrames` — shared framework and settings.
 - `RevathsMailbox` — Revath's Enchanted Mailbox.
 - `RevathsMacro` — Revath's Enchanted Macros.
 - `RevathsMailboxTooltipHelper` — Revath's Enchanted Tooltips.
+- `RevathsAuctionHouse` — Revath's Enchanted Auction House.
 
 The established technical folder IDs are retained so existing mailbox settings, macro preferences, and tracked tooltip data continue to load after upgrading to the combined suite.
 
