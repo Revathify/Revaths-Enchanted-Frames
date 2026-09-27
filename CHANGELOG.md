@@ -1,5 +1,11 @@
 # Changelog
 
+## Upcoming — LFG invite safety
+
+- Stopped loading the retired full-window Auction House UI and its high-strata mouse blocker.
+- Kept only the docked companion active; it no longer modifies Blizzard's Auction House frame alpha.
+- Lowered companion layering so Blizzard dialogs retain priority.
+
 ## Upcoming — Auction House companion
 
 - Restored Blizzard's native Auction House as the default so categories, icons, item quantities, and coin displays remain visible.

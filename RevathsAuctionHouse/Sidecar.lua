@@ -6,7 +6,6 @@ local companion, statusText, detailText, heading, hint, limitBox, rangeText
 local tabs, rows, actions, labels, buttons = {}, {}, {}, {}, {}
 local activeTab, entries, offset, selected = "Sell", {}, 0, nil
 local queue, pendingPrice, pendingPost, priceReady = {}, nil, nil, false
-local oldHide, oldBrowseResults, oldRefreshMarket = ns.Hide, ns.OnBrowseResults, ns.RefreshMarket
 
 local FONT_PATHS = {
     friz = STANDARD_TEXT_FONT, frizOutline = STANDARD_TEXT_FONT,
@@ -385,7 +384,7 @@ local function Build()
     if companion then return end
     companion = CreateFrame("Frame", "RevathsAuctionCompanion", UIParent, "BackdropTemplate")
     companion:SetSize(455, 615)
-    companion:SetFrameStrata("HIGH")
+    companion:SetFrameStrata("MEDIUM")
     companion:SetClampedToScreen(true)
     companion:EnableMouse(true)
     local emblem = companion:CreateTexture(nil, "ARTWORK")
@@ -474,15 +473,12 @@ end
 function ns:ShowForAuctionHouse(force)
     local native = Native()
     if not native then return end
-    if oldHide then oldHide(self) end
-    native:SetAlpha(1)
     if not force and self.db.showCompanion == false then return end
     Build(); ApplyAppearance(); companion:Show(); SelectTab(activeTab)
 end
 
 function ns:Hide()
     if companion then companion:Hide() end
-    if oldHide then oldHide(self) end
 end
 
 function ns:Toggle()
@@ -543,15 +539,55 @@ function ns:OnAuctionError()
 end
 
 function ns:OnBrowseResults()
-    if oldBrowseResults then oldBrowseResults(self) end
+    local ok, results = pcall(C_AuctionHouse.GetBrowseResults)
+    if ok and type(results) == "table" then
+        for index = 1, math.min(#results, 300) do
+            local result = results[index]
+            local id = result.itemKey and result.itemKey.itemID
+            local price = PlainNumber(result.minPrice)
+            if id and price and price > 0 then
+                local infoOK, keyInfo = pcall(C_AuctionHouse.GetItemKeyInfo, result.itemKey)
+                self:RememberPrice(id, infoOK and keyInfo and keyInfo.itemName or ItemName(id), price)
+            end
+        end
+    end
     if companion and companion:IsShown() and activeTab == "Shopping" then RefreshRows() end
 end
 
 function ns:RefreshMarket()
-    if oldRefreshMarket then oldRefreshMarket(self) end
     if companion and companion:IsShown() and activeTab == "Prices" then
         if not self:IsMarketScanActive() then entries = PriceEntries() end
         RefreshRows()
+    end
+end
+
+function ns:RefreshShopping()
+    if companion and companion:IsShown() and activeTab == "Shopping" then
+        entries = WatchEntries(); RefreshRows()
+    end
+end
+
+local function AddTooltipPrice()
+    if not ns.db or not ns.db.showTooltipPrice then return end
+    local _, link = GameTooltip:GetItem()
+    local itemID = link and tonumber(link:match("item:(%d+)"))
+    local record = itemID and ns.db.prices[tostring(itemID)]
+    if not record or not record.last then return end
+    GameTooltip:AddLine("Enchanted AH: " .. Money(record.last), .32, .85, .9)
+    if record.updated then
+        GameTooltip:AddLine((record.source or "Observed") .. " · " .. date("%d %b %H:%M", record.updated), .70, .78, .82)
+    end
+end
+
+function ns:Initialize()
+    -- The companion is not a replacement for Blizzard's frame. Never change
+    -- its alpha or place a mouse-blocking layer over it.
+    if TooltipDataProcessor and Enum and Enum.TooltipDataType then
+        TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip)
+            if tooltip == GameTooltip then AddTooltipPrice() end
+        end)
+    else
+        GameTooltip:HookScript("OnTooltipSetItem", AddTooltipPrice)
     end
 end
 
