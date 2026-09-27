@@ -41,17 +41,17 @@ See how many copies of an item you own without searching every character and sto
 
 ## Revath's Enchanted Auction House
 
-Shop and review auctions in a full-size Revath-styled window that opens in place of Blizzard's Auction House view.
+Keep Blizzard's familiar Auction House—including categories, item icons, quantities, coin displays, and secure checkout—with a Revath-styled companion docked beside it.
 
-- Search live listings and revisit recent searches.
+- Browse categories, search live listings, and revisit recent searches in Blizzard's native Buy view.
 - Queue auctionable BoE stacks, or explicitly mark crafted items to queue, and match the lowest current listing before reviewing each post.
 - See missing materials for recipes tracked in Professions, then search and open secure checkout for each reagent.
-- Right-click a result to add it to an account-wide shopping list with a maximum price.
+- Add the first result of a Blizzard Buy search to an account-wide shopping list and set a maximum price.
 - Compare watched items with prices observed during your own searches.
-- Inspect active auctions, check the market, and cancel an auction with confirmation.
-- Run a full Auction House scan on demand and see observed item values in tooltips and a short daily history.
+- Inspect and manage active auctions in Blizzard's native Auctions tab.
+- Run a full Auction House scan on demand and see observed item values in tooltips and the companion's Prices tab.
 - Choose Modern or Classic styling, colors, fonts, transparency, and scale.
-- Switch back to Blizzard's view at any time, or use `/rah` or `/rauction` while at an auctioneer.
+- Show or hide the companion with `/rah` or `/rauction` while at an auctioneer.
 
 Final purchases and postings use Blizzard's protected checkout and confirmation controls. The sell queue never posts unattended. Full scans are manual and subject to the game's cooldown.
 

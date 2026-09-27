@@ -39,7 +39,7 @@ jobs:
             RevathsMailbox/Core.lua RevathsMailbox/UI.lua \
             RevathsMacro/Core.lua RevathsMacro/UI.lua \
             RevathsMailboxTooltipHelper/Tooltips.lua \
-            RevathsAuctionHouse/Core.lua RevathsAuctionHouse/Market.lua RevathsAuctionHouse/Crafting.lua RevathsAuctionHouse/UI.lua >/dev/null
+            RevathsAuctionHouse/Core.lua RevathsAuctionHouse/Market.lua RevathsAuctionHouse/Crafting.lua RevathsAuctionHouse/UI.lua RevathsAuctionHouse/Sidecar.lua >/dev/null
 
       - name: Package suite
         shell: bash

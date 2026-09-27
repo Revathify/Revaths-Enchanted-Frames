@@ -832,7 +832,7 @@ local function AddTooltipPrice()
     local id = link and tonumber(link:match("item:(%d+)"))
     local record = id and ns.db.prices[tostring(id)]
     if not record or not record.last then return end
-    GameTooltip:AddLine("Enchanted AH: " .. ns:Money(record.last), 0.32, 0.85, 0.9)
+    GameTooltip:AddLine("Enchanted AH: " .. (GetCoinTextureString and GetCoinTextureString(record.last) or ns:Money(record.last)), 0.32, 0.85, 0.9)
     if record.updated then
         GameTooltip:AddLine((record.source or "Observed") .. " · " .. date("%d %b %H:%M", record.updated), 0.70, 0.78, 0.82)
     end

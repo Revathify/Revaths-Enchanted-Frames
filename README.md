@@ -10,7 +10,7 @@ Revath's Enchanted Frames is a modular World of Warcraft Retail addon suite that
 - **Revath's Enchanted Mailbox** — inbox tools, New Mail editor, contacts, quick attachments, alt tracking, Modern and Classic skins, palettes, fonts, opacity, and scaling.
 - **Revath's Enchanted Macros** — separate account and character macro libraries, curated class/spec templates, icon picker, drag-to-action-bar, syntax suggestions, usable-item suggestions, and Modern or Classic skins.
 - **Revath's Enchanted Tooltips** — account-wide bag, bank, and Warband-bank item totals with Shift details per character.
-- **Revath's Enchanted Auction House** — a full-size auction window with familiar Buy, Sell, and Auctions tabs; a reviewed BoE/crafted-item sell queue, tracked-recipe materials, a manual full-market scan, shopping lists, price history, and tooltip values. Blizzard's protected controls handle final checkout and posting.
+- **Revath's Enchanted Auction House** — a docked companion to Blizzard's native Auction House. It adds a reviewed BoE/crafted-item sell queue, tracked-recipe materials, a manual full-market scan, shopping lists, price history, and tooltip values while keeping Blizzard's categories, icons, quantities, coin displays, and checkout.
 
 ## Install or upgrade
 
@@ -33,7 +33,7 @@ Open **Options → AddOns → Revath's Enchanted Frames** for the suite overview
 - `/rmacro` or `/macroworkshop` opens Revath's Enchanted Macros.
 - `/rah` or `/rauction` toggles the auction companion while at an auctioneer.
 
-The Auction House module opens as the main auction window by default. Buy results can be opened in Blizzard's secure checkout or right-clicked into a shopping list. In Sell, queue auctionable BoE stacks or right-click items to mark the crafted items you want to queue. **Price next** checks the lowest current listing; review quantity, price, and deposit before confirming each post in Blizzard's protected Sell view. The Crafting tab gathers basic materials from recipes tracked in Professions, showing owned and missing counts with a direct search and secure checkout for each reagent. The Prices tab can run a full auction snapshot on demand and save observed per-item values for tooltips; the game may throttle repeat scans. Auctions can be cancelled with explicit confirmation. A **Blizzard view** button and `/rah` switch between views; the setting can also make Blizzard's view the default. No background scanning or unattended trading occurs.
+Blizzard's Auction House remains visible, with its category browser, item icons, quantities, and coin displays. Revath's companion docks beside it by default. In Sell, queue auctionable BoE stacks or right-click items to mark the crafted items you want to queue. **Price next** checks the lowest current listing; review quantity, price, and deposit before confirming each post in Blizzard's protected Sell view. The Crafting tab gathers basic materials from recipes marked **Track Recipe** in Professions (the star only favorites a recipe), showing owned and missing counts and searching native Buy for each reagent. The Prices tab can run a full auction snapshot on demand and save observed per-item values for tooltips; the game may throttle repeat scans. `/rah` shows or hides the companion at an auctioneer. No background scanning or unattended trading occurs.
 
 ## Compatibility
 

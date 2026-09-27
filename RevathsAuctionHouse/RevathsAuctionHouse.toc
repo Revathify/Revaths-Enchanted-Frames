@@ -1,6 +1,6 @@
 ## Interface: 120100
 ## Title: Revath's Enchanted Auction House
-## Notes: A full-size auction window with search, selling preparation, shopping lists, prices, and auction management.
+## Notes: A docked companion for Blizzard's Auction House with sell queues, crafting materials, shopping lists, and prices.
 ## Author: Revath#2331 (Revathify)
 ## Version: 3.0.17
 ## Dependencies: RevathsEnchantedFrames
@@ -13,3 +13,4 @@ Core.lua
 Market.lua
 Crafting.lua
 UI.lua
+Sidecar.lua

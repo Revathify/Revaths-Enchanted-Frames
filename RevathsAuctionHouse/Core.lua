@@ -24,7 +24,7 @@ local function InitializeDatabase()
     db.reagentChoices = type(db.reagentChoices) == "table" and db.reagentChoices or {}
     db.marketScan = type(db.marketScan) == "table" and db.marketScan or {}
     if db.showTooltipPrice == nil then db.showTooltipPrice = true end
-    if db.useReplacement == nil then db.useReplacement = true end
+    if db.showCompanion == nil then db.showCompanion = true end
     ns.db = db
 end
 

@@ -75,7 +75,7 @@ local function EnsureAuctionSettings()
     settings.opacity = math.max(0.60, math.min(1, tonumber(settings.opacity) or 0.96))
     settings.scale = math.max(0.70, math.min(1.15, tonumber(settings.scale) or 1))
     if settings.showTooltipPrice == nil then settings.showTooltipPrice = true end
-    if settings.useReplacement == nil then settings.useReplacement = true end
+    if settings.showCompanion == nil then settings.showCompanion = true end
     return settings
 end
 
@@ -302,7 +302,7 @@ function ns:RegisterSettings()
     AddSlider(auctionPanel, -326, "Window opacity", 0.60, 1, 0.05, function() return EnsureAuctionSettings().opacity end, function(v) EnsureAuctionSettings().opacity = v end, ApplyAuction, function(v) return string.format("%d%%", v * 100) end)
     AddSlider(auctionPanel, -410, "Window scale", 0.70, 1.15, 0.05, function() return EnsureAuctionSettings().scale end, function(v) EnsureAuctionSettings().scale = v end, ApplyAuction, function(v) return string.format("%d%%", v * 100) end)
     AddCheckbox(auctionPanel, -486, "Show last-seen price on item tooltips", function() return EnsureAuctionSettings().showTooltipPrice ~= false end, function(v) EnsureAuctionSettings().showTooltipPrice = v end, ApplyAuction)
-    AddCheckbox(auctionPanel, -524, "Use Revath's window by default", function() return EnsureAuctionSettings().useReplacement ~= false end, function(v) EnsureAuctionSettings().useReplacement = v end, ApplyAuction)
+    AddCheckbox(auctionPanel, -524, "Show Revath's companion beside the Auction House", function() return EnsureAuctionSettings().showCompanion ~= false end, function(v) EnsureAuctionSettings().showCompanion = v end, ApplyAuction)
 
     self.settingsPanel = overview
     self.settingsPanels = { overview, mailboxPanel, macroPanel, tooltipPanel, auctionPanel }

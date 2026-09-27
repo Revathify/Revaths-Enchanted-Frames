@@ -1,5 +1,12 @@
 # Changelog
 
+## Upcoming — Auction House companion
+
+- Restored Blizzard's native Auction House as the default so categories, icons, item quantities, and coin displays remain visible.
+- Docked Revath's Sell Queue, Crafting, Shopping, and Prices tools beside the native window instead of hiding it.
+- Kept live price checks and one-at-a-time, Blizzard-confirmed posting in the companion; recipe material searches now open native Buy results.
+- Replaced the old full-window default setting with a show/hide companion preference.
+
 ## Upcoming — Familiar Auction House, smarter workflows
 
 - Made Buy, Sell, and Auctions the primary tabs, with Crafting, Shopping, Prices, and Settings alongside them.
