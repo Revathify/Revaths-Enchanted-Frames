@@ -10,7 +10,7 @@ Revath's Enchanted Frames is a modular World of Warcraft Retail addon suite that
 - **Revath's Enchanted Mailbox** — inbox tools, New Mail editor, contacts, quick attachments, alt tracking, Modern and Classic skins, palettes, fonts, opacity, and scaling.
 - **Revath's Enchanted Macros** — separate account and character macro libraries, curated class/spec templates, icon picker, drag-to-action-bar, syntax suggestions, usable-item suggestions, and Modern or Classic skins.
 - **Revath's Enchanted Tooltips** — account-wide bag, bank, and Warband-bank item totals with Shift details per character.
-- **Revath's Enchanted Auction House** — live auction search, recent searches, account-wide shopping list and price limits, locally observed price history, and your active auctions. Buying, selling, and cancellation use Blizzard's protected Auction House controls.
+- **Revath's Enchanted Auction House** — a full-size auction window with live search, selling preparation, recent searches, an account-wide shopping list and price limits, locally observed price history, and your active auctions. Blizzard's protected controls handle final checkout and posting.
 
 ## Install or upgrade
 
@@ -33,7 +33,7 @@ Open **Options → AddOns → Revath's Enchanted Frames** for the suite overview
 - `/rmacro` or `/macroworkshop` opens Revath's Enchanted Macros.
 - `/rah` or `/rauction` toggles the auction companion while at an auctioneer.
 
-The auction companion opens alongside Blizzard's Auction House. Search results can be opened in Blizzard's buy pane or right-clicked into a shopping list. Your auction listings can be reviewed and cancelled with an explicit confirmation. Price history records only prices observed during your own searches; it is not a global market database or a background scanner.
+The Auction House module opens as the main auction window by default. Browse results can be opened in Blizzard's secure checkout or right-clicked into a shopping list. In Sell, choose a bag item, quantity, price, and duration, then review and post it through Blizzard's protected Sell view. Your auction listings can be reviewed and cancelled with an explicit confirmation. A **Blizzard view** button and `/rah` switch between views; the setting can also make Blizzard's view the default. Price history records only prices observed during your own searches; it is not a global market database or a background scanner.
 
 ## Compatibility
 

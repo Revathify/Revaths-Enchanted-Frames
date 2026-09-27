@@ -1,5 +1,13 @@
 # Changelog
 
+## Upcoming — Full-size Auction House window
+
+- Promoted Enchanted Auction House from a sidecar to the default, full-size auction window.
+- Added a Sell tab for selecting auctionable bag items and preparing quantity, price, and duration before Blizzard's protected final post.
+- Reorganized Browse, Shopping, Auctions, and Prices into a two-column workspace with clearer detail panels.
+- Added a visible switch to Blizzard's view and a setting to choose the default view; `/rah` toggles between them at an auctioneer.
+- Kept secure purchase and posting confirmation in Blizzard's native flow, with a return button to Revath's window.
+
 ## Upcoming — Enchanted Auction House
 
 - Added Revath's Enchanted Auction House as a fifth, independently configurable addon folder with a new cyan-and-silver auction icon.

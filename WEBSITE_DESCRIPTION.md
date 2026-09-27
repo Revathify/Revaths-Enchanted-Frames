@@ -41,17 +41,18 @@ See how many copies of an item you own without searching every character and sto
 
 ## Revath's Enchanted Auction House
 
-Shop and review auctions in a Revath-styled companion window beside Blizzard's Auction House.
+Shop and review auctions in a full-size Revath-styled window that opens in place of Blizzard's Auction House view.
 
 - Search live listings and revisit recent searches.
+- Select auctionable bag items and prepare quantity, buyout price, and duration in the Sell tab.
 - Right-click a result to add it to an account-wide shopping list with a maximum price.
 - Compare watched items with prices observed during your own searches.
 - Inspect active auctions, check the market, and cancel an auction with confirmation.
 - See locally observed last-seen prices on item tooltips and browse a short daily history.
 - Choose Modern or Classic styling, colors, fonts, transparency, and scale.
-- Use `/rah` or `/rauction` while at an auctioneer.
+- Switch back to Blizzard's view at any time, or use `/rah` or `/rauction` while at an auctioneer.
 
-Purchases and posting stay in Blizzard's protected Auction House interface. The module does not automate trading or scan the market in the background.
+Final purchases and postings use Blizzard's protected checkout and confirmation controls. The module does not automate trading or scan the market in the background.
 
 ## Shared settings and appearance
 

@@ -18,6 +18,7 @@ local function InitializeDatabase()
     db.shopping = type(db.shopping) == "table" and db.shopping or {}
     db.prices = type(db.prices) == "table" and db.prices or {}
     if db.showTooltipPrice == nil then db.showTooltipPrice = true end
+    if db.useReplacement == nil then db.useReplacement = true end
     ns.db = db
 end
 
@@ -85,19 +86,37 @@ events:RegisterEvent("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
 events:RegisterEvent("AUCTION_HOUSE_BROWSE_RESULTS_ADDED")
 events:RegisterEvent("OWNED_AUCTIONS_UPDATED")
 events:RegisterEvent("AUCTION_CANCELED")
+events:RegisterEvent("AUCTION_HOUSE_AUCTION_CREATED")
+events:RegisterEvent("BAG_UPDATE_DELAYED")
+events:RegisterEvent("AUCTION_HOUSE_SHOW_ERROR")
 events:SetScript("OnEvent", function(_, event, loadedName)
     if event == "ADDON_LOADED" then
         if loadedName ~= addonName then return end
         InitializeDatabase()
         if ns.Initialize then ns:Initialize() end
     elseif event == "AUCTION_HOUSE_SHOW" then
-        C_Timer.After(0, function() if ns.ShowForAuctionHouse then ns:ShowForAuctionHouse() end end)
+        C_Timer.After(0, function()
+            if AuctionHouseFrame and AuctionHouseFrame:IsShown() then
+                if ns.ShowForAuctionHouse then ns:ShowForAuctionHouse() end
+            else
+                C_Timer.After(0.1, function()
+                    if ns.ShowForAuctionHouse then ns:ShowForAuctionHouse() end
+                end)
+            end
+        end)
     elseif event == "AUCTION_HOUSE_CLOSED" then
         if ns.Hide then ns:Hide() end
     elseif event == "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED" or event == "AUCTION_HOUSE_BROWSE_RESULTS_ADDED" then
         if ns.OnBrowseResults then ns:OnBrowseResults() end
     elseif event == "OWNED_AUCTIONS_UPDATED" or event == "AUCTION_CANCELED" then
         if ns.RefreshOwned then ns:RefreshOwned() end
+    elseif event == "AUCTION_HOUSE_AUCTION_CREATED" then
+        if ns.RefreshOwned then ns:RefreshOwned() end
+        if ns.RefreshSell then ns:RefreshSell() end
+    elseif event == "BAG_UPDATE_DELAYED" then
+        if ns.RefreshSell then ns:RefreshSell() end
+    elseif event == "AUCTION_HOUSE_SHOW_ERROR" then
+        if ns.OnAuctionError then ns:OnAuctionError(loadedName) end
     end
 end)
 

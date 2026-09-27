@@ -1,6 +1,6 @@
 ## Interface: 120100
 ## Title: Revath's Enchanted Auction House
-## Notes: Auction search, shopping lists, price history, and auction management in Revath's style.
+## Notes: A full-size auction window with search, selling preparation, shopping lists, prices, and auction management.
 ## Author: Revath#2331 (Revathify)
 ## Version: 3.0.15
 ## Dependencies: RevathsEnchantedFrames

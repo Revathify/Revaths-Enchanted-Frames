@@ -75,6 +75,7 @@ local function EnsureAuctionSettings()
     settings.opacity = math.max(0.60, math.min(1, tonumber(settings.opacity) or 0.96))
     settings.scale = math.max(0.70, math.min(1.15, tonumber(settings.scale) or 1))
     if settings.showTooltipPrice == nil then settings.showTooltipPrice = true end
+    if settings.useReplacement == nil then settings.useReplacement = true end
     return settings
 end
 
@@ -268,7 +269,7 @@ function ns:RegisterSettings()
     AddModuleStatus(overview, -104, "Revath's Enchanted Mailbox", "RevathsMailbox", "Mailbox replacement, contacts, alt tracking, quick attachments, and Modern or Classic skins.")
     AddModuleStatus(overview, -174, "Revath's Enchanted Macros", "RevathsMacro", "Account and character macro editing, curated templates, icon browser, drag-to-action-bar, and syntax assistance.")
     AddModuleStatus(overview, -244, "Revath's Enchanted Tooltips", "RevathsMailboxTooltipHelper", "Account-wide bag, bank, and Warband-bank item totals in item tooltips.")
-    AddModuleStatus(overview, -314, "Revath's Enchanted Auction House", "RevathsAuctionHouse", "Live search, shopping lists, local price history, and auction management beside Blizzard's Auction House.")
+    AddModuleStatus(overview, -314, "Revath's Enchanted Auction House", "RevathsAuctionHouse", "A full-size auction window for searching, selling preparation, shopping, prices, and your listings.")
     Label(overview, "AUTHOR", -410, "GameFontNormalSmall")
     Label(overview, self.author, -432, "GameFontHighlight")
     Label(overview, "VERSION", -472, "GameFontNormalSmall")
@@ -294,13 +295,14 @@ function ns:RegisterSettings()
     AddCheckbox(tooltipPanel, -102, "Show account-wide item totals", function() return EnsureMailboxSettings().tooltipHelperEnabled ~= false end, function(v) EnsureMailboxSettings().tooltipHelperEnabled = v end, ApplyTooltips)
     Label(tooltipPanel, "The module records bags on login and bag updates, banks while open, and purchased Warband-bank tabs when available.", -154, "GameFontHighlightSmall"):SetWidth(600)
 
-    local auctionPanel = CreatePanel("Revath's Enchanted Auction House", "Appearance and price-history settings for the auction companion. Trading still uses Blizzard's confirmation controls.")
+    local auctionPanel = CreatePanel("Revath's Enchanted Auction House", "Appearance and trading preferences for the auction window. Confirmations remain protected by Blizzard.")
     AddDropdown(auctionPanel, -96, "Skin", function() return SKINS end, function() return EnsureAuctionSettings().skin end, function(v) EnsureAuctionSettings().skin = v end, ApplyAuction)
     AddDropdown(auctionPanel, -170, "Modern color palette", function() return PALETTES end, function() return EnsureAuctionSettings().palette end, function(v) EnsureAuctionSettings().palette = v end, ApplyAuction)
     AddDropdown(auctionPanel, -244, "Font", FontOptions, function() return EnsureAuctionSettings().font end, function(v) EnsureAuctionSettings().font = v end, ApplyAuction)
     AddSlider(auctionPanel, -326, "Window opacity", 0.60, 1, 0.05, function() return EnsureAuctionSettings().opacity end, function(v) EnsureAuctionSettings().opacity = v end, ApplyAuction, function(v) return string.format("%d%%", v * 100) end)
     AddSlider(auctionPanel, -410, "Window scale", 0.70, 1.15, 0.05, function() return EnsureAuctionSettings().scale end, function(v) EnsureAuctionSettings().scale = v end, ApplyAuction, function(v) return string.format("%d%%", v * 100) end)
     AddCheckbox(auctionPanel, -486, "Show last-seen price on item tooltips", function() return EnsureAuctionSettings().showTooltipPrice ~= false end, function(v) EnsureAuctionSettings().showTooltipPrice = v end, ApplyAuction)
+    AddCheckbox(auctionPanel, -524, "Use Revath's window by default", function() return EnsureAuctionSettings().useReplacement ~= false end, function(v) EnsureAuctionSettings().useReplacement = v end, ApplyAuction)
 
     self.settingsPanel = overview
     self.settingsPanels = { overview, mailboxPanel, macroPanel, tooltipPanel, auctionPanel }
