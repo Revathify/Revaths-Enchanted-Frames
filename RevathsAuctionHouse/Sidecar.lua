@@ -5,7 +5,8 @@ local _, ns = ...
 local companion, statusText, detailText, heading, hint, limitBox, rangeText
 local tabs, rows, actions, labels, buttons = {}, {}, {}, {}, {}
 local activeTab, entries, offset, selected = "Sell", {}, 0, nil
-local queue, pendingPrice, pendingPost, priceReady = {}, nil, nil, false
+local queue, pendingPrice, pendingPost = {}, nil, nil
+local bagScan = { scanned = 0, eligible = 0 }
 
 local FONT_PATHS = {
     friz = STANDARD_TEXT_FONT, frizOutline = STANDARD_TEXT_FONT,
@@ -101,11 +102,17 @@ end
 
 local function ScanBags()
     local list = {}
-    if not C_Container or not C_AuctionHouse or not ItemLocation then return list end
-    for bag = 0, NUM_BAG_SLOTS or 4 do
+    bagScan = { scanned = 0, eligible = 0 }
+    if not C_Container or not C_AuctionHouse or not ItemLocation then
+        bagScan.unavailable = true
+        return list
+    end
+    local reagentBag = Enum and Enum.BagIndex and Enum.BagIndex.ReagentBag or 5
+    for bag = 0, math.max(NUM_BAG_SLOTS or 4, reagentBag) do
         for slot = 1, C_Container.GetContainerNumSlots(bag) or 0 do
             local info = C_Container.GetContainerItemInfo(bag, slot)
             if info and info.itemID then
+                bagScan.scanned = bagScan.scanned + 1
                 local location = ItemLocation:CreateFromBagAndSlot(bag, slot)
                 local ok, valid = pcall(C_AuctionHouse.IsSellItemValid, location, false)
                 if ok and valid then
@@ -118,6 +125,7 @@ local function ScanBags()
                         bag = bag, slot = slot, location = location,
                         boe = not info.isBound and loaded and bindType == (Enum.ItemBind and Enum.ItemBind.OnEquip or 2),
                     }
+                    bagScan.eligible = bagScan.eligible + 1
                 end
             end
         end
@@ -129,23 +137,40 @@ local function SameStack(a, b)
     return a and b and a.bag == b.bag and a.slot == b.slot and a.itemID == b.itemID
 end
 
-local function QueueWhere(predicate)
+local function QueueIndex(item)
+    for index, queued in ipairs(queue) do
+        if SameStack(item, queued) then return index end
+    end
+end
+
+local function QueueWhere(predicate, label)
     local existing, added = {}, 0
     for _, item in ipairs(queue) do existing[item.bag .. ":" .. item.slot] = true end
-    for _, item in ipairs(ScanBags()) do
+    entries = ScanBags()
+    for _, item in ipairs(entries) do
         local key = item.bag .. ":" .. item.slot
         if predicate(item) and not existing[key] then
             queue[#queue + 1] = item; existing[key] = true; added = added + 1
         end
     end
-    selected, priceReady = queue[1], false
-    SetStatus(string.format("Added %d stacks. %d await individual review.", added, #queue))
+    selected = queue[1]
+    if added > 0 then
+        SetStatus(string.format("Added %d %s stacks. %d queued; review each in Blizzard Sell.", added, label, #queue))
+    elseif bagScan.unavailable then
+        SetStatus("Bag or auction APIs are unavailable. Reload at an auctioneer.")
+    elseif #entries == 0 then
+        SetStatus(string.format("No auctionable bag items found (%d occupied slots checked).", bagScan.scanned))
+    elseif label == "marked" then
+        SetStatus("Nothing marked. Right-click a sellable item row to mark it.")
+    else
+        SetStatus(string.format("No new %s stacks. %d sellable items found; %d already queued.", label, #entries, #queue))
+    end
 end
 
 local function PriceNext()
-    local item = queue[1]
-    if not item then SetStatus("Queue an item first."); return end
-    selected, priceReady = item, false
+    local item = selected or queue[1]
+    if not item then SetStatus("Select a bag item or queue one first."); return end
+    selected = item
     if C_Container.GetContainerItemID(item.bag, item.slot) ~= item.itemID then
         SetStatus("This stack moved. Rebuild the queue."); return
     end
@@ -170,11 +195,8 @@ local function PriceNext()
 end
 
 local function ReviewPost()
-    local native, item = Native(), queue[1]
-    if not native or not item then SetStatus("Queue an item first."); return end
-    if not priceReady or not item.livePrice then
-        SetStatus("Use Price next before reviewing this posting."); return
-    end
+    local native, item = Native(), selected or queue[1]
+    if not native or not item then SetStatus("Select a bag item or queue one first."); return end
     if C_Container.GetContainerItemID(item.bag, item.slot) ~= item.itemID then
         SetStatus("This stack moved. Rebuild the queue."); return
     end
@@ -188,11 +210,12 @@ local function ReviewPost()
         SetStatus("Finish this special item in Blizzard's Sell view."); return
     end
     if sell.QuantityInput then sell.QuantityInput:SetQuantity(item.count) end
-    if sell.PriceInput then sell.PriceInput:SetAmount(item.livePrice) end
-    if sell.Duration then sell.Duration:SetDuration(2) end
+    if item.livePrice and sell.PriceInput then sell.PriceInput:SetAmount(item.livePrice) end
+    -- Leave Blizzard's duration choice intact; its control is not a SetDuration widget.
     if sell.UpdatePostState then sell:UpdatePostState() end
-    pendingPost = item
-    SetStatus("Review quantity, price, and deposit in Blizzard's Sell view; confirm there.")
+    pendingPost = QueueIndex(item) and item or nil
+    SetStatus(item.livePrice and "Review quantity, price, and deposit in Blizzard Sell; confirm there."
+        or "Blizzard Sell is ready. Enter a price, review the deposit, then confirm there.")
 end
 
 local function WatchEntries()
@@ -216,11 +239,14 @@ local function RefreshDetails()
     if activeTab == "Sell" then
         if selected then
             local mark = ns.db.craftSelections[tostring(selected.itemID)] and " · marked" or ""
-            detailText:SetText(selected.name .. "  x" .. selected.count .. mark .. "\n"
+            local queued = QueueIndex(selected)
+            detailText:SetText(selected.name .. "  x" .. selected.count .. mark .. (queued and " · queued #" .. queued or "") .. "\n"
                 .. "Lowest live: " .. Money(selected.livePrice) .. "   Queue: " .. #queue .. " stacks"
-                .. "\nPosting stays in Blizzard's Sell confirmation.")
+                .. "\nSelect a row, then Review in Sell. Price lookup is optional.")
         else
-            detailText:SetText("Select a bag item. Right-click to mark a crafted item; queue BoE or marked stacks below.")
+            detailText:SetText(string.format("%d auctionable stacks in bags (%d occupied slots checked).\n"
+                .. "Select a row to sell it. Right-click to mark a crafted item; bulk-queue below.",
+                bagScan.eligible, bagScan.scanned))
         end
     elseif activeTab == "Crafting" then
         detailText:SetText(selected and (selected.recipeName .. "\n" .. selected.name .. ": need "
@@ -256,8 +282,10 @@ local function RefreshRows()
             row.icon:SetTexture(entry.icon or ItemIcon(entry.itemID))
             row.name:SetText(entry.name or ItemName(entry.itemID))
             if activeTab == "Sell" then
+                local queued = QueueIndex(entry)
                 row.meta:SetText("x" .. entry.count .. (entry.boe and " · BoE" or "")
-                    .. (ns.db.craftSelections[tostring(entry.itemID)] and " · MARKED" or ""))
+                    .. (ns.db.craftSelections[tostring(entry.itemID)] and " · MARKED" or "")
+                    .. (queued and " · QUEUED #" .. queued or ""))
             elseif activeTab == "Crafting" then
                 row.meta:SetText("Need " .. entry.missing .. " · own " .. entry.held)
             elseif activeTab == "Shopping" then
@@ -277,10 +305,10 @@ local function ConfigureActions()
     end
     for _, button in ipairs(actions) do button:Hide() end
     if activeTab == "Sell" then
-        SetAction(1, "Queue BoE", function() QueueWhere(function(item) return item.boe end); RefreshRows() end)
-        SetAction(2, "Queue marked", function() QueueWhere(function(item) return ns.db.craftSelections[tostring(item.itemID)] end); RefreshRows() end)
-        SetAction(3, "Queue selected", function() if selected then QueueWhere(function(item) return SameStack(item, selected) end); RefreshRows() end end)
-        SetAction(4, "Price next", function() PriceNext(); RefreshRows() end)
+        SetAction(1, "Queue BoE", function() QueueWhere(function(item) return item.boe end, "BoE"); RefreshRows() end)
+        SetAction(2, "Queue marked", function() QueueWhere(function(item) return ns.db.craftSelections[tostring(item.itemID)] end, "marked"); RefreshRows() end)
+        SetAction(3, "Queue all sellable", function() QueueWhere(function() return true end, "sellable"); RefreshRows() end)
+        SetAction(4, "Check live price", function() PriceNext(); RefreshRows() end)
         SetAction(5, "Review in Sell", function() ReviewPost(); RefreshRows() end)
     elseif activeTab == "Crafting" then
         SetAction(1, "Find in Buy", function() if selected then SearchNative(selected.name) end end)
@@ -343,7 +371,7 @@ local function SelectTab(name)
     else entries = PriceEntries() end
     heading:SetText(({ Sell = "Sell queue", Crafting = "Tracked recipe materials",
         Shopping = "Shopping list", Prices = "Market prices" })[name])
-    hint:SetText(({ Sell = "Native Sell stays open; every post needs your confirmation.",
+    hint:SetText(({ Sell = "Select a stack or queue in bulk. Price lookup is optional; every post needs confirmation.",
         Crafting = "Track Recipe in Professions, then find missing reagents.",
         Shopping = "Watched items and your maximum prices.",
         Prices = "Observed values; full scan only when you request it." })[name])
@@ -518,7 +546,6 @@ function ns:OnSellPriceResults(event, loadedKey)
         SetStatus("No current buyout found. Price this one in Blizzard's Sell view."); return
     end
     query.item.livePrice = lowest
-    priceReady = SameStack(queue[1], query.item)
     ns:RememberPrice(query.itemID, query.item.name, lowest)
     RefreshDetails()
     SetStatus("Lowest current listing: " .. Money(lowest) .. " per item. Review before posting.")
@@ -526,11 +553,12 @@ end
 
 function ns:OnAuctionCreated()
     if not pendingPost then return end
-    if SameStack(queue[1], pendingPost) then table.remove(queue, 1) end
-    pendingPost, priceReady = nil, false
+    local index = QueueIndex(pendingPost)
+    if index then table.remove(queue, index) end
+    pendingPost = nil
     selected = queue[1]
     self:RefreshSell()
-    SetStatus(string.format("Posted. %d queued stacks remain; price the next one when ready.", #queue))
+    SetStatus(string.format("Posted. %d queued stacks remain; select the next and review it.", #queue))
 end
 
 function ns:OnAuctionError()

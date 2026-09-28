@@ -44,7 +44,7 @@ See how many copies of an item you own without searching every character and sto
 Keep Blizzard's familiar Auction House—including categories, item icons, quantities, coin displays, and secure checkout—with a Revath-styled companion docked beside it.
 
 - Browse categories, search live listings, and revisit recent searches in Blizzard's native Buy view.
-- Queue auctionable BoE stacks, or explicitly mark crafted items to queue, and match the lowest current listing before reviewing each post.
+- Select an auctionable bag item directly, or queue BoE stacks, explicitly marked crafted items, or all sellable stacks—including the reagent bag. A live-price check is optional; every post is reviewed and confirmed in Blizzard's Sell view.
 - See missing materials for recipes tracked in Professions, then search and open secure checkout for each reagent.
 - Add the first result of a Blizzard Buy search to an account-wide shopping list and set a maximum price.
 - Compare watched items with prices observed during your own searches.

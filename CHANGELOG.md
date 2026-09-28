@@ -1,5 +1,12 @@
 # Changelog
 
+## Upcoming — Sell companion usability
+
+- Included the reagent bag in sellable-item discovery and showed how many occupied slots were checked when nothing qualifies.
+- Made queue results visible on item rows and added clear feedback when BoE or marked-item queues find nothing.
+- Added an explicit queue-all-sellable action; selecting an individual item can now open Blizzard's Sell view directly.
+- Made live-price lookup optional, so unavailable search results no longer block a manual price and secure review in Blizzard's Sell view.
+
 ## Upcoming — LFG invite safety
 
 - Stopped loading the retired full-window Auction House UI and its high-strata mouse blocker.
