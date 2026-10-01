@@ -1,5 +1,10 @@
 # Changelog
 
+## Upcoming - Transparent planner icon
+
+- Removed the planner icon's square background while preserving the book artwork and transparent edges in the WoW texture.
+- Removed minimap texture cropping so the complete book silhouette remains visible.
+
 ## Upcoming - Planner identity and automatic weekly goals
 
 - Added a dedicated enchanted-book icon for the planner minimap button, window header, and addon list.
