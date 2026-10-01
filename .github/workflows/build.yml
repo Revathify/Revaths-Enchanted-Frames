@@ -39,7 +39,7 @@ jobs:
             RevathsMailbox/Core.lua RevathsMailbox/UI.lua \
             RevathsMacro/Core.lua RevathsMacro/UI.lua \
             RevathsMailboxTooltipHelper/Tooltips.lua \
-            RevathsWeeklyPlanner/Core.lua RevathsWeeklyPlanner/Characters.lua RevathsWeeklyPlanner/Progress.lua RevathsWeeklyPlanner/UI.lua >/dev/null
+            RevathsWeeklyPlanner/Core.lua RevathsWeeklyPlanner/Characters.lua RevathsWeeklyPlanner/Progress.lua RevathsWeeklyPlanner/Details.lua RevathsWeeklyPlanner/UI.lua >/dev/null
 
       - name: Validate weekly planner behavior
         run: |

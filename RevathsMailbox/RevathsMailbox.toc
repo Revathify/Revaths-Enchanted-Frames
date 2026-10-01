@@ -7,7 +7,7 @@
 ## OptionalDeps: EllesmereUI, SharedMedia, SharedMediaAdditionalFonts, LibSharedMedia-3.0
 ## SavedVariables: RevathsMailboxDB, RevathsMailDB, AltMailDB
 ## Category: User Interface
-## IconTexture: Interface\AddOns\RevathsMailbox\Media\Icon
+## IconTexture: Interface\AddOns\RevathsMailbox\Media\Icon-v2
 
 Core.lua
 UI.lua

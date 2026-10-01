@@ -323,7 +323,7 @@ classicTitlePlate:Hide()
 local headerIcon = frame:CreateTexture(nil, "ARTWORK")
 headerIcon:SetSize(46, 46)
 headerIcon:SetPoint("TOPLEFT", 20, -13)
-headerIcon:SetTexture("Interface\\AddOns\\RevathsMailbox\\Media\\IconSmall")
+headerIcon:SetTexture("Interface\\AddOns\\RevathsMailbox\\Media\\IconSmall-v2")
 
 local title = Font(frame, 23, C.text)
 title:SetPoint("TOPLEFT", 76, -18)

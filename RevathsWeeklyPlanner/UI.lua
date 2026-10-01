@@ -30,6 +30,30 @@ local fonts = { friz = STANDARD_TEXT_FONT, arial = "Fonts\\ARIALN.TTF", morpheus
 
 local function SafeText(text) return (text or ""):gsub("|", "||") end
 
+local hoveredGoal, detailOffset = nil, 0
+local function HideGoalDetails()
+    if hoveredGoal and GameTooltip then GameTooltip:Hide() end
+    hoveredGoal, detailOffset = nil, 0
+end
+local function ShowGoalDetails(row)
+    if not GameTooltip or not ns.GetGoalDetails then return end
+    if not row:IsShown() or view ~= "goals" then HideGoalDetails(); return end
+    local title, lines = ns:GetGoalDetails(selectedKey, row.goalID)
+    if not title then HideGoalDetails(); return end
+    if hoveredGoal ~= row then detailOffset = 0 end
+    hoveredGoal = row
+    local pageSize = 12
+    detailOffset = math.max(0, math.min(detailOffset, math.max(0, #lines - pageSize)))
+    GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+    GameTooltip:ClearLines()
+    GameTooltip:AddLine(SafeText(title), 1, .82, .3, true)
+    for index = detailOffset + 1, math.min(#lines, detailOffset + pageSize) do
+        GameTooltip:AddLine(SafeText(lines[index]), .9, .93, .96, true)
+    end
+    if #lines > pageSize then GameTooltip:AddLine("Hold Shift and scroll for more details", .55, .7, .8, true) end
+    GameTooltip:Show()
+end
+
 local function Label(parent, size, muted)
     local label = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     label.size, label.muted = size, muted
@@ -193,6 +217,7 @@ function ns:Refresh()
     goalOffset = math.max(0, math.min(goalOffset, #goals - goalCapacity))
     for index, row in ipairs(goalRows) do
         local goal = goals[goalOffset + index]
+        if hoveredGoal == row and row.goalID ~= (goal and goal.id) then HideGoalDetails() end
         row.goalID = goal and goal.id
         row:SetShown(view == "goals" and goal ~= nil and index <= goalCapacity)
         if goal then
@@ -252,7 +277,7 @@ function ns:Refresh()
     else
         for _, row in ipairs(raidRows) do row:Hide() end
     end
-
+    if hoveredGoal then ShowGoalDetails(hoveredGoal) end
 end
 
 function ns:LayoutWindow()
@@ -379,8 +404,19 @@ local function Build()
             ns:Refresh(); Status("Goal removed. Use Undo remove to restore it.")
         end); remove:SetPoint("RIGHT", -3, 0)
         row.remove = remove
+        row:SetScript("OnEnter", function(self)
+            local c = Accent(); self:SetBackdropBorderColor(c[1], c[2], c[3], 1)
+            ShowGoalDetails(self)
+        end)
+        row:SetScript("OnLeave", function(self) Style(self); HideGoalDetails() end)
+        row.check:SetScript("OnEnter", function() ShowGoalDetails(row) end)
+        row.check:SetScript("OnLeave", HideGoalDetails)
         row:EnableMouseWheel(true)
-        row:SetScript("OnMouseWheel", function(_, delta) goalOffset = math.max(0, goalOffset - delta); ns:Refresh() end)
+        row:SetScript("OnMouseWheel", function(self, delta)
+            if hoveredGoal == self and IsShiftKeyDown and IsShiftKeyDown() then
+                detailOffset = detailOffset - delta * 6; ShowGoalDetails(self)
+            else HideGoalDetails(); goalOffset = math.max(0, goalOffset - delta); ns:Refresh() end
+        end)
         goalRows[index] = row
     end
     for index = 1, 20 do
@@ -471,7 +507,7 @@ local function Build()
     end
     resize:SetScript("OnMouseUp",StopResize)
     frame:SetScript("OnSizeChanged",function() ns:LayoutWindow() end)
-    frame:SetScript("OnHide",function() frame:StopMovingOrSizing(); CancelEdit() end)
+    frame:SetScript("OnHide",function() HideGoalDetails(); frame:StopMovingOrSizing(); CancelEdit() end)
     ns:LayoutWindow()
     frame:SetScript("OnShow", function() ns:ImportMailboxCharacters(); ns:CheckWeeklyReset(); ns:Refresh(); ns:RequestRaidRefresh(); if ns.CaptureWeeklyProgress then ns:CaptureWeeklyProgress() end end)
     UISpecialFrames[#UISpecialFrames + 1] = "RevathsWeeklyPlannerFrame"

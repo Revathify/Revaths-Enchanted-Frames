@@ -7,7 +7,7 @@
 ## OptionalDeps: EllesmereUI, SharedMedia, SharedMediaAdditionalFonts, LibSharedMedia-3.0
 ## SavedVariables: RevathsMacroDB
 ## Category: User Interface
-## IconTexture: Interface\AddOns\RevathsMacro\Media\Icon.png
+## IconTexture: Interface\AddOns\RevathsMacro\Media\Icon-v2
 
 Core.lua
 UI.lua

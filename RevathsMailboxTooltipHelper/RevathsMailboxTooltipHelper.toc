@@ -6,5 +6,6 @@
 ## Dependencies: RevathsEnchantedFrames
 ## SavedVariables: RevathsMailboxTooltipHelperDB
 ## Category: User Interface
+## IconTexture: Interface\AddOns\RevathsMailboxTooltipHelper\Media\Icon-v2
 
 Tooltips.lua

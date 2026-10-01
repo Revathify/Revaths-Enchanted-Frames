@@ -12,4 +12,5 @@
 Core.lua
 Characters.lua
 Progress.lua
+Details.lua
 UI.lua

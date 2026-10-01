@@ -338,3 +338,30 @@ local automaticRow = click(automaticTitle,"RightButton")
 assert(type(automaticRow.goalID)=="string" and automaticRow.check.enabled==false)
 assert(not automaticRow.remove:IsShown() and not input.focused, "automatic rows cannot be edited, checked off or removed")
 print("Automatic goal UI controls passed.")
+
+assert(loadfile("RevathsWeeklyPlanner/Details.lua"))("RevathsWeeklyPlanner",ns)
+local shiftDown = false
+IsShiftKeyDown = function() return shiftDown end
+GameTooltip = {
+    SetOwner = function(self, owner) self.owner=owner end,
+    ClearLines = function(self) self.lines={} end,
+    AddLine = function(self, text) self.lines[#self.lines+1]=text end,
+    Show = function(self) self.shown=true end,
+    Hide = function(self) self.shown=false end,
+}
+local bosses = {}
+for index=1,25 do bosses[index]={name="Hover boss "..index,raidName="Hover raid",killed=index==1} end
+ns.db.characters[bob].weekly={raid={killed=1,total=25,bosses=bosses,capturedAt=GetServerTime()}}
+ns:Refresh()
+automaticRow.scripts.OnEnter(automaticRow)
+assert(GameTooltip.shown and #GameTooltip.lines==14, "long hover details show a bounded page and scroll hint")
+local firstPage=table.concat(GameTooltip.lines,"\n")
+assert(firstPage:find("[Killed] Hover boss 1",1,true))
+shiftDown=true; automaticRow.scripts.OnMouseWheel(automaticRow,-2)
+assert(GameTooltip.shown and table.concat(GameTooltip.lines,"\n")~=firstPage, "Shift-wheel pages details without moving goals")
+automaticRow.scripts.OnLeave(automaticRow); assert(not GameTooltip.shown)
+automaticRow.scripts.OnEnter(automaticRow); click("Raid lockouts")
+assert(not GameTooltip.shown, "switching tabs hides goal details")
+click("Weekly goals"); automaticRow.scripts.OnEnter(automaticRow)
+ns:Toggle(); assert(not GameTooltip.shown, "closing planner hides goal details")
+print("Weekly hover details passed: saved data, bounded pages, Shift-scroll and tooltip cleanup.")

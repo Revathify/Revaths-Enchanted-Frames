@@ -1,5 +1,12 @@
 # Changelog
 
+## Upcoming - Weekly goal details and refreshed suite icons
+
+- Added hover details for season raid boss kills and difficulty, completed M+ runs, all active Great Vault slots and available reward item levels, and tracked weekly quest status/objectives.
+- Saved details for offline characters, labelled missing item data, refreshed cached rewards after item loading, and added Shift-scroll paging for long tooltips.
+- Recognized Favor of the Court, Fortify the Runestones, Abundant Offerings and the Saltheril weekly meta quest when accepted or completed, including variants without a weekly frequency tag.
+- Refreshed mailbox, macros, suite and tooltips addon icons in the planner's painted gold-and-cyan style, preserving transparent edges and the approved planner icon.
+
 ## Upcoming - Transparent planner icon
 
 - Removed the planner icon's square background while preserving the book artwork and transparent edges in the WoW texture.
