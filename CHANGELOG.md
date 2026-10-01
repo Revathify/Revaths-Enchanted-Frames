@@ -1,5 +1,18 @@
 # Changelog
 
+## Upcoming — Enchanted Weekly Planner
+
+- Added a separate Weekly Planner module with personal weekly goals and progress for each logged-in character.
+- Added manual completion, editable goals, starter goals, undo removal, and an unfinished-only filter for goals and characters.
+- Used Blizzard's regional weekly reset timing to clear completion checks, including offline alts, while preserving goals.
+- Added shared appearance settings, saved window position, /rweekly and /rplanner commands, release packaging, and reset regression checks.
+
+## Upcoming — Retire Auction House module
+
+- Marked Auction House obsolete and stopped loading its runtime files, retaining the source for reference.
+- Removed its settings page and excluded it from suite packaging and version bumps.
+- Updated installation instructions to disable or remove the old Auction House folder when upgrading.
+
 ## Upcoming — Compact Auction House companion
 
 - Replaced the tall side panel with a 190-pixel-high Sell / Buy companion below Blizzard's AH tabs.

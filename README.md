@@ -2,7 +2,7 @@
 
 <p align="center"><img src="RevathsEnchantedFrames/Media/RevathsEnchantedFrames.png" alt="Revath's Enchanted Frames" width="360"></p>
 
-Revath's Enchanted Frames is a modular World of Warcraft Retail addon suite that combines a customizable mailbox replacement, an advanced macro workshop, account-wide item-count tooltips, and an auction-house companion under one shared parent addon and one Blizzard Settings category.
+Revath's Enchanted Frames is a modular World of Warcraft Retail addon suite that combines a customizable mailbox replacement, an advanced macro workshop, account-wide item-count tooltips, and a personal weekly planner under one shared parent addon and one Blizzard Settings category.
 
 ## Modules
 
@@ -10,7 +10,7 @@ Revath's Enchanted Frames is a modular World of Warcraft Retail addon suite that
 - **Revath's Enchanted Mailbox** — inbox tools, New Mail editor, contacts, quick attachments, alt tracking, Modern and Classic skins, palettes, fonts, opacity, and scaling.
 - **Revath's Enchanted Macros** — separate account and character macro libraries, curated class/spec templates, icon picker, drag-to-action-bar, syntax suggestions, usable-item suggestions, and Modern or Classic skins.
 - **Revath's Enchanted Tooltips** — account-wide bag, bank, and Warband-bank item totals with Shift details per character.
-- **Revath's Enchanted Auction House** — a compact Sell / Buy companion below Blizzard's native Auction House. Queue bag items at the lowest live price and bulk-add missing tracked-recipe materials to buy.
+- **Revath's Enchanted Weekly Planner** — personal goals for each character, automatic weekly resets, and an unfinished-only view.
 
 ## Install or upgrade
 
@@ -19,21 +19,26 @@ Revath's Enchanted Frames is a modular World of Warcraft Retail addon suite that
    - `RevathsMailbox`
    - `RevathsMacro`
    - `RevathsMailboxTooltipHelper`
-   - `RevathsAuctionHouse`
-2. Restart WoW or type `/reload`.
+   - `RevathsWeeklyPlanner`
+2. If upgrading from a release with Auction House support, disable or remove the old `RevathsAuctionHouse` folder from `Interface/AddOns`. That module is now obsolete and is excluded from releases.
+3. Restart WoW or type `/reload`.
 
-The existing child modules keep their technical folder IDs so WoW automatically loads your existing saved-variable files. The Auction House is a new optional child module with its own saved data. Existing settings, macro preferences, and tracked item data migrate without a manual reset.
+The existing child modules keep their technical folder IDs so WoW automatically loads your existing saved-variable files. Existing settings, macro preferences, and tracked item data migrate without a manual reset.
 
 ## Settings and commands
 
-Open **Options → AddOns → Revath's Enchanted Frames** for the suite overview and Mailbox, Macros, Tooltips, and Auction House subpages.
+Open **Options → AddOns → Revath's Enchanted Frames** for the suite overview and Mailbox, Macros, Tooltips, and Weekly Planner subpages.
 
 - `/ref` or `/enchantedframes` opens the shared addon settings.
 - `/rmail` or `/revathsmailbox` opens the mailbox while a mailbox NPC/object is active.
 - `/rmacro` or `/macroworkshop` opens Revath's Enchanted Macros.
-- `/rah` or `/rauction` toggles the auction companion while at an auctioneer.
+- `/rweekly` or `/rplanner` opens the Weekly Planner.
 
-Blizzard's Auction House remains visible. A 190-pixel-high companion sits below its tabs with just **Sell** and **Buy**, and three scrollable item rows. In Sell, select bag items and use **Add selected**, right-click rows to toggle them in the queue, or use **Add all bags** (including the reagent bag). **Sell lowest** prepares the first queued stack at the lowest live buyout, matching the item level for equipment. Review the quantity, price, duration, and deposit and click Blizzard's Post button; after a successful post, the next stack is prepared automatically. **Stop** pauses the queue; **Clear queue** removes it. Missing prices, errors, or moved stacks stop the sequence and keep the queue for review. In Buy, enter an item ID or link and quantity, or use **Add tracked recipes** to collect basic reagents from recipes marked **Track Recipe** in Professions (the star only favorites a recipe). Shared materials are combined before subtracting owned inventory; re-importing recipes updates shortages without duplicating them. Reagents use the saved quality choice, or the first listed quality by default. **Find in Buy** opens the exact material and fills its commodity quantity. Confirm purchases in Blizzard's window, then **Done / next** removes the current entry and searches the next. `/rah` shows or hides the companion at an auctioneer. Posting and purchases require Blizzard's confirmation.
+## Weekly Planner
+
+Log into a character with the module enabled to add it to the roster, then open `/rweekly`. Select a character and type your own weekly goal, or choose a Raid, Dungeons, or Professions starter. Click a goal to complete or uncheck it, right-click to edit its wording, or use its × button to remove it. **Undo remove** restores the last deleted goal. Each character has separate goals and progress, and you can edit an offline alt's checklist. **Unfinished only** hides completed goals and characters; characters with no goals remain visible so you can set them up. Scroll the character or goal list for more entries. Drag the header to move the window; its position and appearance settings are saved.
+
+Goals are checked off manually in this first version. Blizzard's weekly reset countdown clears completions automatically, including offline characters in the current region, while retaining the goals themselves. Resets are checked on login, when opening the planner, during edits, and once a minute while logged in. If reset timing is unavailable, progress is retained until Blizzard provides it again. Only characters logged into with the addon enabled are known; no external account access is required.
 
 ## Compatibility
 

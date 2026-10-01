@@ -66,17 +66,19 @@ local function EnsureMacroSettings()
     return RevathsMacroDB
 end
 
-local function EnsureAuctionSettings()
-    if type(RevathsAuctionHouseDB) ~= "table" then RevathsAuctionHouseDB = {} end
-    local settings = RevathsAuctionHouseDB
+local function EnsurePlannerSettings()
+    if type(RevathsWeeklyPlannerDB) ~= "table" then RevathsWeeklyPlannerDB = {} end
+    local settings = RevathsWeeklyPlannerDB
     settings.skin = settings.skin == "classic" and "classic" or "modern"
     settings.palette = type(settings.palette) == "string" and settings.palette or "midnight"
     settings.font = type(settings.font) == "string" and settings.font or "friz"
     settings.opacity = math.max(0.60, math.min(1, tonumber(settings.opacity) or 0.96))
     settings.scale = math.max(0.70, math.min(1.15, tonumber(settings.scale) or 1))
-    if settings.showTooltipPrice == nil then settings.showTooltipPrice = true end
-    if settings.showCompanion == nil then settings.showCompanion = true end
     return settings
+end
+
+local function ApplyPlanner()
+    if RevathsEnchantedWeeklyPlanner_ApplySettings then RevathsEnchantedWeeklyPlanner_ApplySettings() end
 end
 
 local function ApplyMailbox()
@@ -85,10 +87,6 @@ end
 
 local function ApplyMacros()
     if RevathsEnchantedMacros_ApplySettings then RevathsEnchantedMacros_ApplySettings() end
-end
-
-local function ApplyAuction()
-    if RevathsEnchantedAuctionHouse_ApplySettings then RevathsEnchantedAuctionHouse_ApplySettings() end
 end
 
 local function ApplyTooltips(enabled)
@@ -265,11 +263,11 @@ function ns:RegisterSettings()
     if self.settingsRegistered then return end
     self.settingsRegistered = true
 
-    local overview = CreatePanel(self.title, "One parent addon with independently managed Mailbox, Macros, Tooltips, and Auction House modules.")
+    local overview = CreatePanel(self.title, "One parent addon with independently managed Mailbox, Macros, Tooltips, and Weekly Planner modules.")
     AddModuleStatus(overview, -104, "Revath's Enchanted Mailbox", "RevathsMailbox", "Mailbox replacement, contacts, alt tracking, quick attachments, and Modern or Classic skins.")
     AddModuleStatus(overview, -174, "Revath's Enchanted Macros", "RevathsMacro", "Account and character macro editing, curated templates, icon browser, drag-to-action-bar, and syntax assistance.")
     AddModuleStatus(overview, -244, "Revath's Enchanted Tooltips", "RevathsMailboxTooltipHelper", "Account-wide bag, bank, and Warband-bank item totals in item tooltips.")
-    AddModuleStatus(overview, -314, "Revath's Enchanted Auction House", "RevathsAuctionHouse", "A small companion below Blizzard's Auction House with sell and buy queues.")
+    AddModuleStatus(overview, -314, "Revath's Enchanted Weekly Planner", "RevathsWeeklyPlanner", "Personal weekly goals for each character, automatic resets, and an unfinished-only view.")
     Label(overview, "AUTHOR", -410, "GameFontNormalSmall")
     Label(overview, self.author, -432, "GameFontHighlight")
     Label(overview, "VERSION", -472, "GameFontNormalSmall")
@@ -295,29 +293,30 @@ function ns:RegisterSettings()
     AddCheckbox(tooltipPanel, -102, "Show account-wide item totals", function() return EnsureMailboxSettings().tooltipHelperEnabled ~= false end, function(v) EnsureMailboxSettings().tooltipHelperEnabled = v end, ApplyTooltips)
     Label(tooltipPanel, "The module records bags on login and bag updates, banks while open, and purchased Warband-bank tabs when available.", -154, "GameFontHighlightSmall"):SetWidth(600)
 
-    local auctionPanel = CreatePanel("Revath's Enchanted Auction House", "Appearance for the compact Sell / Buy companion below Blizzard's Auction House.")
-    AddDropdown(auctionPanel, -96, "Skin", function() return SKINS end, function() return EnsureAuctionSettings().skin end, function(v) EnsureAuctionSettings().skin = v end, ApplyAuction)
-    AddDropdown(auctionPanel, -170, "Modern color palette", function() return PALETTES end, function() return EnsureAuctionSettings().palette end, function(v) EnsureAuctionSettings().palette = v end, ApplyAuction)
-    AddDropdown(auctionPanel, -244, "Font", FontOptions, function() return EnsureAuctionSettings().font end, function(v) EnsureAuctionSettings().font = v end, ApplyAuction)
-    AddSlider(auctionPanel, -326, "Window opacity", 0.60, 1, 0.05, function() return EnsureAuctionSettings().opacity end, function(v) EnsureAuctionSettings().opacity = v end, ApplyAuction, function(v) return string.format("%d%%", v * 100) end)
-    AddSlider(auctionPanel, -410, "Window scale", 0.70, 1.15, 0.05, function() return EnsureAuctionSettings().scale end, function(v) EnsureAuctionSettings().scale = v end, ApplyAuction, function(v) return string.format("%d%%", v * 100) end)
-    AddCheckbox(auctionPanel, -486, "Show last-seen price on item tooltips", function() return EnsureAuctionSettings().showTooltipPrice ~= false end, function(v) EnsureAuctionSettings().showTooltipPrice = v end, ApplyAuction)
-    AddCheckbox(auctionPanel, -524, "Show Revath's companion below the Auction House", function() return EnsureAuctionSettings().showCompanion ~= false end, function(v) EnsureAuctionSettings().showCompanion = v end, ApplyAuction)
+    local plannerPanel = CreatePanel("Revath's Enchanted Weekly Planner", "Appearance for your personal weekly checklist. Open it with /rweekly or /rplanner.")
+    AddDropdown(plannerPanel, -96, "Skin", function() return SKINS end, function() return EnsurePlannerSettings().skin end, function(v) EnsurePlannerSettings().skin = v end, ApplyPlanner)
+    AddDropdown(plannerPanel, -170, "Modern color palette", function() return PALETTES end, function() return EnsurePlannerSettings().palette end, function(v) EnsurePlannerSettings().palette = v end, ApplyPlanner)
+    AddDropdown(plannerPanel, -244, "Font", FontOptions, function() return EnsurePlannerSettings().font end, function(v) EnsurePlannerSettings().font = v end, ApplyPlanner)
+    AddSlider(plannerPanel, -326, "Window opacity", 0.60, 1, 0.05, function() return EnsurePlannerSettings().opacity end, function(v) EnsurePlannerSettings().opacity = v end, ApplyPlanner, function(v) return string.format("%d%%", v * 100) end)
+    AddSlider(plannerPanel, -410, "Window scale", 0.70, 1.15, 0.05, function() return EnsurePlannerSettings().scale end, function(v) EnsurePlannerSettings().scale = v end, ApplyPlanner, function(v) return string.format("%d%%", v * 100) end)
+    local openPlanner = CreateFrame("Button", nil, plannerPanel, "UIPanelButtonTemplate")
+    openPlanner:SetPoint("TOPLEFT", 24, -484); openPlanner:SetSize(180, 30); openPlanner:SetText("Open Weekly Planner")
+    openPlanner:SetScript("OnClick", function() if RevathsEnchantedWeeklyPlanner_Open then RevathsEnchantedWeeklyPlanner_Open() end end)
 
     self.settingsPanel = overview
-    self.settingsPanels = { overview, mailboxPanel, macroPanel, tooltipPanel, auctionPanel }
+    self.settingsPanels = { overview, mailboxPanel, macroPanel, tooltipPanel, plannerPanel }
     if Settings and Settings.RegisterCanvasLayoutCategory then
         local category = Settings.RegisterCanvasLayoutCategory(overview, self.title)
         Settings.RegisterAddOnCategory(category)
         Settings.RegisterCanvasLayoutSubcategory(category, mailboxPanel, "Mailbox")
         Settings.RegisterCanvasLayoutSubcategory(category, macroPanel, "Macros")
         Settings.RegisterCanvasLayoutSubcategory(category, tooltipPanel, "Tooltips")
-        Settings.RegisterCanvasLayoutSubcategory(category, auctionPanel, "Auction House")
+        Settings.RegisterCanvasLayoutSubcategory(category, plannerPanel, "Weekly Planner")
         self.settingsCategoryID = category:GetID()
     elseif InterfaceOptions_AddCategory then
         InterfaceOptions_AddCategory(overview)
-        mailboxPanel.parent, macroPanel.parent, tooltipPanel.parent, auctionPanel.parent = self.title, self.title, self.title, self.title
-        InterfaceOptions_AddCategory(mailboxPanel); InterfaceOptions_AddCategory(macroPanel); InterfaceOptions_AddCategory(tooltipPanel); InterfaceOptions_AddCategory(auctionPanel)
+        mailboxPanel.parent, macroPanel.parent, tooltipPanel.parent, plannerPanel.parent = self.title, self.title, self.title, self.title
+        InterfaceOptions_AddCategory(mailboxPanel); InterfaceOptions_AddCategory(macroPanel); InterfaceOptions_AddCategory(tooltipPanel); InterfaceOptions_AddCategory(plannerPanel)
     end
 
     function RevathsEnchantedFrames_RefreshSettings()

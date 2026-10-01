@@ -1,6 +1,6 @@
 ## Interface: 120100
-## Title: Revath's Enchanted Auction House
-## Notes: A compact companion below Blizzard's Auction House with lowest-price sell queues and tracked-recipe buy lists.
+## Title: Revath's Enchanted Auction House (Obsolete)
+## Notes: Obsolete module retained for reference. Disabled; no runtime files are loaded.
 ## Author: Revath#2331 (Revathify)
 ## Version: 3.0.21
 ## Dependencies: RevathsEnchantedFrames
@@ -8,8 +8,3 @@
 ## SavedVariables: RevathsAuctionHouseDB
 ## Category: User Interface
 ## IconTexture: Interface\AddOns\RevathsAuctionHouse\Media\Icon.png
-
-Core.lua
-Market.lua
-Crafting.lua
-Sidecar.lua

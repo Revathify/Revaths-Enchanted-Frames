@@ -26,7 +26,7 @@ jobs:
       - name: Validate manifests and Lua syntax
         shell: bash
         run: |
-          for addon in RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper RevathsAuctionHouse; do
+          for addon in RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper RevathsWeeklyPlanner; do
             test -f "$addon/$addon.toc"
             addon_version=$(sed -nE 's/^## Version:[[:space:]]*(.+)$/\1/p' "$addon/$addon.toc")
             if [ "$addon_version" != "${{ steps.version.outputs.version }}" ]; then
@@ -39,7 +39,13 @@ jobs:
             RevathsMailbox/Core.lua RevathsMailbox/UI.lua \
             RevathsMacro/Core.lua RevathsMacro/UI.lua \
             RevathsMailboxTooltipHelper/Tooltips.lua \
-            RevathsAuctionHouse/Core.lua RevathsAuctionHouse/Market.lua RevathsAuctionHouse/Crafting.lua RevathsAuctionHouse/UI.lua RevathsAuctionHouse/Sidecar.lua >/dev/null
+            RevathsWeeklyPlanner/Core.lua RevathsWeeklyPlanner/UI.lua >/dev/null
+
+      - name: Validate weekly planner behavior
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lua5.1
+          lua5.1 tests/weekly_planner.lua
 
       - name: Package suite
         shell: bash
@@ -47,9 +53,9 @@ jobs:
           staging="$RUNNER_TEMP/revaths-enchanted-frames"
           zip_path="$RUNNER_TEMP/RevathsEnchantedFrames-v${{ steps.version.outputs.version }}-${{ github.run_number }}.zip"
           mkdir -p "$staging"
-          cp -R RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper RevathsAuctionHouse "$staging/"
-          (cd "$staging" && zip -r "$zip_path" RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper RevathsAuctionHouse)
-          for addon in RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper RevathsAuctionHouse; do
+          cp -R RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper RevathsWeeklyPlanner "$staging/"
+          (cd "$staging" && zip -r "$zip_path" RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper RevathsWeeklyPlanner)
+          for addon in RevathsEnchantedFrames RevathsMailbox RevathsMacro RevathsMailboxTooltipHelper RevathsWeeklyPlanner; do
             addon_version=$(unzip -p "$zip_path" "$addon/$addon.toc" | sed -nE 's/^## Version:[[:space:]]*(.+)$/\1/p' | tr -d '\r')
             if [ "$addon_version" != "${{ steps.version.outputs.version }}" ]; then
               echo "Packaged $addon is $addon_version; expected ${{ steps.version.outputs.version }}." >&2

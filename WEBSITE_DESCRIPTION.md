@@ -1,6 +1,6 @@
 # Revath's Enchanted Frames
 
-Revath's Enchanted Frames is a modular quality-of-life suite for World of Warcraft Retail. It brings an enhanced mailbox, a powerful macro workshop, account-wide item ownership information, and an auction-house companion together under one visual identity and one organized Blizzard AddOns settings category.
+Revath's Enchanted Frames is a modular quality-of-life suite for World of Warcraft Retail. It brings an enhanced mailbox, a powerful macro workshop, account-wide item ownership information, and a personal weekly planner together under one visual identity and one organized Blizzard AddOns settings category.
 
 Each module can be managed independently, while shared appearance settings keep the suite consistent. Choose between Modern and Classic-inspired skins, select color palettes and fonts, adjust transparency and sizing, and apply changes immediately from either the addon windows or Blizzard Options.
 
@@ -39,25 +39,23 @@ See how many copies of an item you own without searching every character and sto
 - Hold Shift to see the per-character breakdown.
 - Enable or disable totals from the suite's Tooltips settings page.
 
-## Revath's Enchanted Auction House
+## Revath's Enchanted Weekly Planner
 
-Keep Blizzard's familiar Auction House—including categories, item icons, quantities, coin displays, and secure checkout—with a Revath-styled companion docked beside it.
+Keep a personal weekly checklist for each character in one compact window.
 
-- Browse categories, search live listings, and revisit recent searches in Blizzard's native Buy view.
-- Select an auctionable bag item directly, or queue BoE stacks, explicitly marked crafted items, or all sellable stacks—including the reagent bag. A live-price check is optional; every post is reviewed and confirmed in Blizzard's Sell view.
-- See missing materials for recipes tracked in Professions, then search and open secure checkout for each reagent.
-- Add the first result of a Blizzard Buy search to an account-wide shopping list and set a maximum price.
-- Compare watched items with prices observed during your own searches.
-- Inspect and manage active auctions in Blizzard's native Auctions tab.
-- Run a full Auction House scan on demand and see observed item values in tooltips and the companion's Prices tab.
-- Choose Modern or Classic styling, colors, fonts, transparency, and scale.
-- Show or hide the companion with `/rah` or `/rauction` while at an auctioneer.
+- Add your own goals, or customize Raid, Dungeons, and Professions starter goals.
+- Mark goals complete yourself, edit their wording, and undo the last removal.
+- Filter to unfinished goals and characters to decide which alt to play next.
+- Keep goals across weeks while completion checks clear at Blizzard's regional weekly reset.
+- Manage logged-in characters' saved checklists without switching characters.
+- Customize skin, palette, font, opacity, scale, and window position.
+- Open with `/rweekly` or `/rplanner`.
 
-Final purchases and postings use Blizzard's protected checkout and confirmation controls. The sell queue never posts unattended. Full scans are manual and subject to the game's cooldown.
+This first version uses manual completion; activities are not automatically detected.
 
 ## Shared settings and appearance
 
-Open **Options → AddOns → Revath's Enchanted Frames** to access the suite overview and separate Mailbox, Macros, Tooltips, and Auction House pages.
+Open **Options → AddOns → Revath's Enchanted Frames** to access the suite overview and separate Mailbox, Macros, Tooltips, and Weekly Planner pages.
 
 - Current values appear immediately when a settings page opens.
 - Dropdown selectors provide clear skin, palette, and font choices.
@@ -74,7 +72,9 @@ The release ZIP contains one parent addon and four feature modules:
 - `RevathsMailbox` — Revath's Enchanted Mailbox.
 - `RevathsMacro` — Revath's Enchanted Macros.
 - `RevathsMailboxTooltipHelper` — Revath's Enchanted Tooltips.
-- `RevathsAuctionHouse` — Revath's Enchanted Auction House.
+- `RevathsWeeklyPlanner` — Revath's Enchanted Weekly Planner.
+
+The Auction House module is obsolete and excluded from releases. If it is installed from an older release, disable or remove its `RevathsAuctionHouse` folder when upgrading.
 
 The established technical folder IDs are retained so existing mailbox settings, macro preferences, and tracked tooltip data continue to load after upgrading to the combined suite.
 
