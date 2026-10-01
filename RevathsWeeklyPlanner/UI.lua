@@ -53,10 +53,13 @@ local function Style(surface)
     surface:SetBackdropColor(bg[1], bg[2], bg[3], classic and 1 or ns.db.opacity)
     surface:SetBackdropBorderColor(border[1], border[2], border[3], 1)
     if surface.kindButton then
-        surface:SetNormalTexture(classic and "Interface\\Buttons\\UI-Panel-Button-Up" or nil)
-        surface:SetPushedTexture(classic and "Interface\\Buttons\\UI-Panel-Button-Down" or nil)
-        surface:SetHighlightTexture(classic and "Interface\\Buttons\\UI-Panel-Button-Highlight" or nil)
         if classic then
+            surface:SetNormalTexture("Interface\\Buttons\\UI-Panel-Button-Up")
+            surface:SetPushedTexture("Interface\\Buttons\\UI-Panel-Button-Down")
+            surface:SetHighlightTexture("Interface\\Buttons\\UI-Panel-Button-Highlight")
+            surface:GetNormalTexture():SetAlpha(1)
+            surface:GetPushedTexture():SetAlpha(1)
+            surface:GetHighlightTexture():SetAlpha(1)
             surface:GetNormalTexture():SetTexCoord(0, .625, 0, .6875)
             surface:GetPushedTexture():SetTexCoord(0, .625, 0, .6875)
             surface:GetHighlightTexture():SetTexCoord(0, .625, 0, .6875)
@@ -64,6 +67,12 @@ local function Style(surface)
             surface:GetPushedTexture():SetVertexColor(.58,.09,.035)
             surface:GetHighlightTexture():SetVertexColor(1,.72,.18,.55)
             surface:SetBackdropColor(0,0,0,0); surface:SetBackdropBorderColor(0,0,0,0)
+        else
+            -- Button asset setters reject nil; hide existing Classic textures instead.
+            for _, state in ipairs({ "Normal", "Pushed", "Highlight" }) do
+                local texture = surface["Get" .. state .. "Texture"](surface)
+                if texture then texture:SetAlpha(0) end
+            end
         end
     end
 end

@@ -171,10 +171,14 @@ for _, name in ipairs({"SetJustifyH", "SetBackdrop", "SetBackdropColor", "SetBac
     "SetTextInsets", "SetJustifyV", "SetTexture", "SetColorTexture", "SetTexCoord", "SetVertexColor"}) do methods[name] = noop end
 function methods:CreateTexture() return object("Texture", nil, self) end
 for _, state in ipairs({"Normal", "Pushed", "Highlight"}) do
-    methods["Set" .. state .. "Texture"] = function(self, path) self[state .. "Texture"] = path and self:CreateTexture() or nil end
+    methods["Set" .. state .. "Texture"] = function(self, path)
+        assert(type(path) == "string" and path ~= "", "Button texture setters require an asset")
+        self[state .. "Texture"] = self[state .. "Texture"] or self:CreateTexture()
+    end
     methods["Get" .. state .. "Texture"] = function(self) return self[state .. "Texture"] end
 end
 function methods:CreateFontString() return object("FontString", nil, self) end
+function methods:SetAlpha(alpha) self.alpha = alpha end
 function methods:SetText(text) self.text = text end
 function methods:GetText() return self.text or "" end
 function methods:SetPoint(...) self.point = {...} end
@@ -276,6 +280,22 @@ assert(sawOfflineExplanation, "offline mailbox alt explains missing raid data")
 click("Me")
 click("Refresh raid data"); assert(ns.awaitingRaidInfo)
 click("Weekly goals"); assert(input:IsShown(), "return to checklist")
+ns.db.skin = "modern"; ns:ApplyAppearance()
+for _, f in ipairs(objects) do
+    if f.kindButton then
+        for _, state in ipairs({"Normal", "Pushed", "Highlight"}) do
+            assert(f[state .. "Texture"].alpha == 0, "Modern skin hides Classic button textures")
+        end
+    end
+end
+ns.db.skin = "classic"; ns:ApplyAppearance()
+for _, f in ipairs(objects) do
+    if f.kindButton then
+        for _, state in ipairs({"Normal", "Pushed", "Highlight"}) do
+            assert(f[state .. "Texture"].alpha == 1, "Classic textures return after switching skins")
+        end
+    end
+end
 ns.db.skin = "modern"; ns:ApplyAppearance()
 ns:Toggle(); assert(not RevathsWeeklyPlannerFrame:IsShown())
 print("Weekly Planner tests passed: persistence, per-alt goals, editing, filters, regional resets, offline catch-up, unavailable timing, undo, mailbox imports, raid snapshots, combat deferral, restricted data, expiration, and UI interactions.")

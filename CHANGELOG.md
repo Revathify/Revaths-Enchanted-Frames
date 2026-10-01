@@ -1,5 +1,11 @@
 # Changelog
 
+## Upcoming - Weekly Planner Modern skin fix
+
+- Fixed the planner failing to open in Modern skin because button texture setters rejected nil assets.
+- Hide Classic button textures in Modern skin and restore them when switching back to Classic.
+- Added stricter texture API mocks and regression checks for switching between both skins.
+
 ## Upcoming - Planner styling and raid lockouts
 
 - Added a draggable Weekly Planner minimap icon with saved position and click-to-toggle access.
