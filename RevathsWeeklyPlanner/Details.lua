@@ -55,5 +55,9 @@ function ns:GetGoalDetails(key, goalID)
     end
     if stamp then Add("Updated " .. date("%d %b, %H:%M", stamp)) end
     if key ~= self.currentKey then Add("Offline snapshot - log into this character to refresh.") end
+    if goal.automatic then
+        Add(goal.manualCompletion and "Completion set manually for this week." or "Completion follows live progress.")
+        Add("Click to check off; Shift-click to restore automatic completion.")
+    end
     return goal.title, lines
 end

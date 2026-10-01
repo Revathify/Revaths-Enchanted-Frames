@@ -1,5 +1,11 @@
 # Changelog
 
+## Upcoming - Clickable default weekly goals
+
+- Restored row and checkbox clicks for the four default goals, including offline alts.
+- Saved manual completion until weekly reset while continuing to show real boss, quest, dungeon and Vault progress.
+- Added Shift-click to restore automatic completion and described it in the goal tooltips.
+
 ## Upcoming - Weekly goal details and refreshed suite icons
 
 - Added hover details for season raid boss kills and difficulty, completed M+ runs, all active Great Vault slots and available reward item levels, and tracked weekly quest status/objectives.

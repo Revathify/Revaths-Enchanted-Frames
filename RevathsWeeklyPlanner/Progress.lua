@@ -201,7 +201,7 @@ function ns:GetDefaultGoals(character)
     local done, total = 0, 0
     for _, quest in pairs(snapshot.quests or {}) do total = total + 1; if quest.done then done = done + 1 end end
     local target = vault and vault.dungeonTarget > 0 and vault.dungeonTarget or nil
-    return {
+    local goals = {
         { id = "auto:raid", automatic = true, done = raid and raid.killed >= raid.total or false,
             title = "Kill season raid bosses - " .. (raid and string.format("%d/%d", raid.killed, raid.total) or "Waiting for raid data") },
         { id = "auto:dungeons", automatic = true, done = runs and target and runs.count >= target or false,
@@ -212,6 +212,11 @@ function ns:GetDefaultGoals(character)
             title = "Fill Great Vault slots - " .. (vault and string.format("%d/%d", vault.filled, vault.total)
                 or (snapshot.rewardPending and "Claim last week's reward to refresh" or "Waiting for Vault data")) },
     }
+    for _, goal in ipairs(goals) do
+        local override = character.weeklyOverrides and character.weeklyOverrides[goal.id]
+        if type(override) == "boolean" then goal.done, goal.manualCompletion = override, true end
+    end
+    return goals
 end
 
 local events = CreateFrame("Frame")

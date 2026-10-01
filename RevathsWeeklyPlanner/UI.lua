@@ -206,7 +206,7 @@ function ns:Refresh()
     characterTitle:SetText(character and SafeText(character.name .. " — " .. character.realm) or "Your weekly goals")
     local done, total = 0, 0
     if character then done, total = self:GetProgress(character) end
-    progressText:SetText(string.format("%d / %d complete · Default goals update automatically; right-click personal goals to edit", done, total))
+    progressText:SetText(string.format("%d / %d complete · Click goals to check off; right-click personal goals to edit", done, total))
     resetText:SetText(ResetCountdown())
     local accent = Accent()
     goalsTab.label:SetTextColor(view == "goals" and accent[1] or .56, view == "goals" and accent[2] or .62, view == "goals" and accent[3] or .70)
@@ -222,7 +222,7 @@ function ns:Refresh()
         row:SetShown(view == "goals" and goal ~= nil and index <= goalCapacity)
         if goal then
             row.check:SetChecked(goal.done == true)
-            row.check:SetEnabled(not goal.automatic)
+            row.check:SetEnabled(true)
             row.remove:SetShown(not goal.automatic)
             row.label:SetText(SafeText(goal.title))
             row.label:SetTextColor(goal.done and .45 or .95, goal.done and .78 or .96, goal.done and .60 or .98)
@@ -381,7 +381,14 @@ local function Build()
     for index = 1, 20 do
         local row = Button(frame, "", 470, 32, function(self, mouseButton)
             if type(self.goalID) == "string" then
-                Status("Default goals update automatically for the logged-in character."); return
+                if mouseButton == "RightButton" then
+                    Status("Click to check off this goal; Shift-click to restore automatic completion.")
+                else
+                    if IsShiftKeyDown and IsShiftKeyDown() then ns:ResetGoalOverride(selectedKey, self.goalID)
+                    else ns:ToggleGoal(selectedKey, self.goalID) end
+                    ns:Refresh()
+                end
+                return
             end
             if mouseButton == "RightButton" then
                 for _, goal in ipairs(ns:GetGoals(selectedKey)) do
@@ -396,7 +403,11 @@ local function Build()
         row:RegisterForClicks("LeftButtonUp", "RightButtonUp")
         row.check = CreateFrame("CheckButton", nil, row, "UICheckButtonTemplate")
         row.check:SetSize(26, 26); row.check:SetPoint("LEFT", 3, 0)
-        row.check:SetScript("OnClick", function() ns:ToggleGoal(selectedKey, row.goalID); ns:Refresh() end)
+        row.check:SetScript("OnClick", function()
+            if type(row.goalID) == "string" and IsShiftKeyDown and IsShiftKeyDown() then ns:ResetGoalOverride(selectedKey, row.goalID)
+            else ns:ToggleGoal(selectedKey, row.goalID) end
+            ns:Refresh()
+        end)
         row.label:ClearAllPoints(); row.label:SetPoint("LEFT", 35, 0); row.label:SetWidth(395); row.label:SetWordWrap(false)
         local remove = Button(row, "×", 24, 24, function()
             ns:RemoveGoal(selectedKey, row.goalID)
@@ -455,7 +466,7 @@ local function Build()
     local tip = Label(frame, 10, true); tip:SetPoint("BOTTOMLEFT", 18, 64); tip:SetWidth(192)
     tip:SetText("Mailbox characters included.\nScroll either list for more.")
     local manual = Label(frame, 10, true); manual:SetPoint("BOTTOMLEFT", 18, 26); manual:SetWidth(192)
-    manual:SetText("Default goals update automatically.\nPersonal goals: check off yourself.")
+    manual:SetText("Click any goal to check it off.\nShift-click defaults to use live progress.")
     statusText = Label(frame, 11, true); statusText:SetPoint("BOTTOMLEFT", 232, 12); statusText:SetWidth(470); statusText:SetWordWrap(false)
     statusText:SetText("Type a weekly goal above and press Enter.")
     appearancePanel = Surface(CreateFrame("Frame", nil, frame, "BackdropTemplate"), "panel")

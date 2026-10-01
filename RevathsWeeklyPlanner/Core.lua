@@ -39,6 +39,7 @@ function ns:InitializeDatabase()
                 end
             end
             character.goals = valid
+            character.weeklyOverrides = type(character.weeklyOverrides) == "table" and character.weeklyOverrides or nil
             character.nextID = math.max(tonumber(character.nextID) or 1, largestID + 1)
         end
     end
@@ -56,6 +57,7 @@ function ns:CheckWeeklyReset()
             if type(character.resetAt) == "number" and now >= character.resetAt then
                 for _, goal in ipairs(character.goals) do goal.done = false end
                 character.weekly = nil
+                character.weeklyOverrides = nil
             end
             character.resetAt = nextReset
         end
@@ -173,9 +175,24 @@ end
 function ns:ToggleGoal(key, id)
     self:CheckWeeklyReset()
     local character = self.db and self.db.characters[key]
+    if character and self.GetDefaultGoals then
+        for _, goal in ipairs(self:GetDefaultGoals(character)) do
+            if goal.id == id then
+                character.weeklyOverrides = character.weeklyOverrides or {}
+                character.weeklyOverrides[id] = not goal.done
+                return true
+            end
+        end
+    end
     for _, goal in ipairs(character and character.goals or {}) do
         if goal.id == id then goal.done = not goal.done; return true end
     end
+end
+
+function ns:ResetGoalOverride(key, id)
+    self:CheckWeeklyReset()
+    local character = self.db and self.db.characters[key]
+    if character and character.weeklyOverrides then character.weeklyOverrides[id] = nil end
 end
 
 function ns:RemoveGoal(key, id)

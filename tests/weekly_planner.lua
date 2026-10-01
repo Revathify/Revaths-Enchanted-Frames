@@ -335,13 +335,20 @@ assert(loadfile("RevathsWeeklyPlanner/Progress.lua"))("RevathsWeeklyPlanner",ns)
 RevathsEnchantedWeeklyPlanner_Open(); click("Me")
 local automaticTitle = ns:GetGoals(bob)[1].title
 local automaticRow = click(automaticTitle,"RightButton")
-assert(type(automaticRow.goalID)=="string" and automaticRow.check.enabled==false)
-assert(not automaticRow.remove:IsShown() and not input.focused, "automatic rows cannot be edited, checked off or removed")
+assert(type(automaticRow.goalID)=="string" and automaticRow.check.enabled==true)
+assert(not automaticRow.remove:IsShown() and not input.focused, "default titles cannot be edited or removed")
+automaticRow.scripts.OnClick(automaticRow,"LeftButton")
+assert(ns:GetGoals(bob)[1].done and automaticRow.check.checked, "click default goal row to complete")
+automaticRow.check.scripts.OnClick()
+assert(not ns:GetGoals(bob)[1].done, "click default checkbox to reopen")
 print("Automatic goal UI controls passed.")
 
 assert(loadfile("RevathsWeeklyPlanner/Details.lua"))("RevathsWeeklyPlanner",ns)
 local shiftDown = false
 IsShiftKeyDown = function() return shiftDown end
+shiftDown=true; automaticRow.scripts.OnClick(automaticRow,"LeftButton")
+assert(not ns:GetGoals(bob)[1].manualCompletion, "Shift-click restores automatic completion")
+shiftDown=false
 GameTooltip = {
     SetOwner = function(self, owner) self.owner=owner end,
     ClearLines = function(self) self.lines={} end,
