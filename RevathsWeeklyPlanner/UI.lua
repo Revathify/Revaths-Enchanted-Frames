@@ -5,6 +5,9 @@ local characterRows, goalRows, labels, surfaces = {}, {}, {}, {}
 local selectedKey, editID, characterOffset, goalOffset = nil, nil, 0, 0
 local view, raidOffset = "goals", 0
 local raidRows, goalControls = {}, {}
+local characterCapacity, goalCapacity = 7, 6
+local appearancePanel, modernButton, classicButton, opacitySlider, scaleSlider, opacityValue, scaleValue
+local refreshingAppearance = false
 local raidStatus, refreshRaids, headerGlow, headerLine, titlePlate, goalsTab, raidsTab
 local palettes = {
     midnight = { bg={.035,.047,.071}, panel={.065,.082,.115}, button={.09,.11,.15}, input={.025,.034,.052}, border={.18,.23,.31} },
@@ -50,7 +53,8 @@ local function Style(surface)
         edgeFile = classic and "Interface\\DialogFrame\\UI-DialogBox-Border" or "Interface\\Tooltips\\UI-Tooltip-Border",
         edgeSize = classic and (surface.role == "bg" and 32 or 22) or (surface.role == "bg" and 16 or 12),
         insets = { left = classic and 7 or 3, right = classic and 7 or 3, top = classic and 7 or 3, bottom = classic and 7 or 3 } })
-    surface:SetBackdropColor(bg[1], bg[2], bg[3], classic and 1 or ns.db.opacity)
+    local opacity = ns.db.opacity + (surface.role == "panel" and .02 or (surface.role == "bg" and 0 or .04))
+    surface:SetBackdropColor(bg[1], bg[2], bg[3], classic and 1 or math.min(1, opacity))
     surface:SetBackdropBorderColor(border[1], border[2], border[3], 1)
     if surface.kindButton then
         if classic then
@@ -119,6 +123,10 @@ function ns:ApplyAppearance()
     headerGlow:SetColorTexture(c[1], c[2], c[3], .12)
     headerLine:SetColorTexture(c[1], c[2], c[3], .45)
     titlePlate:SetShown(self.db.skin == "classic")
+    local border = self.db.skin == "classic" and {.58,.48,.30} or (palettes[self.db.palette] or palettes.midnight).border
+    for _, slider in ipairs({opacitySlider,scaleSlider}) do
+        slider.track:SetColorTexture(border[1],border[2],border[3],.8)
+    end
     for _, surface in ipairs(surfaces) do Style(surface) end
     local key = self.db.font
     local outline = key:find("Outline") and "OUTLINE" or ""
@@ -148,11 +156,11 @@ function ns:Refresh()
     if not visibleSelection and characters[1] then
         selectedKey = characters[1].key; goalOffset = 0; CancelEdit()
     end
-    characterOffset = math.max(0, math.min(characterOffset, #characters - #characterRows))
+    characterOffset = math.max(0, math.min(characterOffset, #characters - characterCapacity))
     for index, row in ipairs(characterRows) do
         local entry = characters[characterOffset + index]
         row.key = entry and entry.key
-        row:SetShown(entry ~= nil)
+        row:SetShown(entry ~= nil and index <= characterCapacity)
         if entry then
             local character = entry.character
             row.label:SetText((entry.key == selectedKey and "› " or "") .. SafeText(character.name))
@@ -182,11 +190,11 @@ function ns:Refresh()
     filter:SetChecked(self.db.unfinishedOnly)
     undoButton:SetShown(view == "goals" and self.removedGoal ~= nil)
     local goals = self:GetGoals(selectedKey)
-    goalOffset = math.max(0, math.min(goalOffset, #goals - #goalRows))
+    goalOffset = math.max(0, math.min(goalOffset, #goals - goalCapacity))
     for index, row in ipairs(goalRows) do
         local goal = goals[goalOffset + index]
         row.goalID = goal and goal.id
-        row:SetShown(view == "goals" and goal ~= nil)
+        row:SetShown(view == "goals" and goal ~= nil and index <= goalCapacity)
         if goal then
             row.check:SetChecked(goal.done == true)
             row.label:SetText(SafeText(goal.title))
@@ -197,15 +205,26 @@ function ns:Refresh()
     frame.empty:SetText(total == 0 and "What would you like to finish this week?\nAdd a goal below, or choose a starter goal."
         or "All goals complete for this character.\nTurn off Unfinished only to see or change them.")
     for _, control in ipairs(goalControls) do control:SetShown(view == "goals") end
+    appearancePanel:SetShown(view == "appearance")
+    if view == "appearance" then
+        characterTitle:SetText("Appearance")
+        progressText:SetText("Choose your skin and transparency; drag the corner to resize.")
+        refreshingAppearance = true
+        opacitySlider:SetValue(self.db.opacity); scaleSlider:SetValue(self.db.scale)
+        refreshingAppearance = false
+        local c = Accent()
+        modernButton.label:SetTextColor(self.db.skin == "modern" and c[1] or .56, self.db.skin == "modern" and c[2] or .62, self.db.skin == "modern" and c[3] or .70)
+        classicButton.label:SetTextColor(self.db.skin == "classic" and c[1] or .56, self.db.skin == "classic" and c[2] or .62, self.db.skin == "classic" and c[3] or .70)
+    end
     refreshRaids:SetShown(view == "raids")
     raidStatus:SetShown(view == "raids")
     if view == "raids" then
         progressText:SetText("Saved raid IDs and boss kills · Scroll for more")
         local entries = self:GetRaidEntries(selectedKey)
-        raidOffset = math.max(0, math.min(raidOffset, #entries - #raidRows))
+        raidOffset = math.max(0, math.min(raidOffset, #entries - goalCapacity))
         for index, row in ipairs(raidRows) do
             local entry = entries[raidOffset + index]
-            row:SetShown(entry ~= nil)
+            row:SetShown(entry ~= nil and index <= goalCapacity)
             if entry then
                 local c = Accent()
                 if entry.raid then
@@ -234,10 +253,31 @@ function ns:Refresh()
 
 end
 
+function ns:LayoutWindow()
+    if not frame or not input then return end
+    local width,height = frame:GetWidth(),frame:GetHeight()
+    local contentWidth = width-250
+    characterCapacity = math.min(#characterRows,math.floor((height-230)/38))
+    goalCapacity = math.min(#goalRows,math.floor((height-274)/36))
+    frame.rosterPanel:SetHeight(height-226)
+    frame.contentPanel:SetSize(contentWidth+8,height-268)
+    appearancePanel:SetSize(contentWidth+8,height-268)
+    for _,row in ipairs(goalRows) do row:SetWidth(contentWidth); row.label:SetWidth(contentWidth-75) end
+    for _,row in ipairs(raidRows) do row:SetWidth(contentWidth); row.label:SetWidth(contentWidth-18); row.meta:SetWidth(contentWidth-18) end
+    input:SetWidth(contentWidth-102)
+    characterTitle:SetWidth(contentWidth); progressText:SetWidth(contentWidth)
+    statusText:SetWidth(contentWidth-16); raidStatus:SetWidth(contentWidth)
+    frame.empty:SetWidth(contentWidth-40)
+    self.db.window.width,self.db.window.height = width,height
+    self:Refresh()
+end
+
 local function Build()
     if frame then return end
     frame = Surface(CreateFrame("Frame", "RevathsWeeklyPlannerFrame", UIParent, "BackdropTemplate"), "bg")
-    frame:SetSize(720, 500); frame:SetFrameStrata("DIALOG"); frame:SetClampedToScreen(true)
+    frame:SetResizable(true); frame:SetResizeBounds(720, 500, 1200, 900)
+    frame:SetSize(math.max(720, math.min(1200, tonumber(ns.db.window.width) or 720)),
+        math.max(500, math.min(900, tonumber(ns.db.window.height) or 500))); frame:SetFrameStrata("DIALOG"); frame:SetClampedToScreen(true)
     frame:EnableMouse(true); frame:SetMovable(true)
     local position = ns.db.window
     frame:SetPoint("CENTER", UIParent, "CENTER", tonumber(position.x) or 0, tonumber(position.y) or 0)
@@ -250,7 +290,7 @@ local function Build()
         local x, y = frame:GetCenter()
         local scale = UIParent:GetEffectiveScale() / frame:GetEffectiveScale()
         local parentX, parentY = UIParent:GetCenter()
-        ns.db.window = { x = x - parentX * scale, y = y - parentY * scale }
+        ns.db.window.x, ns.db.window.y = x - parentX * scale, y - parentY * scale
         frame:ClearAllPoints(); frame:SetPoint("CENTER", UIParent, "CENTER", ns.db.window.x, ns.db.window.y)
     end)
     headerGlow = frame:CreateTexture(nil, "BACKGROUND")
@@ -265,8 +305,10 @@ local function Build()
     headerLine:SetPoint("TOPLEFT", 18,-78); headerLine:SetPoint("TOPRIGHT", -18,-78); headerLine:SetHeight(2)
     local rosterPanel = Surface(CreateFrame("Frame", nil, frame, "BackdropTemplate"), "panel")
     rosterPanel:SetPoint("TOPLEFT", 14,-128); rosterPanel:SetSize(202,274)
+    frame.rosterPanel = rosterPanel
     local contentPanel = Surface(CreateFrame("Frame", nil, frame, "BackdropTemplate"), "panel")
     contentPanel:SetPoint("TOPLEFT", 228,-166); contentPanel:SetSize(478,232)
+    frame.contentPanel = contentPanel
     local function SetView(nextView)
         view = nextView; raidOffset = 0; CancelEdit(); Status(""); ns:Refresh()
         if nextView == "raids" then ns:RequestRaidRefresh() end
@@ -275,7 +317,7 @@ local function Build()
     raidsTab = Button(frame, "Raid lockouts", 112,26, function() SetView("raids") end); raidsTab:SetPoint("LEFT",goalsTab,"RIGHT",6,0)
     local close = Button(frame, "×", 28, 28, function() frame:Hide() end); close:SetPoint("TOPRIGHT", -12, -12)
     local settings = Button(frame, "Settings", 78, 28, function()
-        if SlashCmdList.REVATHSENCHANTEDFRAMES then SlashCmdList.REVATHSENCHANTEDFRAMES() end
+        SetView("appearance")
     end); settings:SetPoint("RIGHT", close, "LEFT", -6, 0)
     filter = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
     filter:SetPoint("TOPLEFT", 12, -54); filter:SetSize(26, 26)
@@ -293,7 +335,7 @@ local function Build()
     end); mine:SetPoint("TOPLEFT", 175, -92)
     characterTitle = Label(frame, 15); characterTitle:SetPoint("TOPLEFT", 232, -124); characterTitle:SetWidth(470)
     progressText = Label(frame, 10, true); progressText:SetPoint("TOPLEFT", 232, -148); progressText:SetWidth(470)
-    for index = 1, 7 do
+    for index = 1, 20 do
         local row = Button(frame, "", 194, 36, function(self)
             selectedKey = self.key; goalOffset, raidOffset = 0, 0; CancelEdit(); ns:Refresh()
         end)
@@ -309,7 +351,7 @@ local function Build()
         end)
         characterRows[index] = row
     end
-    for index = 1, 6 do
+    for index = 1, 20 do
         local row = Button(frame, "", 470, 32, function(self, mouseButton)
             if mouseButton == "RightButton" then
                 for _, goal in ipairs(ns:GetGoals(selectedKey)) do
@@ -335,7 +377,7 @@ local function Build()
         row:SetScript("OnMouseWheel", function(_, delta) goalOffset = math.max(0, goalOffset - delta); ns:Refresh() end)
         goalRows[index] = row
     end
-    for index = 1, 6 do
+    for index = 1, 20 do
         local row = Surface(CreateFrame("Frame", nil, frame, "BackdropTemplate"), "panel")
         row:SetSize(470,32); row:SetPoint("TOPLEFT",232,-174-(index-1)*36)
         row.label = Label(row,11); row.label:SetPoint("TOPLEFT",8,-3); row.label:SetWidth(452); row.label:SetWordWrap(false)
@@ -346,35 +388,85 @@ local function Build()
     end
     refreshRaids = Button(frame, "Refresh raid data", 140,26,function()
         ns:RequestRaidRefresh(); Status("Refreshing the logged-in character's raid information.")
-    end); refreshRaids:SetPoint("TOPLEFT",232,-404)
-    raidStatus = Label(frame,11,true); raidStatus:SetPoint("TOPLEFT",232,-442); raidStatus:SetWidth(470)
+    end); refreshRaids:SetPoint("BOTTOMLEFT",232,70)
+    raidStatus = Label(frame,11,true); raidStatus:SetPoint("BOTTOMLEFT",232,46); raidStatus:SetWidth(470)
     frame.empty = Label(contentPanel, 13, true); frame.empty:SetPoint("TOPLEFT", frame, "TOPLEFT", 245, -190); frame.empty:SetWidth(430)
     local starters = { {"Raid", "Finish my raid goal"}, {"Dungeons", "Finish my weekly dungeon goal"}, {"Professions", "Finish my profession weeklies"} }
     for index, starter in ipairs(starters) do
         local button = Button(frame, starter[1], 108, 26, function()
             local ok, message = ns:SaveGoal(selectedKey, starter[2])
             ns:Refresh(); Status(ok and "Starter goal added. Right-click it to make it your own." or message)
-        end); button:SetPoint("TOPLEFT", 232 + (index - 1) * 113, -404)
+        end); button:SetPoint("BOTTOMLEFT", 232 + (index - 1) * 113, 70)
         goalControls[#goalControls + 1] = button
     end
     undoButton = Button(frame, "Undo remove", 126, 26, function()
         local ok = ns:UndoRemove(); ns:Refresh(); Status(ok and "Goal restored." or "A goal with that name already exists.")
-    end); undoButton:SetPoint("TOPRIGHT", -18, -404)
+    end); undoButton:SetPoint("BOTTOMRIGHT", -18, 70)
     input = Surface(CreateFrame("EditBox", nil, frame, "BackdropTemplate"), "input")
-    input:SetSize(368, 28); input:SetPoint("TOPLEFT", 232, -438); input:SetAutoFocus(false)
+    input:SetSize(368, 28); input:SetPoint("BOTTOMLEFT", 232, 34); input:SetAutoFocus(false)
     input:SetMaxBytes(160); input:SetTextInsets(8, 8, 4, 4); input:SetTextColor(1, 1, 1)
     input:SetScript("OnEnterPressed", SaveGoal)
     input:SetScript("OnEscapePressed", function() CancelEdit(); Status("Editing cancelled.") end)
     addButton = Button(frame, "Add goal", 96, 28, SaveGoal); addButton:SetPoint("LEFT", input, "RIGHT", 6, 0)
     goalControls[#goalControls + 1] = input
     goalControls[#goalControls + 1] = addButton
-    local tip = Label(frame, 10, true); tip:SetPoint("TOPLEFT", 18, -412); tip:SetWidth(192)
+    local tip = Label(frame, 10, true); tip:SetPoint("BOTTOMLEFT", 18, 64); tip:SetWidth(192)
     tip:SetText("Mailbox characters included.\nScroll either list for more.")
-    local manual = Label(frame, 10, true); manual:SetPoint("TOPLEFT", 18, -450); manual:SetWidth(192)
+    local manual = Label(frame, 10, true); manual:SetPoint("BOTTOMLEFT", 18, 26); manual:SetWidth(192)
     manual:SetText("Goals: mark complete yourself.\nRaids: saved boss kills.")
     statusText = Label(frame, 11, true); statusText:SetPoint("BOTTOMLEFT", 232, 12); statusText:SetWidth(470); statusText:SetWordWrap(false)
     statusText:SetText("Type a weekly goal above and press Enter.")
-    frame:SetScript("OnHide", CancelEdit)
+    appearancePanel = Surface(CreateFrame("Frame", nil, frame, "BackdropTemplate"), "panel")
+    appearancePanel:SetPoint("TOPLEFT",228,-166); appearancePanel:SetSize(478,232)
+    modernButton = Button(appearancePanel,"Modern",130,32,function() ns.db.skin = "modern"; ns:ApplyAppearance() end)
+    modernButton:SetPoint("TOPLEFT",18,-18)
+    classicButton = Button(appearancePanel,"Classic",130,32,function() ns.db.skin = "classic"; ns:ApplyAppearance() end)
+    classicButton:SetPoint("LEFT",modernButton,"RIGHT",12,0)
+    local hint = Label(appearancePanel,11,true); hint:SetPoint("TOPLEFT",18,-59)
+    hint:SetText("Modern: palettes and transparency. Classic: old-WoW frames.")
+    local function Slider(label, y, minimum, maximum, getter, setter)
+        local caption = Label(appearancePanel,12,true); caption:SetPoint("TOPLEFT",18,y); caption:SetText(label)
+        local valueText = Label(appearancePanel,12); valueText:SetPoint("TOPLEFT",258,y)
+        local slider = CreateFrame("Slider",nil,appearancePanel)
+        slider:SetPoint("TOPLEFT",18,y-25); slider:SetSize(290,18)
+        slider:SetOrientation("HORIZONTAL"); slider:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+        slider:SetMinMaxValues(minimum,maximum); slider:SetValueStep(.05); slider:SetObeyStepOnDrag(true)
+        local track = slider:CreateTexture(nil,"BACKGROUND")
+        track:SetColorTexture(.18,.23,.31,.8); track:SetPoint("LEFT",2,0); track:SetPoint("RIGHT",-2,0); track:SetHeight(4)
+        slider.track = track
+        slider:SetScript("OnValueChanged",function(_,value)
+            valueText:SetText(string.format("%d%%",value*100))
+            if refreshingAppearance then return end
+            setter(math.max(minimum,math.min(maximum,value))); ns:ApplyAppearance()
+        end)
+        slider:SetValue(getter())
+        return slider,valueText
+    end
+    refreshingAppearance = true
+    opacitySlider,opacityValue = Slider("MODERN OPACITY",-93,.55,1,function() return ns.db.opacity end,function(v) ns.db.opacity=v end)
+    scaleSlider,scaleValue = Slider("WINDOW SCALE",-167,.65,1.10,function() return ns.db.scale end,function(v) ns.db.scale=v end)
+    refreshingAppearance = false
+    local more = Button(appearancePanel,"Palette / font",124,26,function()
+        if SlashCmdList.REVATHSENCHANTEDFRAMES then SlashCmdList.REVATHSENCHANTEDFRAMES() end
+    end); more:SetPoint("BOTTOMRIGHT",-18,18)
+    local resize = CreateFrame("Button",nil,frame)
+    resize:SetSize(18,18); resize:SetPoint("BOTTOMRIGHT",-5,5)
+    resize:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    resize:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    resize:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    resize:SetScript("OnMouseDown",function(_,button) if button == "LeftButton" then frame:StartSizing("BOTTOMRIGHT") end end)
+    local function StopResize()
+        frame:StopMovingOrSizing()
+        local x,y = frame:GetCenter()
+        local px,py = UIParent:GetCenter()
+        local scale = UIParent:GetEffectiveScale()/frame:GetEffectiveScale()
+        ns.db.window.x,ns.db.window.y = x-px*scale,y-py*scale
+        frame:ClearAllPoints(); frame:SetPoint("CENTER",UIParent,"CENTER",ns.db.window.x,ns.db.window.y)
+    end
+    resize:SetScript("OnMouseUp",StopResize)
+    frame:SetScript("OnSizeChanged",function() ns:LayoutWindow() end)
+    frame:SetScript("OnHide",function() frame:StopMovingOrSizing(); CancelEdit() end)
+    ns:LayoutWindow()
     frame:SetScript("OnShow", function() ns:ImportMailboxCharacters(); ns:CheckWeeklyReset(); ns:Refresh(); ns:RequestRaidRefresh() end)
     UISpecialFrames[#UISpecialFrames + 1] = "RevathsWeeklyPlannerFrame"
     frame:Hide(); ns:ApplyAppearance()

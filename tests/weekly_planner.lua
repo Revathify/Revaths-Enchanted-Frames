@@ -168,7 +168,7 @@ local function noop() end
 for _, name in ipairs({"SetJustifyH", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetFrameStrata",
     "SetClampedToScreen", "EnableMouse", "SetMovable", "RegisterForDrag", "StartMoving", "StopMovingOrSizing",
     "ClearAllPoints", "SetWordWrap", "RegisterForClicks", "EnableMouseWheel", "SetAutoFocus", "SetMaxBytes",
-    "SetTextInsets", "SetJustifyV", "SetTexture", "SetColorTexture", "SetTexCoord", "SetVertexColor"}) do methods[name] = noop end
+    "SetTextInsets", "SetJustifyV", "SetResizable", "SetResizeBounds", "StartSizing", "SetOrientation", "SetThumbTexture", "SetMinMaxValues", "SetValueStep", "SetObeyStepOnDrag", "SetTexture", "SetColorTexture", "SetTexCoord", "SetVertexColor"}) do methods[name] = noop end
 function methods:CreateTexture() return object("Texture", nil, self) end
 for _, state in ipairs({"Normal", "Pushed", "Highlight"}) do
     methods["Set" .. state .. "Texture"] = function(self, path)
@@ -184,7 +184,17 @@ function methods:GetText() return self.text or "" end
 function methods:SetPoint(...) self.point = {...} end
 function methods:SetHeight(height) self.height = height end
 function methods:SetWidth(width) self.width = width end
-function methods:SetSize(width, height) self.width, self.height = width, height end
+function methods:SetSize(width, height)
+    self.width, self.height = width, height
+    if self.scripts.OnSizeChanged then self.scripts.OnSizeChanged(self,width,height) end
+end
+function methods:GetWidth() return self.width end
+function methods:GetHeight() return self.height end
+function methods:SetValue(value)
+    local changed = self.value ~= value
+    self.value = value
+    if changed and self.scripts.OnValueChanged then self.scripts.OnValueChanged(self,value) end
+end
 function methods:SetScript(event, fn) self.scripts[event] = fn end
 function methods:SetScale(scale) self.scale = scale end
 function methods:GetEffectiveScale() return self.scale end
@@ -297,5 +307,24 @@ for _, f in ipairs(objects) do
     end
 end
 ns.db.skin = "modern"; ns:ApplyAppearance()
+local originalFontSize = input.fontSize
+RevathsWeeklyPlannerFrame:SetSize(960,700)
+assert(ns.db.window.width == 960 and ns.db.window.height == 700, "save dimensions")
+assert(input.width == 608 and input.fontSize == originalFontSize, "resize layout without scaling text")
+local visibleGoals = 0
+for _,f in ipairs(objects) do if f.goalID and visible(f) then visibleGoals = visibleGoals+1 end end
+assert(visibleGoals > 6, "taller window exposes more goal rows")
+click("Settings"); assert(not input:IsShown(), "in-window Appearance hides checklist editor")
+click("Classic"); assert(ns.db.skin == "classic")
+click("Modern"); assert(ns.db.skin == "modern")
+local opacitySlider
+for _,f in ipairs(objects) do
+    if f.kind == "Slider" and f.value == ns.db.opacity then opacitySlider=f; break end
+end
+assert(opacitySlider, "mailbox-style opacity slider exists")
+opacitySlider:SetValue(.55); assert(ns.db.opacity == .55, "opacity range matches mailbox")
+click("Weekly goals"); assert(input:IsShown())
+RevathsWeeklyPlannerFrame:SetSize(720,500)
+assert(input.width == 368 and ns.db.window.width == 720, "restore default dimensions")
 ns:Toggle(); assert(not RevathsWeeklyPlannerFrame:IsShown())
 print("Weekly Planner tests passed: persistence, per-alt goals, editing, filters, regional resets, offline catch-up, unavailable timing, undo, mailbox imports, raid snapshots, combat deferral, restricted data, expiration, and UI interactions.")

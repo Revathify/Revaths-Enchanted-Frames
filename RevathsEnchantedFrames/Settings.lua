@@ -72,8 +72,8 @@ local function EnsurePlannerSettings()
     settings.skin = settings.skin == "classic" and "classic" or "modern"
     settings.palette = type(settings.palette) == "string" and settings.palette or "midnight"
     settings.font = type(settings.font) == "string" and settings.font or "friz"
-    settings.opacity = math.max(0.60, math.min(1, tonumber(settings.opacity) or 0.96))
-    settings.scale = math.max(0.70, math.min(1.15, tonumber(settings.scale) or 1))
+    settings.opacity = math.max(0.55, math.min(1, tonumber(settings.opacity) or 0.96))
+    settings.scale = math.max(0.65, math.min(1.10, tonumber(settings.scale) or 1))
     return settings
 end
 
@@ -297,8 +297,8 @@ function ns:RegisterSettings()
     AddDropdown(plannerPanel, -96, "Skin", function() return SKINS end, function() return EnsurePlannerSettings().skin end, function(v) EnsurePlannerSettings().skin = v end, ApplyPlanner)
     AddDropdown(plannerPanel, -170, "Modern color palette", function() return PALETTES end, function() return EnsurePlannerSettings().palette end, function(v) EnsurePlannerSettings().palette = v end, ApplyPlanner)
     AddDropdown(plannerPanel, -244, "Font", FontOptions, function() return EnsurePlannerSettings().font end, function(v) EnsurePlannerSettings().font = v end, ApplyPlanner)
-    AddSlider(plannerPanel, -326, "Window opacity", 0.60, 1, 0.05, function() return EnsurePlannerSettings().opacity end, function(v) EnsurePlannerSettings().opacity = v end, ApplyPlanner, function(v) return string.format("%d%%", v * 100) end)
-    AddSlider(plannerPanel, -410, "Window scale", 0.70, 1.15, 0.05, function() return EnsurePlannerSettings().scale end, function(v) EnsurePlannerSettings().scale = v end, ApplyPlanner, function(v) return string.format("%d%%", v * 100) end)
+    AddSlider(plannerPanel, -326, "Modern opacity", 0.55, 1, 0.05, function() return EnsurePlannerSettings().opacity end, function(v) EnsurePlannerSettings().opacity = v end, ApplyPlanner, function(v) return string.format("%d%%", v * 100) end)
+    AddSlider(plannerPanel, -410, "Window scale", 0.65, 1.10, 0.05, function() return EnsurePlannerSettings().scale end, function(v) EnsurePlannerSettings().scale = v end, ApplyPlanner, function(v) return string.format("%d%%", v * 100) end)
     local openPlanner = CreateFrame("Button", nil, plannerPanel, "UIPanelButtonTemplate")
     openPlanner:SetPoint("TOPLEFT", 24, -484); openPlanner:SetSize(180, 30); openPlanner:SetText("Open Weekly Planner")
     openPlanner:SetScript("OnClick", function() if RevathsEnchantedWeeklyPlanner_Open then RevathsEnchantedWeeklyPlanner_Open() end end)

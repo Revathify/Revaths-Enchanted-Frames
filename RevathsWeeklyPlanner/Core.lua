@@ -21,8 +21,8 @@ function ns:InitializeDatabase()
     db.skin = db.skin == "classic" and "classic" or "modern"
     db.palette = type(db.palette) == "string" and db.palette or "midnight"
     db.font = type(db.font) == "string" and db.font or "friz"
-    db.opacity = math.max(.60, math.min(1, tonumber(db.opacity) or .96))
-    db.scale = math.max(.70, math.min(1.15, tonumber(db.scale) or 1))
+    db.opacity = math.max(.55, math.min(1, tonumber(db.opacity) or .96))
+    db.scale = math.max(.65, math.min(1.10, tonumber(db.scale) or 1))
     db.window = type(db.window) == "table" and db.window or {}
     db.unfinishedOnly = db.unfinishedOnly == true
     for key, character in pairs(db.characters) do

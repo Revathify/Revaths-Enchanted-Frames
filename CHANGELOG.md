@@ -1,5 +1,11 @@
 # Changelog
 
+## Upcoming - Resizable planner and appearance controls
+
+- Added a bottom-right resize handle, saved dimensions, and lists that expand with the window while keeping text size unchanged.
+- Added an in-window Appearance panel with mailbox-style Modern/Classic buttons and opacity/scale sliders.
+- Matched mailbox opacity and scale ranges and opacity differences between backgrounds, panels, inputs, and buttons.
+
 ## Upcoming - Weekly Planner Modern skin fix
 
 - Fixed the planner failing to open in Modern skin because button texture setters rejected nil assets.
