@@ -100,6 +100,9 @@ events:RegisterEvent("BAG_UPDATE_DELAYED")
 events:RegisterEvent("AUCTION_HOUSE_SHOW_ERROR")
 events:RegisterEvent("REPLICATE_ITEM_LIST_UPDATE")
 events:RegisterEvent("ITEM_SEARCH_RESULTS_UPDATED")
+events:RegisterEvent("ITEM_SEARCH_RESULTS_ADDED")
+events:RegisterEvent("AUCTION_MULTISELL_FAILURE")
+events:RegisterEvent("ITEM_DATA_LOAD_RESULT")
 events:RegisterEvent("COMMODITY_SEARCH_RESULTS_UPDATED")
 events:SetScript("OnEvent", function(_, event, loadedName)
     if event == "ADDON_LOADED" then
@@ -128,11 +131,13 @@ events:SetScript("OnEvent", function(_, event, loadedName)
         if ns.OnAuctionCreated then ns:OnAuctionCreated() end
     elseif event == "BAG_UPDATE_DELAYED" then
         if ns.RefreshSell then ns:RefreshSell() end
-    elseif event == "AUCTION_HOUSE_SHOW_ERROR" then
+    elseif event == "ITEM_DATA_LOAD_RESULT" then
+        if ns.OnItemDataLoaded then ns:OnItemDataLoaded(loadedName) end
+    elseif event == "AUCTION_HOUSE_SHOW_ERROR" or event == "AUCTION_MULTISELL_FAILURE" then
         if ns.OnAuctionError then ns:OnAuctionError(loadedName) end
     elseif event == "REPLICATE_ITEM_LIST_UPDATE" then
         if ns.OnReplicateListUpdate then ns:OnReplicateListUpdate() end
-    elseif event == "ITEM_SEARCH_RESULTS_UPDATED" or event == "COMMODITY_SEARCH_RESULTS_UPDATED" then
+    elseif event == "ITEM_SEARCH_RESULTS_UPDATED" or event == "ITEM_SEARCH_RESULTS_ADDED" or event == "COMMODITY_SEARCH_RESULTS_UPDATED" then
         if ns.OnSellPriceResults then ns:OnSellPriceResults(event, loadedName) end
     end
 end)

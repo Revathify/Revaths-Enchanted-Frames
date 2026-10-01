@@ -1,5 +1,12 @@
 # Changelog
 
+## Upcoming — Compact Auction House companion
+
+- Replaced the tall side panel with a 190-pixel-high Sell / Buy companion below Blizzard's AH tabs.
+- Added individual and bulk bag queues that prepare each stack at the lowest live price and advance after a confirmed native post.
+- Added item/link and quantity entry plus bulk tracked-recipe imports to the Buy queue; shared reagent requirements subtract inventory once, and repeat imports do not duplicate shortages.
+- Kept posting and purchase confirmation in Blizzard's window, with stop, removal, and queue-clearing controls.
+
 ## Upcoming — Sell companion usability
 
 - Included the reagent bag in sellable-item discovery and showed how many occupied slots were checked when nothing qualifies.

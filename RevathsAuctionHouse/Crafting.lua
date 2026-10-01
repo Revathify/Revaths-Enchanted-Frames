@@ -63,3 +63,24 @@ function ns:CycleReagentVariant(material)
     self.db.reagentChoices = self.db.reagentChoices or {}
     self.db.reagentChoices[material.slotKey] = material.variants[index % #material.variants + 1]
 end
+
+-- Sum shared reagents before subtracting inventory, so owned items are counted once.
+function ns:GetTrackedShoppingMaterials()
+    local materials, recipeCount = self:GetTrackedMaterials()
+    local totals = {}
+    for _, material in ipairs(materials) do
+        local item = totals[material.itemID]
+        if not item then
+            item = { itemID = material.itemID, name = material.name, required = 0, held = material.held }
+            totals[material.itemID] = item
+        end
+        item.required = item.required + material.required
+    end
+    local list = {}
+    for _, item in pairs(totals) do
+        item.missing = math.max(0, item.required - item.held)
+        list[#list + 1] = item
+    end
+    table.sort(list, function(a, b) return a.name < b.name end)
+    return list, recipeCount
+end

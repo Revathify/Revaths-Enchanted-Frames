@@ -1,6 +1,6 @@
 ## Interface: 120100
 ## Title: Revath's Enchanted Auction House
-## Notes: A docked companion for Blizzard's Auction House with sell queues, crafting materials, shopping lists, and prices.
+## Notes: A compact companion below Blizzard's Auction House with lowest-price sell queues and tracked-recipe buy lists.
 ## Author: Revath#2331 (Revathify)
 ## Version: 3.0.20
 ## Dependencies: RevathsEnchantedFrames
