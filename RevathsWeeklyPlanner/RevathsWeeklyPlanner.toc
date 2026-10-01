@@ -2,7 +2,7 @@
 ## Title: Revath's Enchanted Weekly Planner
 ## Notes: Personal weekly goals across characters with automatic weekly resets.
 ## Author: Revath#2331 (Revathify)
-## Version: 3.0.21
+## Version: 3.0.22
 ## Dependencies: RevathsEnchantedFrames
 ## OptionalDeps: LibSharedMedia-3.0
 ## SavedVariables: RevathsWeeklyPlannerDB
