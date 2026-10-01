@@ -7,8 +7,9 @@
 ## OptionalDeps: LibSharedMedia-3.0, RevathsMailbox
 ## SavedVariables: RevathsWeeklyPlannerDB
 ## Category: User Interface
-## IconTexture: Interface\Icons\INV_Misc_Note_01
+## IconTexture: Interface\AddOns\RevathsWeeklyPlanner\Media\PlannerIcon
 
 Core.lua
 Characters.lua
+Progress.lua
 UI.lua

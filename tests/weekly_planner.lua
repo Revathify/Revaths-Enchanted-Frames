@@ -168,7 +168,7 @@ local function noop() end
 for _, name in ipairs({"SetJustifyH", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetFrameStrata",
     "SetClampedToScreen", "EnableMouse", "SetMovable", "RegisterForDrag", "StartMoving", "StopMovingOrSizing",
     "ClearAllPoints", "SetWordWrap", "RegisterForClicks", "EnableMouseWheel", "SetAutoFocus", "SetMaxBytes",
-    "SetTextInsets", "SetJustifyV", "SetResizable", "SetResizeBounds", "StartSizing", "SetOrientation", "SetThumbTexture", "SetMinMaxValues", "SetValueStep", "SetObeyStepOnDrag", "SetTexture", "SetColorTexture", "SetTexCoord", "SetVertexColor"}) do methods[name] = noop end
+    "SetTextInsets", "SetJustifyV", "RegisterEvent", "SetResizable", "SetResizeBounds", "StartSizing", "SetOrientation", "SetThumbTexture", "SetMinMaxValues", "SetValueStep", "SetObeyStepOnDrag", "SetTexture", "SetColorTexture", "SetTexCoord", "SetVertexColor"}) do methods[name] = noop end
 function methods:CreateTexture() return object("Texture", nil, self) end
 for _, state in ipairs({"Normal", "Pushed", "Highlight"}) do
     methods["Set" .. state .. "Texture"] = function(self, path)
@@ -178,6 +178,7 @@ for _, state in ipairs({"Normal", "Pushed", "Highlight"}) do
     methods["Get" .. state .. "Texture"] = function(self) return self[state .. "Texture"] end
 end
 function methods:CreateFontString() return object("FontString", nil, self) end
+function methods:SetEnabled(enabled) self.enabled = enabled end
 function methods:SetAlpha(alpha) self.alpha = alpha end
 function methods:SetText(text) self.text = text end
 function methods:GetText() return self.text or "" end
@@ -328,3 +329,12 @@ RevathsWeeklyPlannerFrame:SetSize(720,500)
 assert(input.width == 368 and ns.db.window.width == 720, "restore default dimensions")
 ns:Toggle(); assert(not RevathsWeeklyPlannerFrame:IsShown())
 print("Weekly Planner tests passed: persistence, per-alt goals, editing, filters, regional resets, offline catch-up, unavailable timing, undo, mailbox imports, raid snapshots, combat deferral, restricted data, expiration, and UI interactions.")
+
+-- Exercise the automatic rows through the real UI handlers too.
+assert(loadfile("RevathsWeeklyPlanner/Progress.lua"))("RevathsWeeklyPlanner",ns)
+RevathsEnchantedWeeklyPlanner_Open(); click("Me")
+local automaticTitle = ns:GetGoals(bob)[1].title
+local automaticRow = click(automaticTitle,"RightButton")
+assert(type(automaticRow.goalID)=="string" and automaticRow.check.enabled==false)
+assert(not automaticRow.remove:IsShown() and not input.focused, "automatic rows cannot be edited, checked off or removed")
+print("Automatic goal UI controls passed.")

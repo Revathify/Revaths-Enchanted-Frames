@@ -53,7 +53,7 @@ Keep a personal weekly checklist for each character in one compact window.
 - Customize skin, palette, font, opacity, scale, and window position.
 - Open with `/rweekly` or `/rplanner`.
 
-Personal goals use manual completion. Raid lockouts and boss kills are collected automatically from Blizzard for the logged-in character; offline alts show their last saved snapshot.
+Default goals track season raid bosses, completed M+ dungeons, accepted weekly-tagged quests, and filled Great Vault slots automatically. Personal goals use manual completion. Offline alts show their last saved counters until reset. The planner has its own enchanted-book icon on the minimap and window header.
 
 ## Shared settings and appearance
 

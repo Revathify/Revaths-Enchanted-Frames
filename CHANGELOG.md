@@ -1,5 +1,13 @@
 # Changelog
 
+## Upcoming - Planner identity and automatic weekly goals
+
+- Added a dedicated enchanted-book icon for the planner minimap button, window header, and addon list.
+- New blank macros now use the automatic question-mark icon so #showtooltip can resolve spell icons.
+- Added automatic default goals for current-season raid bosses, completed M+ runs, tracked weekly quests, and Great Vault slots.
+- Used Blizzard counters and season encounter data, saved offline snapshots, protected automatic rows from manual edits, and expired progress at weekly reset.
+- Added regression coverage for default goal data, secret values, previous-week Vault rewards, and automatic row controls.
+
 ## Upcoming - Resizable planner and appearance controls
 
 - Added a bottom-right resize handle, saved dimensions, and lists that expand with the window while keeping text size unchanged.

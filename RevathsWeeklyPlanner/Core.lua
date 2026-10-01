@@ -55,6 +55,7 @@ function ns:CheckWeeklyReset()
         if character.region == Region() then
             if type(character.resetAt) == "number" and now >= character.resetAt then
                 for _, goal in ipairs(character.goals) do goal.done = false end
+                character.weekly = nil
             end
             character.resetAt = nextReset
         end
@@ -94,7 +95,11 @@ end
 function ns:GetProgress(character)
     local done = 0
     for _, goal in ipairs(character.goals) do if goal.done then done = done + 1 end end
-    return done, #character.goals
+    local total = #character.goals
+    if self.GetDefaultGoals then
+        for _, goal in ipairs(self:GetDefaultGoals(character)) do total = total + 1; if goal.done then done = done + 1 end end
+    end
+    return done, total
 end
 
 function ns:GetCharacters(includeRaids)
@@ -124,6 +129,11 @@ end
 function ns:GetGoals(key)
     local character = self.db and self.db.characters[key]
     local list = {}
+    if character and self.GetDefaultGoals then
+        for _, goal in ipairs(self:GetDefaultGoals(character)) do
+            if not self.db.unfinishedOnly or not goal.done then list[#list + 1] = goal end
+        end
+    end
     for _, goal in ipairs(character and character.goals or {}) do
         if not self.db.unfinishedOnly or not goal.done then list[#list + 1] = goal end
     end
@@ -207,6 +217,7 @@ events:SetScript("OnEvent", function(_, event, name)
         end
         C_Timer.NewTicker(60, function()
             ns:CheckWeeklyReset()
+            if ns.CaptureWeeklyProgress then ns:CaptureWeeklyProgress() end
             if ns.Refresh then ns:Refresh() end
         end)
     elseif event == "PLAYER_LOGIN" or event == "PLAYER_ENTERING_WORLD" then

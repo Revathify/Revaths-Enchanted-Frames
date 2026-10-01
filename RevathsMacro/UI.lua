@@ -459,7 +459,7 @@ end
 
 local function SetEditor(record)
     selectedRecord = record
-    selectedIcon = record and record.icon or "Interface\\Icons\\INV_Misc_Note_01"
+    selectedIcon = record and record.icon or 134400
     macroName:SetText(record and record.name or "")
     macroBody:SetText(record and record.body or "")
     iconPreview:SetTexture(selectedIcon)

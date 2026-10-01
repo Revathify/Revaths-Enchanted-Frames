@@ -182,7 +182,7 @@ function ns:Refresh()
     characterTitle:SetText(character and SafeText(character.name .. " — " .. character.realm) or "Your weekly goals")
     local done, total = 0, 0
     if character then done, total = self:GetProgress(character) end
-    progressText:SetText(string.format("%d / %d complete · Click to check off; right-click to edit", done, total))
+    progressText:SetText(string.format("%d / %d complete · Default goals update automatically; right-click personal goals to edit", done, total))
     resetText:SetText(ResetCountdown())
     local accent = Accent()
     goalsTab.label:SetTextColor(view == "goals" and accent[1] or .56, view == "goals" and accent[2] or .62, view == "goals" and accent[3] or .70)
@@ -197,6 +197,8 @@ function ns:Refresh()
         row:SetShown(view == "goals" and goal ~= nil and index <= goalCapacity)
         if goal then
             row.check:SetChecked(goal.done == true)
+            row.check:SetEnabled(not goal.automatic)
+            row.remove:SetShown(not goal.automatic)
             row.label:SetText(SafeText(goal.title))
             row.label:SetTextColor(goal.done and .45 or .95, goal.done and .78 or .96, goal.done and .60 or .98)
         end
@@ -298,7 +300,7 @@ local function Build()
     titlePlate = frame:CreateTexture(nil, "BORDER")
     titlePlate:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header"); titlePlate:SetSize(460, 84); titlePlate:SetPoint("TOP", 0, 14)
     local icon = frame:CreateTexture(nil, "ARTWORK")
-    icon:SetTexture("Interface\\Icons\\INV_Misc_Note_01"); icon:SetSize(40,40); icon:SetPoint("TOPLEFT", 20,-14)
+    icon:SetTexture("Interface\\AddOns\\RevathsWeeklyPlanner\\Media\\PlannerIcon"); icon:SetSize(40,40); icon:SetPoint("TOPLEFT", 20,-14)
     local title = Label(frame, 20); title:SetPoint("TOPLEFT", 76, -18); title:SetText("REVATH'S ENCHANTED PLANNER")
     local subtitle = Label(frame, 11, true); subtitle:SetPoint("TOPLEFT", 76,-44); subtitle:SetText("Weekly goals · Characters · Raid lockouts")
     headerLine = frame:CreateTexture(nil, "ARTWORK")
@@ -353,6 +355,9 @@ local function Build()
     end
     for index = 1, 20 do
         local row = Button(frame, "", 470, 32, function(self, mouseButton)
+            if type(self.goalID) == "string" then
+                Status("Default goals update automatically for the logged-in character."); return
+            end
             if mouseButton == "RightButton" then
                 for _, goal in ipairs(ns:GetGoals(selectedKey)) do
                     if goal.id == self.goalID then
@@ -373,6 +378,7 @@ local function Build()
             if editID == row.goalID then CancelEdit() end
             ns:Refresh(); Status("Goal removed. Use Undo remove to restore it.")
         end); remove:SetPoint("RIGHT", -3, 0)
+        row.remove = remove
         row:EnableMouseWheel(true)
         row:SetScript("OnMouseWheel", function(_, delta) goalOffset = math.max(0, goalOffset - delta); ns:Refresh() end)
         goalRows[index] = row
@@ -413,7 +419,7 @@ local function Build()
     local tip = Label(frame, 10, true); tip:SetPoint("BOTTOMLEFT", 18, 64); tip:SetWidth(192)
     tip:SetText("Mailbox characters included.\nScroll either list for more.")
     local manual = Label(frame, 10, true); manual:SetPoint("BOTTOMLEFT", 18, 26); manual:SetWidth(192)
-    manual:SetText("Goals: mark complete yourself.\nRaids: saved boss kills.")
+    manual:SetText("Default goals update automatically.\nPersonal goals: check off yourself.")
     statusText = Label(frame, 11, true); statusText:SetPoint("BOTTOMLEFT", 232, 12); statusText:SetWidth(470); statusText:SetWordWrap(false)
     statusText:SetText("Type a weekly goal above and press Enter.")
     appearancePanel = Surface(CreateFrame("Frame", nil, frame, "BackdropTemplate"), "panel")
@@ -467,7 +473,7 @@ local function Build()
     frame:SetScript("OnSizeChanged",function() ns:LayoutWindow() end)
     frame:SetScript("OnHide",function() frame:StopMovingOrSizing(); CancelEdit() end)
     ns:LayoutWindow()
-    frame:SetScript("OnShow", function() ns:ImportMailboxCharacters(); ns:CheckWeeklyReset(); ns:Refresh(); ns:RequestRaidRefresh() end)
+    frame:SetScript("OnShow", function() ns:ImportMailboxCharacters(); ns:CheckWeeklyReset(); ns:Refresh(); ns:RequestRaidRefresh(); if ns.CaptureWeeklyProgress then ns:CaptureWeeklyProgress() end end)
     UISpecialFrames[#UISpecialFrames + 1] = "RevathsWeeklyPlannerFrame"
     frame:Hide(); ns:ApplyAppearance()
 end
@@ -502,7 +508,7 @@ function ns:InitializeMinimap()
     button:RegisterForDrag("LeftButton")
     button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
     local icon = button:CreateTexture(nil, "BACKGROUND")
-    icon:SetTexture("Interface\\Icons\\INV_Misc_Note_01")
+    icon:SetTexture("Interface\\AddOns\\RevathsWeeklyPlanner\\Media\\PlannerIcon")
     icon:SetSize(20, 20); icon:SetPoint("CENTER")
     icon:SetTexCoord(.08, .92, .08, .92)
     local border = button:CreateTexture(nil, "OVERLAY")
