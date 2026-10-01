@@ -47,11 +47,13 @@ Keep a personal weekly checklist for each character in one compact window.
 - Mark goals complete yourself, edit their wording, and undo the last removal.
 - Filter to unfinished goals and characters to decide which alt to play next.
 - Keep goals across weeks while completion checks clear at Blizzard's regional weekly reset.
-- Manage logged-in characters' saved checklists without switching characters.
+- Import the character roster from Enchanted Mailbox and manage saved alt checklists.
+- View raid IDs, difficulty, killed bosses, and reset time in a dedicated Raid Lockouts tab.
+- Keep dated raid snapshots for offline alts; log into each character to refresh its raid details.
 - Customize skin, palette, font, opacity, scale, and window position.
 - Open with `/rweekly` or `/rplanner`.
 
-This first version uses manual completion; activities are not automatically detected.
+Personal goals use manual completion. Raid lockouts and boss kills are collected automatically from Blizzard for the logged-in character; offline alts show their last saved snapshot.
 
 ## Shared settings and appearance
 

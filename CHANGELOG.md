@@ -1,5 +1,14 @@
 # Changelog
 
+## Upcoming - Planner styling and raid lockouts
+
+- Added a draggable Weekly Planner minimap icon with saved position and click-to-toggle access.
+- Matched the suite's Modern palettes, branded header, differentiated panels, and Classic dialog/button textures.
+- Imported Enchanted Mailbox characters and preserved goals when imported alts log in.
+- Added a Raid Lockouts tab with saved raid IDs, difficulty, boss kill details, and individual reset timing.
+- Saved dated offline-alt snapshots, refreshed current-character raid data on login and successful encounters, and preserved cached information when data is unavailable.
+- Added roster, raid capture, combat deferral, expiration, restricted-data, and tab interaction regression checks.
+
 ## Upcoming — Enchanted Weekly Planner
 
 - Added a separate Weekly Planner module with personal weekly goals and progress for each logged-in character.

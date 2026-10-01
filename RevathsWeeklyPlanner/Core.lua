@@ -69,6 +69,15 @@ function ns:TrackCurrentCharacter()
     local guid = UnitGUID("player")
     local key = tostring(Region()) .. ":" .. (guid or (realm .. ":" .. name))
     local character = self.db.characters[key]
+    if not character and self.FindCharacter then
+        local previousKey
+        previousKey, character = self:FindCharacter(name, realm, Region())
+        if character then
+            self.db.characters[previousKey] = nil
+            self.db.characters[key] = character
+            if self.removedGoal and self.removedGoal.key == previousKey then self.removedGoal.key = key end
+        end
+    end
     if not character then
         character = { goals = {}, nextID = 1 }
         self.db.characters[key] = character
@@ -78,6 +87,7 @@ function ns:TrackCurrentCharacter()
     character.lastSeen = Now()
     self.currentKey = key
     self:CheckWeeklyReset()
+    if self.InitializeMinimap then self:InitializeMinimap() end
     if self.Refresh then self:Refresh() end
 end
 
@@ -87,12 +97,18 @@ function ns:GetProgress(character)
     return done, #character.goals
 end
 
-function ns:GetCharacters()
+function ns:GetCharacters(includeRaids)
     local list = {}
     if not self.db then return list end
     for key, character in pairs(self.db.characters) do
         local done, total = self:GetProgress(character)
-        if character.region == Region() and (not self.db.unfinishedOnly or total == 0 or done < total) then
+        local pendingRaid = false
+        if includeRaids then
+            for _, raid in ipairs(character.raids or {}) do
+                if raid.resetAt > Now() and raid.killed < #raid.bosses then pendingRaid = true end
+            end
+        end
+        if character.region == Region() and (not self.db.unfinishedOnly or total == 0 or done < total or pendingRaid) then
             list[#list + 1] = { key = key, character = character, done = done, total = total }
         end
     end
@@ -184,7 +200,11 @@ events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:SetScript("OnEvent", function(_, event, name)
     if event == "ADDON_LOADED" and name == addonName then
         ns:InitializeDatabase()
-        if IsLoggedIn and IsLoggedIn() then ns:TrackCurrentCharacter() end
+        if ns.ImportMailboxCharacters then ns:ImportMailboxCharacters() end
+        if IsLoggedIn and IsLoggedIn() then
+            ns:TrackCurrentCharacter()
+            if ns.RequestRaidRefresh then ns:RequestRaidRefresh() end
+        end
         C_Timer.NewTicker(60, function()
             ns:CheckWeeklyReset()
             if ns.Refresh then ns:Refresh() end

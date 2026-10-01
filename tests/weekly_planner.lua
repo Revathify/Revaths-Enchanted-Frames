@@ -76,6 +76,86 @@ ns:InitializeDatabase(); assert(ns.db == saved and ns.db.characters[bob].nextID 
 assert(ns:SaveGoal(bob, "Another goal"))
 assert(ns.db.characters[bob].goals[2].id == 3)
 
+-- Mailbox roster and authoritative raid snapshots.
+assert(loadfile("RevathsWeeklyPlanner/Characters.lua"))("RevathsWeeklyPlanner", ns)
+local raidEvents = eventFrame
+RevathsMailboxDB = { characters = {
+    bob = {name = "Bob", realm = "TestRealm", classFile = "MAGE", lastSeen = now},
+    alt = {name = "Cara", realm = "Test Realm", classFile = "PRIEST", lastSeen = now - 100},
+    foreign = {name = "FarAway", realm = "Test Realm", region = 1},
+} }
+ns:ImportMailboxCharacters()
+local importedKey, imported = ns:FindCharacter("Cara", "TestRealm", region)
+assert(imported and imported.class == "PRIEST", "import mailbox roster")
+assert(not ns:FindCharacter("FarAway", "Test Realm", region), "skip other region")
+local rosterCount = 0
+for _ in pairs(ns.db.characters) do rosterCount = rosterCount + 1 end
+ns:ImportMailboxCharacters()
+local newCount = 0
+for _ in pairs(ns.db.characters) do newCount = newCount + 1 end
+assert(newCount == rosterCount, "idempotent import and realm normalization")
+assert(ns:SaveGoal(importedKey, "Imported alt goal"))
+identity = "Cara"; ns:TrackCurrentCharacter()
+assert(ns.db.characters[importedKey] == nil and ns.db.characters[ns.currentKey] == imported, "promote imported identity to GUID")
+assert(imported.goals[1].title == "Imported alt goal", "promotion preserves goals")
+identity = "Bob"; ns:TrackCurrentCharacter()
+local requests, inCombat, unavailableRaid = 0, false, false
+RequestRaidInfo = function() requests = requests + 1 end
+InCombatLockdown = function() return inCombat end
+GetNumSavedInstances = function() if unavailableRaid then error("API unavailable") end; return 2 end
+GetSavedInstanceInfo = function(index)
+    return index == 1 and "Test Raid" or "Dungeon", 123456, 3600, 15, true, true, 0, index == 1, 20, "Heroic", 2, 1
+end
+GetSavedInstanceEncounterInfo = function(_, index) return "Boss " .. index, 1, index == 1 end
+ns:RequestRaidRefresh()
+assert(requests == 1 and not ns.db.characters[bob].raids, "wait for UPDATE_INSTANCE_INFO")
+raidEvents.handler(nil, "UPDATE_INSTANCE_INFO")
+local snapshot = ns.db.characters[bob].raids
+assert(#snapshot == 1 and snapshot[1].id == 123456 and snapshot[1].killed == 1, "capture raid IDs, exclude dungeons")
+assert(snapshot[1].bosses[1].killed and not snapshot[1].bosses[2].killed, "capture boss kill details")
+for _, goal in ipairs(ns.db.characters[bob].goals) do goal.done = true end
+ns.db.unfinishedOnly = true
+local foundPending = false
+for _, entry in ipairs(ns:GetCharacters(true)) do if entry.key == bob then foundPending = true end end
+assert(foundPending, "raid filter retains characters with unfinished bosses even when their goals are complete")
+for _, goal in ipairs(ns.db.characters[bob].goals) do goal.done = false end
+assert(ns.db.characters[bob].raidsUpdatedAt == now and #ns:GetRaidEntries(bob) == 2, "unfinished filter keeps pending bosses")
+ns.db.unfinishedOnly = false
+assert(#ns:GetRaidEntries(bob) == 3, "full view includes killed bosses")
+ns:RequestRaidRefresh(); unavailableRaid = true; ns:CaptureRaidInfo()
+assert(ns.db.characters[bob].raids == snapshot and ns.raidInfoUnavailable, "failed query preserves snapshot")
+unavailableRaid = false; inCombat = true; ns:CaptureRaidInfo()
+assert(ns.pendingRaidInfo, "defer reads in combat")
+inCombat = false; raidEvents.handler(nil, "PLAYER_REGEN_ENABLED")
+assert(not ns.pendingRaidInfo and not ns.raidInfoUnavailable)
+local previousSecret = issecretvalue
+issecretvalue = function(value) return value == 123456 end
+snapshot = ns.db.characters[bob].raids
+ns:RequestRaidRefresh(); ns:CaptureRaidInfo()
+assert(ns.db.characters[bob].raids == snapshot, "restricted values preserve snapshot")
+issecretvalue = previousSecret
+local raidExpiry = snapshot[1].resetAt
+now = raidExpiry + 1
+assert(#ns:GetRaidEntries(bob) == 0, "expired snapshots disappear even when extension was enabled")
+-- Extended lockouts use their own expiry, rather than the checklist weekly reset.
+snapshot[1].resetAt = now + 604800
+ns.db.characters[bob].resetAt = now - 1
+ns:CheckWeeklyReset()
+assert(#ns:GetRaidEntries(bob) == 3, "weekly checklist reset retains active extended raids")
+ns:RequestRaidRefresh(); ns:CaptureRaidInfo()
+GetNumSavedInstances = function() return 0 end
+ns:RequestRaidRefresh(); ns:CaptureRaidInfo()
+assert(#ns.db.characters[bob].raids == 0, "successful empty query clears previous lockouts")
+GetNumSavedInstances = function() return 2 end
+ns:RequestRaidRefresh(); ns:CaptureRaidInfo()
+C_Timer.After = function(_, fn) fn() end
+local previousRequests = requests
+raidEvents.handler(nil, "ENCOUNTER_END", 1, "Boss", 15, 20, 0)
+assert(requests == previousRequests, "failed encounter does not request a refresh")
+raidEvents.handler(nil, "ENCOUNTER_END", 1, "Boss", 15, 20, 1)
+assert(requests == previousRequests + 1, "successful encounter requests fresh raid data")
+date = os.date
+
 -- Frame mocks exercise the actual UI handlers, without pretending to be the live WoW client.
 local objects, methods = {}, {}
 local function object(kind, name, parent)
@@ -88,7 +168,12 @@ local function noop() end
 for _, name in ipairs({"SetJustifyH", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetFrameStrata",
     "SetClampedToScreen", "EnableMouse", "SetMovable", "RegisterForDrag", "StartMoving", "StopMovingOrSizing",
     "ClearAllPoints", "SetWordWrap", "RegisterForClicks", "EnableMouseWheel", "SetAutoFocus", "SetMaxBytes",
-    "SetTextInsets", "SetJustifyV"}) do methods[name] = noop end
+    "SetTextInsets", "SetJustifyV", "SetTexture", "SetColorTexture", "SetTexCoord", "SetVertexColor"}) do methods[name] = noop end
+function methods:CreateTexture() return object("Texture", nil, self) end
+for _, state in ipairs({"Normal", "Pushed", "Highlight"}) do
+    methods["Set" .. state .. "Texture"] = function(self, path) self[state .. "Texture"] = path and self:CreateTexture() or nil end
+    methods["Get" .. state .. "Texture"] = function(self) return self[state .. "Texture"] end
+end
 function methods:CreateFontString() return object("FontString", nil, self) end
 function methods:SetText(text) self.text = text end
 function methods:GetText() return self.text or "" end
@@ -171,5 +256,26 @@ for _, f in ipairs(objects) do
     if f.kind == "Button" and visible(f) and f.label and f.label.text == "Extra goal 12" then sawLast = true end
 end
 assert(sawLast, "long goal lists remain accessible by scrolling")
+click("Raid lockouts")
+assert(not input:IsShown(), "raid tab hides goal editor")
+local sawKilled, sawAvailable, sawID = false, false, false
+for _, f in ipairs(objects) do
+    if visible(f) and f.text then
+        sawKilled = sawKilled or f.text:find("%[Killed%]") ~= nil
+        sawAvailable = sawAvailable or f.text:find("%[Available%]") ~= nil
+        sawID = sawID or f.text:find("ID: 123456", 1, true) ~= nil
+    end
+end
+assert(sawKilled and sawAvailable and sawID, "raid UI displays killed bosses, available bosses and raid ID")
+click("Cara")
+local sawOfflineExplanation = false
+for _, f in ipairs(objects) do
+    if visible(f) and f.text and f.text:find("Log into this character", 1, true) then sawOfflineExplanation = true end
+end
+assert(sawOfflineExplanation, "offline mailbox alt explains missing raid data")
+click("Me")
+click("Refresh raid data"); assert(ns.awaitingRaidInfo)
+click("Weekly goals"); assert(input:IsShown(), "return to checklist")
+ns.db.skin = "modern"; ns:ApplyAppearance()
 ns:Toggle(); assert(not RevathsWeeklyPlannerFrame:IsShown())
-print("Weekly Planner tests passed: persistence, per-alt goals, editing, filters, regional resets, offline catch-up, unavailable timing, undo, and UI interactions.")
+print("Weekly Planner tests passed: persistence, per-alt goals, editing, filters, regional resets, offline catch-up, unavailable timing, undo, mailbox imports, raid snapshots, combat deferral, restricted data, expiration, and UI interactions.")

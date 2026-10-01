@@ -1,13 +1,14 @@
 ## Interface: 120100
 ## Title: Revath's Enchanted Weekly Planner
-## Notes: Personal weekly goals across characters with automatic weekly resets.
+## Notes: Weekly goals, mailbox character roster, and saved raid IDs with boss progress.
 ## Author: Revath#2331 (Revathify)
 ## Version: 3.0.22
 ## Dependencies: RevathsEnchantedFrames
-## OptionalDeps: LibSharedMedia-3.0
+## OptionalDeps: LibSharedMedia-3.0, RevathsMailbox
 ## SavedVariables: RevathsWeeklyPlannerDB
 ## Category: User Interface
 ## IconTexture: Interface\Icons\INV_Misc_Note_01
 
 Core.lua
+Characters.lua
 UI.lua

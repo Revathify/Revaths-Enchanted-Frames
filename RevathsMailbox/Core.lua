@@ -116,6 +116,8 @@ function ns:UpdateCharacter(preserveKnownMoney)
     entry.realm = GetRealmName()
     entry.realmKey = RealmKey()
     entry.classFile = classFile
+    entry.region = GetCurrentRegion and GetCurrentRegion() or 0
+    entry.guid = UnitGUID("player")
     entry.level = UnitLevel("player")
     entry.faction = UnitFactionGroup("player")
     local currentMoney = GetMoney and GetMoney()
