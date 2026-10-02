@@ -56,7 +56,7 @@ Select **Raid lockouts** to see saved raid IDs, difficulty, killed and available
 
 The planner now uses the same palette colours, panel styling, branded header, and Classic dialog/button textures as the mailbox and macro frames. Appearance preferences remain configurable on the Weekly Planner settings page.
 
-Crest icons, Owned amounts and Can still earn allowances appear in an information panel below the selected character's goals. They do not count as goals or completion targets. Hover a crest for full earning details and its update time. Offline alts show their own saved balances; log into that character to refresh expired allowances.
+The information panel below the selected character's goals has **Crests** and **Other resources** tabs with currency icons, **Owned** amounts and **Can still earn** allowances. Other resources includes Voidlight Marl, Undercoin, Coffer Keys/shards, Field Accolades, Unalloyed Abundance, Resonance Crystals and additional Midnight resources. Scroll within the panel for more currencies; switching characters resets its scroll position and keeps your selected tab. They do not count as goals or completion targets. Hover a crest for full earning details and its update time. Offline alts show their own saved balances; log into that character to refresh expired allowances.
 
 ## Compatibility
 

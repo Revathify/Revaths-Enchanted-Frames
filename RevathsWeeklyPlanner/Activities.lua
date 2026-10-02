@@ -16,6 +16,12 @@ local function Icon(value)
     end)
 end
 
+local crestIDs = {3442,3443,3444,3445,3446}
+-- Verified currency identifiers; labels/icons and allowances always come from Blizzard.
+local resourceIDs = {3316,2803,3028,3310,3405,3377,2815,3376,3379,3385,3392,3400,3373,3393,3319,3448,3546}
+local captureIDs = {}
+for _, ids in ipairs({crestIDs,resourceIDs}) do for _, id in ipairs(ids) do captureIDs[#captureIDs+1]=id end end
+
 local function Currency(id)
     if not C_CurrencyInfo or not C_CurrencyInfo.GetCurrencyInfo then return end
     return Read(function()
@@ -34,7 +40,7 @@ function ns:CaptureActivities(character, snapshot)
     character.resources=character.resources or {}
     snapshot.currencies=snapshot.currencies or {}
     -- Balances persist across resets; earned/limit snapshots expire with this week's progress.
-    for _, id in ipairs({3028,3310,3442,3443,3444,3445,3446}) do
+    for _, id in ipairs(captureIDs) do
         local currency=Currency(id)
         if currency then
             snapshot.currencies[id]=currency
@@ -105,11 +111,11 @@ local function CurrencyLines(currency)
 end
 
 -- Informational balances belong to the selected character, never the goal checklist.
-function ns:GetCrestInfo(character)
+local function CurrencyRows(self, character, ids)
     local rows = {}
     local currencies = character and character.weekly and character.weekly.currencies or {}
     local balances = character and character.resources or {}
-    for id = 3442, 3446 do
+    for _, id in ipairs(ids) do
         local currency, balance = currencies[id], balances[id]
         if currency then
             local earned, cap, kind = Allowance(currency)
@@ -129,6 +135,9 @@ function ns:GetCrestInfo(character)
     end
     return rows
 end
+
+function ns:GetCrestInfo(character) return CurrencyRows(self, character, crestIDs) end
+function ns:GetResourceInfo(character) return CurrencyRows(self, character, resourceIDs) end
 
 function ns:GetAdditionalGoals(character)
     local snapshot,goals=character.weekly or {},{}

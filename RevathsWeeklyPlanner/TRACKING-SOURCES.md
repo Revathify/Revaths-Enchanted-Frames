@@ -10,6 +10,10 @@ Verified 2 October 2026. Implemented independently; referenced addon data is use
 - Midnight Coffer Key Shards: [3310](https://www.wowhead.com/currency=3310/coffer-key-shards). The client supplies the earning cap; the implementation does not hardcode 600 or infer earned keys from key inventory changes.
 - Midnight Season 2 Mistcrests: 3442 Adventurer, 3443 Veteran, 3444 Champion, [3445 Hero](https://www.wowhead.com/currency=3445/hero-mistcrest), [3446 Myth](https://www.wowhead.com/currency=3446/myth-mistcrest). Retired currencies are excluded via isTypeUnused. This catalog is season-specific and must be reviewed for the next season.
 
+## Additional resource currencies
+
+The resource ID catalogue was checked against [SavedInstances' authored Currency.lua catalogue](https://github.com/SavedInstances/SavedInstances/blob/master/SavedInstances/Modules/Currency.lua): Voidlight Marl 3316, Undercoin 2803, Field Accolade 3405, Unalloyed Abundance 3377, Resonance Crystals 2815, Shard of Dundun 3376, Brimming Arcana 3379, Luminous Dust 3385, Remnant of Anguish 3392, Uncontaminated Void Sample 3400, Angler Pearls 3373, Illusionary Coin 3393, Twilight's Blade Insignia 3319, Corrosive Coin 3448 and Coiled Filament 3546. The Other resources tab also shows Coffer Keys 3028 and shards 3310. Labels, icons, balances and earning limits are read from Blizzard; unavailable/retired currencies are excluded instead of assigned invented balances. Saved balances persist across weekly resets; earning snapshots require refreshing by logging into the character. Resources do not create new checklist goals. Long lists scroll within the information panel.
+
 ## Profession sources
 
 [WeeklyKnowledge's authored game data](https://github.com/DennisRas/WeeklyKnowledge/tree/main/Data/Objectives) identifies Midnight weekly quests, treatise usage flags, weekly treasure flags, and gathering/disenchanting flags. [Skill-line definitions](https://github.com/DennisRas/WeeklyKnowledge/blob/main/Data/SkillLineVariants.lua) map expansion skill lines to primary professions. These are factual quest/skill identifiers; our checklist and snapshot implementation is original.

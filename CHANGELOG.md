@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.4.0 - Tabbed character currencies
+
+- Added Crests and Other resources tabs below the selected character's goals, remembering the selected tab.
+- Added Voidlight Marl, Undercoin, Coffer Keys/shards, Field Accolades, Unalloyed Abundance, Resonance Crystals and other verified Midnight resources with currency icons and saved balances.
+- Added independent resource scrolling, per-alt selection, hover details and safe offline/reset snapshots.
+- Kept resource information outside goal completion totals and adapted the panel height to smaller windows.
+
 ## 4.3.0 - Clearer crest information
 
 - Added Blizzard currency icons, saved with balances for offline alts.

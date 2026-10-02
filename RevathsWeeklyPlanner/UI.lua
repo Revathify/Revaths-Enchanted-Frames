@@ -7,7 +7,8 @@ local view, raidOffset = "goals", 0
 local raidRows, goalControls = {}, {}
 local characterCapacity, goalCapacity = 7, 6
 local appearancePanel, modernButton, classicButton, opacitySlider, scaleSlider, opacityValue, scaleValue
-local crestPanel, crestRows, crestHint
+local crestPanel, crestRows, crestHint, crestTab, resourceTab, currencyHeader, resourceFooter
+local resourceOffset = 0
 local refreshingAppearance = false
 local raidStatus, refreshRaids, headerGlow, headerLine, titlePlate, goalsTab, raidsTab
 local palettes = {
@@ -180,7 +181,7 @@ function ns:Refresh()
     local visibleSelection = false
     for _, entry in ipairs(characters) do if entry.key == selectedKey then visibleSelection = true end end
     if not visibleSelection and characters[1] then
-        selectedKey = characters[1].key; goalOffset = 0; CancelEdit()
+        selectedKey = characters[1].key; goalOffset, resourceOffset = 0, 0; CancelEdit()
     end
     characterOffset = math.max(0, math.min(characterOffset, #characters - characterCapacity))
     for index, row in ipairs(characterRows) do
@@ -215,15 +216,25 @@ function ns:Refresh()
     raidsTab.label:SetTextColor(view == "raids" and accent[1] or .56, view == "raids" and accent[2] or .62, view == "raids" and accent[3] or .70)
     filter:SetChecked(self.db.unfinishedOnly)
     undoButton:SetShown(view == "goals" and self.removedGoal ~= nil)
-    local crests = self.GetCrestInfo and self:GetCrestInfo(character) or {}
-    local crestHeight = view == "goals" and self.GetCrestInfo and (50 + math.max(1, #crests) * 24) or 0
+    local otherResources = self.db.resourceTab == "resources"
+    local crests = otherResources and self.GetResourceInfo and self:GetResourceInfo(character)
+        or (self.GetCrestInfo and self:GetCrestInfo(character) or {})
+    local capacity = math.max(1, math.min(#crestRows, math.floor((frame:GetHeight()-268-6-42-70)/24)))
+    resourceOffset = math.max(0, math.min(resourceOffset, #crests-capacity))
+    local crestHeight = view == "goals" and self.GetCrestInfo and (70 + math.max(1, math.min(capacity,#crests)) * 24) or 0
+    currencyHeader:SetText(otherResources and "RESOURCE" or "CREST")
+    local c = Accent()
+    crestTab.label:SetTextColor(not otherResources and c[1] or .56, not otherResources and c[2] or .62, not otherResources and c[3] or .70)
+    resourceTab.label:SetTextColor(otherResources and c[1] or .56, otherResources and c[2] or .62, otherResources and c[3] or .70)
+    resourceFooter:SetText(#crests>capacity and string.format("%d–%d of %d · Scroll for more", resourceOffset+1, math.min(#crests,resourceOffset+capacity),#crests) or "Hover for details and update time")
+    resourceFooter:SetShown(#crests>0)
     crestPanel:SetShown(crestHeight > 0)
     crestPanel:SetHeight(math.max(1, crestHeight))
     crestPanel:SetWidth(frame:GetWidth() - 242)
     frame.contentPanel:SetHeight(frame:GetHeight() - 268 - (crestHeight > 0 and crestHeight + 6 or 0))
     goalCapacity = math.max(1, math.min(#goalRows, math.floor((frame.contentPanel:GetHeight() - 6) / 36)))
     for index, row in ipairs(crestRows) do
-        local entry = crests[index]
+        local entry = index<=capacity and crests[resourceOffset+index] or nil
         row.entry = entry
         row:SetShown(entry ~= nil)
         row.label:SetText(entry and SafeText(entry.name) or "")
@@ -238,7 +249,7 @@ function ns:Refresh()
     end
     crestHint:SetWidth(frame:GetWidth() - 262)
     crestHint:SetShown(#crests == 0)
-    crestHint:SetText("Log into this character to collect crest balances and allowances.")
+    crestHint:SetText(otherResources and "Log into this character to collect resource balances." or "Log into this character to collect crest balances and allowances.")
     local goals = self:GetGoals(selectedKey, view == "visibility")
     goalOffset = math.max(0, math.min(goalOffset, #goals - goalCapacity))
     for index, row in ipairs(goalRows) do
@@ -368,21 +379,35 @@ local function Build()
     frame.contentPanel = contentPanel
     crestPanel = Surface(CreateFrame("Frame", nil, frame, "BackdropTemplate"), "panel")
     crestPanel:SetPoint("BOTTOMLEFT", 228, 102)
-    local crestTitle = Label(crestPanel, 12)
-    crestTitle:SetPoint("TOPLEFT", 10, -8); crestTitle:SetText("Your crests")
-    local typeHeader = Label(crestPanel, 9, true); typeHeader:SetPoint("TOPLEFT", 36, -29); typeHeader:SetText("CREST")
-    local ownedHeader = Label(crestPanel, 9, true); ownedHeader:SetPoint("TOPLEFT", 186, -29); ownedHeader:SetWidth(52); ownedHeader:SetJustifyH("RIGHT"); ownedHeader:SetText("OWNED")
-    local allowanceHeader = Label(crestPanel, 9, true); allowanceHeader:SetPoint("TOPLEFT", 258, -29); allowanceHeader:SetText("CAN STILL EARN")
+    local function SelectResources(tab)
+        ns.db.resourceTab = tab; resourceOffset = 0
+        if GameTooltip then GameTooltip:Hide() end
+        ns:Refresh()
+    end
+    crestTab = Button(crestPanel, "Crests", 86,24,function() SelectResources("crests") end)
+    crestTab:SetPoint("TOPLEFT", 10,-8)
+    resourceTab = Button(crestPanel, "Other resources", 126,24,function() SelectResources("resources") end)
+    resourceTab:SetPoint("LEFT",crestTab,"RIGHT",6,0)
+    currencyHeader = Label(crestPanel, 9, true); currencyHeader:SetPoint("TOPLEFT", 36, -41)
+    resourceFooter = Label(crestPanel, 9, true); resourceFooter:SetPoint("BOTTOMLEFT",10,5)
+    local function ScrollResources(_, delta)
+        if GameTooltip then GameTooltip:Hide() end
+        resourceOffset = math.max(0, resourceOffset-delta); ns:Refresh()
+    end
+    crestPanel:EnableMouseWheel(true); crestPanel:SetScript("OnMouseWheel",ScrollResources)
+    local ownedHeader = Label(crestPanel, 9, true); ownedHeader:SetPoint("TOPLEFT", 186, -41); ownedHeader:SetWidth(52); ownedHeader:SetJustifyH("RIGHT"); ownedHeader:SetText("OWNED")
+    local allowanceHeader = Label(crestPanel, 9, true); allowanceHeader:SetPoint("TOPLEFT", 258, -41); allowanceHeader:SetText("CAN STILL EARN")
     for index = 1, 5 do
         local row = CreateFrame("Frame", nil, crestPanel)
-        row:SetPoint("TOPLEFT", 10, -44 - (index-1)*24)
-        row:SetPoint("TOPRIGHT", -10, -44 - (index-1)*24); row:SetHeight(24)
+        row:SetPoint("TOPLEFT", 10, -56 - (index-1)*24)
+        row:SetPoint("TOPRIGHT", -10, -56 - (index-1)*24); row:SetHeight(24)
         row.icon = row:CreateTexture(nil, "ARTWORK"); row.icon:SetSize(18,18); row.icon:SetPoint("LEFT", 0, 0)
         row.icon:SetTexCoord(.07, .93, .07, .93)
         row.label = Label(row, 11); row.label:SetPoint("LEFT", 26, 0); row.label:SetWidth(145); row.label:SetWordWrap(false)
         row.owned = Label(row, 12); row.owned:SetPoint("LEFT", 176, 0); row.owned:SetWidth(52); row.owned:SetJustifyH("RIGHT"); row.owned:SetWordWrap(false)
         row.value = Label(row, 10); row.value:SetPoint("LEFT", 248, 0); row.value:SetPoint("RIGHT", -2, 0); row.value:SetJustifyH("LEFT"); row.value:SetWordWrap(false)
         row:EnableMouse(true)
+        row:EnableMouseWheel(true); row:SetScript("OnMouseWheel",ScrollResources)
         row:SetScript("OnEnter", function(self)
             if not self.entry or not GameTooltip then return end
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:ClearLines()
@@ -395,7 +420,7 @@ local function Build()
         row:SetScript("OnHide", function() if GameTooltip then GameTooltip:Hide() end end)
         crestRows = crestRows or {}; crestRows[index] = row
     end
-    crestHint = Label(crestPanel, 11, true); crestHint:SetPoint("TOPLEFT", 10, -47)
+    crestHint = Label(crestPanel, 11, true); crestHint:SetPoint("TOPLEFT", 10, -58)
     local function SetView(nextView)
         view = nextView; raidOffset = 0; goalOffset = 0; CancelEdit(); Status(""); ns:Refresh()
         if nextView == "raids" then ns:RequestRaidRefresh() end
@@ -418,7 +443,7 @@ local function Build()
     resetText = Label(frame, 12, true); resetText:SetPoint("TOPRIGHT", -18, -63)
     local rosterTitle = Label(frame, 13); rosterTitle:SetPoint("TOPLEFT", 18, -99); rosterTitle:SetText("CHARACTERS")
     local mine = Button(frame, "Me", 36, 24, function()
-        selectedKey = ns.currentKey; goalOffset = 0; CancelEdit()
+        selectedKey = ns.currentKey; goalOffset, resourceOffset = 0, 0; CancelEdit()
         -- Explicitly selecting a finished character makes its goals visible.
         ns.db.unfinishedOnly = false; ns:Refresh()
     end); mine:SetPoint("TOPLEFT", 175, -92)
@@ -426,7 +451,7 @@ local function Build()
     progressText = Label(frame, 10, true); progressText:SetPoint("TOPLEFT", 232, -148); progressText:SetWidth(470)
     for index = 1, 20 do
         local row = Button(frame, "", 194, 36, function(self)
-            selectedKey = self.key; goalOffset, raidOffset = 0, 0; CancelEdit(); ns:Refresh()
+            selectedKey = self.key; goalOffset, raidOffset, resourceOffset = 0, 0, 0; CancelEdit(); ns:Refresh()
         end)
         row:SetPoint("TOPLEFT", 18, -134 - (index - 1) * 38)
         row.label:ClearAllPoints(); row.label:SetPoint("TOPLEFT", 7, -5); row.label:SetWidth(116)

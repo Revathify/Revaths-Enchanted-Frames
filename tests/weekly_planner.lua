@@ -420,3 +420,31 @@ click("Weekly goals")
 RevathsWeeklyPlannerFrame:SetSize(1200,900)
 assert(visible(crestRow) and RevathsWeeklyPlannerFrame.contentPanel.height>400, "resizing retains room for goals and crest information")
 print("Crest info UI passed: per-alt selection, saved balance details, separate noninteractive rows, tab visibility and resize layout.")
+
+-- Tabbed resources share the selected character but scroll independently of goals.
+local ids={3316,2803,3028,3310,3405,3377,2815,3376}
+for index,id in ipairs(ids) do ns.db.characters[bob].resources[id]={name="Resource "..id,quantity=index*100,icon=1000+id,capturedAt=now} end
+imported.resources[3316]={name="Alt Voidlight Marl",quantity=321,icon=654321,capturedAt=now}
+click("Me"); click("Other resources")
+assert(ns.db.resourceTab=="resources", "selected information tab is saved")
+local firstResource
+for _,f in ipairs(objects) do if f.entry and f.entry.name=="Resource 3316" and visible(f) then firstResource=f end end
+assert(firstResource and firstResource.owned.text=="100", "resource tab shows the selected character's balance")
+firstResource.scripts.OnMouseWheel(nil,-50)
+local sawLast=false
+for _,f in ipairs(objects) do if f.entry and f.entry.name=="Resource 3376" and visible(f) then sawLast=true end end
+assert(sawLast, "resources beyond the visible rows remain reachable")
+click("Cara")
+local altResource
+for _,f in ipairs(objects) do if f.entry and f.entry.name=="Alt Voidlight Marl" and visible(f) then altResource=f end end
+assert(altResource and altResource.owned.text=="321" and ns.db.resourceTab=="resources", "alt selection resets scrolling and preserves the tab")
+click("Crests")
+assert(ns.db.resourceTab=="crests" and crestRow.entry.quantity==77, "switching back restores the alt's crests")
+click("Me"); click("Other resources"); ns:InitializeDatabase()
+assert(ns.db.resourceTab=="resources", "resource tab survives database reload")
+RevathsWeeklyPlannerFrame:SetSize(720,500)
+local displayed=0
+for _,f in ipairs(objects) do if f.goalID and visible(f) then displayed=displayed+1 end end
+assert(displayed*36+6<=RevathsWeeklyPlannerFrame.contentPanel.height, "tabbed resource panel leaves space for goals at minimum size")
+click("Raid lockouts"); assert(not visible(firstResource), "raid view hides the resource panel")
+print("Tabbed currency UI passed: per-alt balances, tab persistence, independent scrolling, small-window layout and tab visibility.")

@@ -44,6 +44,10 @@ Currency(3310,"Coffer Key Shards",50,450,600,0,0,true,false)
 Currency(3445,"Hero Mistcrest",20,0,0,1000,650,false,true)
 Currency(3442,"Adventurer Mistcrest",9,0,0,0,0,false,false)
 currencies[3445].iconFileID=123456
+Currency(3316,"Voidlight Marl",12500,0,0,0,0,false,false)
+Currency(2803,"Undercoin",0,0,0,0,0,false,false)
+Currency(3405,"Field Accolade",30,200,900,0,0,true,false)
+currencies[3316].iconFileID=654321
 local failCurrency=false
 local secretValue={}
 issecretvalue=function(value) return value==secretValue end
@@ -65,6 +69,12 @@ local function CrestDetails()
     end
     return table.concat(lines,"\n")
 end
+local resources=ns:GetResourceInfo(character)
+assert(resources[1].name=="Voidlight Marl" and resources[1].quantity==12500 and resources[1].icon==654321)
+assert(resources[2].name=="Undercoin" and resources[2].quantity==0, "zero is a known balance, not missing data")
+local field
+for _,row in ipairs(resources) do if row.name=="Field Accolade" then field=row end end
+assert(field.allowance=="700 more this week", "resource allowances follow Blizzard counters")
 local function Details(id) local _,lines=ns:GetGoalDetails(key,id); return table.concat(lines,"\n") end
 local hero
 for _,row in ipairs(ns:GetCrestInfo(character)) do if row.name=="Hero Mistcrest" then hero=row end end
@@ -92,6 +102,7 @@ assert(Goal("auto:world:assignments") and Goal("auto:world:abundance"),"active w
 assert(Goal("auto:quests").countsForProgress==false,"aggregate quest summary does not double count named activities")
 local saved=character.weekly.currencies[3310]
 failCurrency=true; failProfession=true; ns:CaptureWeeklyProgress()
+assert(character.resources[3316].quantity==12500, "failed resource reads retain saved balances")
 assert(character.weekly.currencies[3310]==saved and Goal("auto:profession:164"),"partial/restricted APIs preserve snapshots")
 failCurrency=false; failProfession=false
 currencies[3310].quantity=secretValue; ns:CaptureWeeklyProgress()
@@ -121,6 +132,7 @@ ns:ToggleGoal(key,"auto:world:abundance")
 assert(Goal("auto:world:abundance").done,"new named goals retain manual completion")
 ns:InitializeDatabase(); assert(character.hiddenGoals["auto:shards"],"preferences survive reload")
 now=reset+1; reset=reset+604800; completed={}; ns:CheckWeeklyReset()
+assert(ns:GetResourceInfo(character)[1].quantity==12500 and ns:GetResourceInfo(character)[1].stale, "offline resource balances survive weekly reset while allowances expire")
 assert(not character.weekly and character.resources[3028].quantity==2,"weekly reset clears earnings, preserves saved balances")
 assert(character.hiddenGoals["auto:shards"] and not character.weeklyOverrides,"visibility survives reset; completion does not")
 assert(Goal("auto:profession:164").title:find("Waiting",1,true),"offline profession weeklies wait for fresh flags after reset")

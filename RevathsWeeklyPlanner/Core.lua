@@ -25,6 +25,7 @@ function ns:InitializeDatabase()
     db.scale = math.max(.65, math.min(1.10, tonumber(db.scale) or 1))
     db.window = type(db.window) == "table" and db.window or {}
     db.unfinishedOnly = db.unfinishedOnly == true
+    db.resourceTab = db.resourceTab == "resources" and "resources" or "crests"
     for key, character in pairs(db.characters) do
         if type(character) ~= "table" then
             db.characters[key] = nil
