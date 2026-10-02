@@ -448,3 +448,40 @@ for _,f in ipairs(objects) do if f.goalID and visible(f) then displayed=displaye
 assert(displayed*36+6<=RevathsWeeklyPlannerFrame.contentPanel.height, "tabbed resource panel leaves space for goals at minimum size")
 click("Raid lockouts"); assert(not visible(firstResource), "raid view hides the resource panel")
 print("Tabbed currency UI passed: per-alt balances, tab persistence, independent scrolling, small-window layout and tab visibility.")
+
+-- Status colors and persistent roster ordering use the actual UI controls.
+click("Me"); click("Raid lockouts")
+ns.db.unfinishedOnly=false; ns:Refresh()
+local sawGreenAvailable,sawMutedKilled=false,false
+for _,f in ipairs(objects) do
+    if visible(f) and f.text and f.color then
+        if f.text:find("[Available]",1,true) then assert(f.color[2]>f.color[1] and f.color[2]>f.color[3]); sawGreenAvailable=true end
+        if f.text:find("[Killed]",1,true) then assert(f.color[2]<.7); sawMutedKilled=true end
+    end
+end
+assert(sawGreenAvailable and sawMutedKilled, "raid availability and killed bosses have distinct status colors")
+local before=ns:GetCharacters(false,true)
+local firstKey=before[1].key
+assert(not ns:MoveCharacter(firstKey,-1), "cannot move above first character")
+click("Order")
+local firstRow
+for _,f in ipairs(objects) do if f.key==firstKey and visible(f) and f.down then firstRow=f end end
+assert(firstRow and firstRow.down:IsShown() and not firstRow.meta:IsShown(), "order mode exposes arrows without overlapping metadata")
+firstRow.down.scripts.OnClick()
+local reordered=ns:GetCharacters(false,true)
+assert(reordered[2].key==firstKey and reordered[1].key==before[2].key, "down arrow swaps adjacent characters including the current character")
+ns:InitializeDatabase()
+assert(ns:GetCharacters(false,true)[2].key==firstKey, "custom ordering survives reload")
+ns.db.unfinishedOnly=true
+assert(ns:GetCharacters(false,true)[2].key==firstKey, "filtering does not rewrite stored ordering")
+click("Done")
+assert(not firstRow.down:IsShown(), "finishing hides the roster arrows")
+ns.db.unfinishedOnly=false
+click("Order","RightButton")
+assert(ns:GetCharacters(false,true)[1].key==ns.currentKey, "reset restores the original roster order")
+assert(not ns:MoveCharacter("missing",1) and not ns:MoveCharacter(firstKey,0), "invalid moves cannot change saved order")
+local r,g,b=ns:GetDetailColor("[Remaining] Boss")
+assert(g>r and g>b, "remaining boss details use available green")
+r,g,b=ns:GetDetailColor("Dungeons slot 1: Locked - 1/8")
+assert(r>g and g>b, "locked Vault slots show amber progress")
+print("Status colors and roster order passed: raid colors, tooltip states, UI arrows, reload, filters, boundaries and reset.")

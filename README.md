@@ -58,6 +58,8 @@ The planner now uses the same palette colours, panel styling, branded header, an
 
 The information panel below the selected character's goals has **Crests** and **Other resources** tabs with currency icons, **Owned** amounts and **Can still earn** allowances. Other resources includes Voidlight Marl, Undercoin, Coffer Keys/shards, Field Accolades, Unalloyed Abundance, Resonance Crystals and additional Midnight resources. Scroll within the panel for more currencies; switching characters resets its scroll position and keeps your selected tab. They do not count as goals or completion targets. Hover a crest for full earning details and its update time. Offline alts show their own saved balances; log into that character to refresh expired allowances.
 
+Use **Order** above the character list to reveal up/down arrows and arrange the roster, then click **Done**. Your order is saved across logins and weekly resets; all characters appear while ordering, including ones hidden by Unfinished only. Right-click the order button to restore the default order. Available raid bosses are green, killed bosses are muted, completed goals are green and progress is amber. Hover details use corresponding status colors for bosses, quests and Vault slots.
+
 ## Compatibility
 
 - World of Warcraft Retail / Midnight 12.1 (`Interface: 120100`)

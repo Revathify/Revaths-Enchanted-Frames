@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.5.0 - Status colors and character order
+
+- Colored available raid bosses green and killed bosses muted, with status colors for roster summaries, completed/in-progress goals and boss/quest/Vault hover details.
+- Added an Order button and up/down controls for arranging the character roster, including the current character.
+- Saved custom order per character across reloads, login identity upgrades, weekly resets and filtered views.
+- Right-click the Order button to restore the original roster order.
+
 ## 4.4.0 - Tabbed character currencies
 
 - Added Crests and Other resources tabs below the selected character's goals, remembering the selected tab.

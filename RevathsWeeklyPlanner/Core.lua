@@ -129,12 +129,34 @@ function ns:GetCharacters(includeRaids, includeAll)
         end
     end
     table.sort(list, function(a, b)
+        local aOrder = tonumber(a.character.sortOrder) or math.huge
+        local bOrder = tonumber(b.character.sortOrder) or math.huge
+        if aOrder ~= bOrder then return aOrder < bOrder end
         if (a.key == self.currentKey) ~= (b.key == self.currentKey) then return a.key == self.currentKey end
         local aName = (a.character.name or "") .. (a.character.realm or "")
         local bName = (b.character.name or "") .. (b.character.realm or "")
         return aName < bName
     end)
     return list
+end
+
+function ns:MoveCharacter(key, direction)
+    if direction ~= -1 and direction ~= 1 then return false end
+    local characters = self:GetCharacters(false, true)
+    for index, entry in ipairs(characters) do
+        if entry.key == key then
+            local destination = index + direction
+            if destination < 1 or destination > #characters then return false end
+            characters[index], characters[destination] = characters[destination], characters[index]
+            for rank, item in ipairs(characters) do item.character.sortOrder = rank end
+            return true
+        end
+    end
+    return false
+end
+
+function ns:ResetCharacterOrder()
+    for _, entry in ipairs(self:GetCharacters(false, true)) do entry.character.sortOrder = nil end
 end
 
 function ns:GetGoals(key, includeHidden)

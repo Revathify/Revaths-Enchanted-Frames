@@ -9,6 +9,7 @@ local characterCapacity, goalCapacity = 7, 6
 local appearancePanel, modernButton, classicButton, opacitySlider, scaleSlider, opacityValue, scaleValue
 local crestPanel, crestRows, crestHint, crestTab, resourceTab, currencyHeader, resourceFooter
 local resourceOffset = 0
+local orderingCharacters, orderButton = false, nil
 local refreshingAppearance = false
 local raidStatus, refreshRaids, headerGlow, headerLine, titlePlate, goalsTab, raidsTab
 local palettes = {
@@ -32,6 +33,25 @@ local fonts = { friz = STANDARD_TEXT_FONT, arial = "Fonts\\ARIALN.TTF", morpheus
 
 local function SafeText(text) return (text or ""):gsub("|", "||") end
 
+local statusColors = {
+    available = {.35,.90,.50}, complete = {.45,.82,.58}, killed = {.56,.59,.64},
+    progress = {1,.76,.30}, waiting = {.56,.62,.70}, normal = {.90,.93,.96},
+}
+local function SetStatusColor(label, status)
+    local c = statusColors[status] or statusColors.normal
+    label:SetTextColor(c[1], c[2], c[3])
+end
+
+function ns:GetDetailColor(text)
+    local status
+    if text:find("^%[Available%]") or text:find("^%[Remaining%]") or text:find(": Unlocked",1,true) then status="available"
+    elseif text:find("^%[Killed%]") then status="killed"
+    elseif text:find("^%[Done%]") or text:find("^%[Completed%]") or text:find("^%[Ready") or text=="Completed this week." then status="complete"
+    elseif text:find("^%[In progress%]") or text:find(": Locked",1,true) then status="progress"
+    elseif text:find("^%[No longer") or text:find("^Log into") or text:find("^Updated ") or text:find("^Offline snapshot") then status="waiting" end
+    return unpack(statusColors[status] or statusColors.normal)
+end
+
 local hoveredGoal, detailOffset = nil, 0
 local function HideGoalDetails()
     if hoveredGoal and GameTooltip then GameTooltip:Hide() end
@@ -51,7 +71,8 @@ local function ShowGoalDetails(row)
     -- Let the tooltip fit the longest entry instead of wrapping into its default narrow width.
     GameTooltip:AddLine(SafeText(title), 1, .82, .3, false)
     for index = detailOffset + 1, math.min(#lines, detailOffset + pageSize) do
-        GameTooltip:AddLine(SafeText(lines[index]), .9, .93, .96, false)
+        local r,g,b = ns:GetDetailColor(lines[index])
+        GameTooltip:AddLine(SafeText(lines[index]), r,g,b, false)
     end
     if #lines > pageSize then GameTooltip:AddLine("Hold Shift and scroll for more details", .55, .7, .8, false) end
     GameTooltip:Show()
@@ -176,7 +197,7 @@ end
 
 function ns:Refresh()
     if not frame or not frame:IsShown() or not self.db then return end
-    local characters = self:GetCharacters(view == "raids", view == "visibility")
+    local characters = self:GetCharacters(view == "raids", view == "visibility" or orderingCharacters)
     if not selectedKey or not self.db.characters[selectedKey] then selectedKey = self.currentKey end
     local visibleSelection = false
     for _, entry in ipairs(characters) do if entry.key == selectedKey then visibleSelection = true end end
@@ -184,10 +205,18 @@ function ns:Refresh()
         selectedKey = characters[1].key; goalOffset, resourceOffset = 0, 0; CancelEdit()
     end
     characterOffset = math.max(0, math.min(characterOffset, #characters - characterCapacity))
+    orderButton.label:SetText(orderingCharacters and "Done" or "Order")
+    local allCharacters = self:GetCharacters(false, true)
+    local ranks = {}; for index, entry in ipairs(allCharacters) do ranks[entry.key] = index end
     for index, row in ipairs(characterRows) do
         local entry = characters[characterOffset + index]
         row.key = entry and entry.key
         row:SetShown(entry ~= nil and index <= characterCapacity)
+        row.meta:SetShown(not orderingCharacters)
+        row.realm:SetWidth(orderingCharacters and 150 or 180)
+        row.up:SetShown(orderingCharacters); row.down:SetShown(orderingCharacters)
+        row.up:SetEnabled(entry ~= nil and (ranks[entry.key] or 1)>1)
+        row.down:SetEnabled(entry ~= nil and (ranks[entry.key] or #allCharacters)<#allCharacters)
         if entry then
             local character = entry.character
             row.label:SetText((entry.key == selectedKey and "› " or "") .. SafeText(character.name))
@@ -199,8 +228,10 @@ function ns:Refresh()
                     if raid.resetAt > GetServerTime() then killed = killed + raid.killed; bosses = bosses + #raid.bosses end
                 end
                 row.meta:SetText(character.raidsUpdatedAt and string.format("%d / %d bosses", killed, bosses) or "Not scanned")
+                SetStatusColor(row.meta, bosses>killed and "available" or bosses>0 and "complete" or "waiting")
             else
                 row.meta:SetText(entry.total == 0 and "No goals yet" or string.format("%d / %d complete", entry.done, entry.total))
+                SetStatusColor(row.meta, entry.total==0 and "waiting" or entry.done>=entry.total and "complete" or entry.done>0 and "progress" or "normal")
             end
             row.realm:SetText(SafeText(character.realm))
         end
@@ -262,7 +293,8 @@ function ns:Refresh()
             row.check:SetEnabled(true)
             row.remove:SetShown(view == "goals" and not goal.automatic)
             row.label:SetText(SafeText(goal.title))
-            row.label:SetTextColor(goal.done and .45 or .95, goal.done and .78 or .96, goal.done and .60 or .98)
+            local earned = tonumber(goal.title:match("(%d+)%s*/%s*%d+"))
+            SetStatusColor(row.label, goal.done and "complete" or (goal.title:find("Waiting",1,true) or goal.title:find("Log in",1,true)) and "waiting" or earned and earned>0 and "progress" or "normal")
         end
     end
     frame.empty:SetShown(view == "goals" and #goals == 0)
@@ -303,7 +335,7 @@ function ns:Refresh()
                     row.meta:SetText("ID: " .. SafeText(tostring(raid.id or "Unavailable")) .. " · Resets in " .. hours .. "h" .. (raid.extended and " · Extended" or ""))
                 else
                     row.label:SetText((entry.boss.killed and "[Killed]  " or "[Available]  ") .. SafeText(entry.boss.name))
-                    row.label:SetTextColor(entry.boss.killed and .40 or .90, entry.boss.killed and .86 or .93, entry.boss.killed and .69 or .96)
+                    SetStatusColor(row.label, entry.boss.killed and "killed" or "available")
                     row.meta:SetText("")
                 end
             end
@@ -318,6 +350,7 @@ function ns:Refresh()
     else
         for _, row in ipairs(raidRows) do row:Hide() end
     end
+    if orderingCharacters then Status("Use arrows to arrange characters; click Done to finish. Right-click the order button to reset.") end
     if hoveredGoal then ShowGoalDetails(hoveredGoal) end
 end
 
@@ -442,6 +475,12 @@ local function Build()
     local filterLabel = Label(frame, 12); filterLabel:SetPoint("LEFT", filter, "RIGHT", 4, 0); filterLabel:SetText("Unfinished only")
     resetText = Label(frame, 12, true); resetText:SetPoint("TOPRIGHT", -18, -63)
     local rosterTitle = Label(frame, 13); rosterTitle:SetPoint("TOPLEFT", 18, -99); rosterTitle:SetText("CHARACTERS")
+    orderButton = Button(frame, "Order", 56,24,function(_,mouseButton)
+        if mouseButton == "RightButton" then ns:ResetCharacterOrder(); Status("Character order reset.")
+        else orderingCharacters = not orderingCharacters; Status(orderingCharacters and "Move characters with the arrows." or "Character order saved.") end
+        ns:Refresh()
+    end)
+    orderButton:SetPoint("TOPLEFT",111,-92); orderButton:RegisterForClicks("LeftButtonUp","RightButtonUp")
     local mine = Button(frame, "Me", 36, 24, function()
         selectedKey = ns.currentKey; goalOffset, resourceOffset = 0, 0; CancelEdit()
         -- Explicitly selecting a finished character makes its goals visible.
@@ -459,6 +498,17 @@ local function Build()
         row.meta = Label(row, 9, true); row.meta:SetPoint("TOPRIGHT", -6, -6); row.meta:SetWidth(69); row.meta:SetJustifyH("RIGHT")
         row.realm = Label(row, 9, true); row.realm:SetPoint("BOTTOMLEFT", 7, 4); row.realm:SetWidth(180)
         row.realm:SetWordWrap(false)
+        local function MoveCharacter(direction)
+            if ns:MoveCharacter(row.key,direction) then
+                local characters = ns:GetCharacters(false,true)
+                for rank, entry in ipairs(characters) do
+                    if entry.key == row.key then characterOffset = math.max(0, math.min(characterOffset,rank-1)); if rank>characterOffset+characterCapacity then characterOffset=rank-characterCapacity end; break end
+                end
+                ns:Refresh()
+            end
+        end
+        row.up = Button(row,"↑",20,16,function() MoveCharacter(-1) end); row.up:SetPoint("TOPRIGHT",-3,-2)
+        row.down = Button(row,"↓",20,16,function() MoveCharacter(1) end); row.down:SetPoint("BOTTOMRIGHT",-3,2)
         row:EnableMouseWheel(true)
         row:SetScript("OnMouseWheel", function(_, delta)
             characterOffset = math.max(0, characterOffset - delta); ns:Refresh()
