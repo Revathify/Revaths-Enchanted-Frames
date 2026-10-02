@@ -8,13 +8,21 @@ local function Number(value) value=Public(value); assert(type(value)=="number" a
 local function Read(fn) local ok,value=pcall(fn); if ok then return value end end
 local function Text(value, fallback) value=Public(value); return type(value)=="string" and value~="" and value or fallback end
 
+local function Icon(value)
+    return Read(function()
+        value = Public(value)
+        if type(value) == "number" and value > 0 and value < math.huge then return value end
+        if type(value) == "string" and value ~= "" then return value end
+    end)
+end
+
 local function Currency(id)
     if not C_CurrencyInfo or not C_CurrencyInfo.GetCurrencyInfo then return end
     return Read(function()
         local info=Public(C_CurrencyInfo.GetCurrencyInfo(id))
         assert(type(info)=="table")
         if Public(info.isTypeUnused)==true then return false end
-        return { id=id, name=Text(info.name,"Currency "..id), quantity=Number(info.quantity),
+        return { id=id, icon=Icon(info.iconFileID), name=Text(info.name,"Currency "..id), quantity=Number(info.quantity),
             earned=Number(info.quantityEarnedThisWeek), weeklyCap=Number(info.maxWeeklyQuantity),
             seasonCap=Number(info.maxQuantity), totalEarned=Number(info.totalEarned),
             weekly=Public(info.canEarnPerWeek)==true, seasonal=Public(info.useTotalEarnedForMaxQty)==true,
@@ -30,7 +38,11 @@ function ns:CaptureActivities(character, snapshot)
         local currency=Currency(id)
         if currency then
             snapshot.currencies[id]=currency
-            character.resources[id]={ name=currency.name, quantity=currency.quantity, capturedAt=currency.capturedAt }
+            self.currencyIcons = self.currencyIcons or {}
+            local previous = character.resources[id]
+            currency.icon = currency.icon or (previous and previous.icon) or self.currencyIcons[id]
+            if currency.icon then self.currencyIcons[id] = currency.icon end
+            character.resources[id]={ name=currency.name, icon=currency.icon, quantity=currency.quantity, capturedAt=currency.capturedAt }
         elseif currency==false then snapshot.currencies[id]=nil; character.resources[id]=nil end
     end
     local roster = GetProfessions and GetProfessionInfo and Read(function()
@@ -101,13 +113,16 @@ function ns:GetCrestInfo(character)
         local currency, balance = currencies[id], balances[id]
         if currency then
             local earned, cap, kind = Allowance(currency)
+            local remaining = cap and math.max(0, cap-earned)
             rows[#rows + 1] = { name = currency.name, quantity = currency.quantity,
-                summary = cap and string.format("%d held | %s %d/%d | %d left", currency.quantity, kind, earned, cap, math.max(0, cap-earned))
-                    or (currency.quantity .. " held | No earning limit"),
+                icon = currency.icon or (balance and balance.icon) or (self.currencyIcons and self.currencyIcons[id]),
+                allowance = cap and (remaining == 0 and "Limit reached" or string.format("%d more %s", remaining, kind == "Weekly" and "this week" or "this season")) or "No earning limit",
+                atLimit = cap and remaining == 0 or false,
                 details = CurrencyLines(currency), capturedAt = currency.capturedAt }
         elseif balance then
             rows[#rows + 1] = { name = balance.name, quantity = balance.quantity,
-                summary = balance.quantity .. " held (saved) | Allowance needs refresh",
+                icon = balance.icon or (self.currencyIcons and self.currencyIcons[id]),
+                allowance = "Log in to refresh", stale = true,
                 details = {balance.name .. ": " .. balance.quantity .. " available (saved)",
                     "Log into this character to refresh the earning allowance."}, capturedAt = balance.capturedAt }
         end

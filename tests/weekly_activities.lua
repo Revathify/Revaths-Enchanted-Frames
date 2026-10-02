@@ -43,6 +43,7 @@ Currency(3028,"Restored Coffer Keys",3,0,0,0,0,false,false)
 Currency(3310,"Coffer Key Shards",50,450,600,0,0,true,false)
 Currency(3445,"Hero Mistcrest",20,0,0,1000,650,false,true)
 Currency(3442,"Adventurer Mistcrest",9,0,0,0,0,false,false)
+currencies[3445].iconFileID=123456
 local failCurrency=false
 local secretValue={}
 issecretvalue=function(value) return value==secretValue end
@@ -65,6 +66,16 @@ local function CrestDetails()
     return table.concat(lines,"\n")
 end
 local function Details(id) local _,lines=ns:GetGoalDetails(key,id); return table.concat(lines,"\n") end
+local hero
+for _,row in ipairs(ns:GetCrestInfo(character)) do if row.name=="Hero Mistcrest" then hero=row end end
+assert(hero.icon==123456 and character.resources[3445].icon==123456, "real currency icons are saved for offline characters")
+assert(hero.allowance=="350 more this season" and hero.quantity==20, "human-readable allowance stays separate from owned currency")
+currencies[3445].iconFileID=secretValue; ns:CaptureWeeklyProgress()
+assert(character.resources[3445].icon==123456, "restricted icon metadata preserves the previous public icon without losing balances")
+currencies[3445].iconFileID=123456
+currencies[3445].totalEarned=1000; ns:CaptureWeeklyProgress()
+for _,row in ipairs(ns:GetCrestInfo(character)) do if row.name=="Hero Mistcrest" then assert(row.atLimit and row.allowance=="Limit reached") end end
+currencies[3445].totalEarned=650; ns:CaptureWeeklyProgress()
 assert(not Goal("auto:crests"), "crest information never appears as a selectable goal")
 assert(Goal("auto:shards").title:find("450/600",1,true))
 assert(Details("auto:shards"):find("150 remaining",1,true) and Details("auto:shards"):find("Keys available: 3",1,true))

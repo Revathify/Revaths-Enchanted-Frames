@@ -169,6 +169,7 @@ for _, name in ipairs({"SetJustifyH", "SetBackdrop", "SetBackdropColor", "SetBac
     "SetClampedToScreen", "EnableMouse", "SetMovable", "RegisterForDrag", "StartMoving", "StopMovingOrSizing",
     "ClearAllPoints", "SetWordWrap", "RegisterForClicks", "EnableMouseWheel", "SetAutoFocus", "SetMaxBytes",
     "SetTextInsets", "SetJustifyV", "RegisterEvent", "SetResizable", "SetResizeBounds", "StartSizing", "SetOrientation", "SetThumbTexture", "SetMinMaxValues", "SetValueStep", "SetObeyStepOnDrag", "SetTexture", "SetColorTexture", "SetTexCoord", "SetVertexColor"}) do methods[name] = noop end
+function methods:SetTexture(asset) self.texture=asset end
 function methods:CreateTexture() return object("Texture", nil, self) end
 for _, state in ipairs({"Normal", "Pushed", "Highlight"}) do
     methods["Set" .. state .. "Texture"] = function(self, path)
@@ -393,7 +394,7 @@ assert(loadfile("RevathsWeeklyPlanner/Catalog.lua"))("RevathsWeeklyPlanner",ns)
 assert(loadfile("RevathsWeeklyPlanner/Activities.lua"))("RevathsWeeklyPlanner",ns)
 ns.db.characters[bob].resources={}
 for id=3442,3446 do ns.db.characters[bob].resources[id]={name="Test crest "..id,quantity=id-3440,capturedAt=now} end
-imported.resources={[3445]={name="Alt Hero crest",quantity=77,capturedAt=now}}
+imported.resources={[3445]={name="Alt Hero crest",quantity=77,icon=123456,capturedAt=now}}
 click("Me")
 local crestRow
 for _,f in ipairs(objects) do if f.entry and f.entry.name=="Test crest 3445" and visible(f) then crestRow=f end end
@@ -413,8 +414,9 @@ click("Cara")
 for _,f in ipairs(objects) do if f.entry and f.entry.name=="Alt Hero crest" then crestRow=f end end
 assert(crestRow.entry and crestRow.entry.quantity==77 and visible(crestRow), "selecting an offline alt refreshes its own crest panel")
 click("Settings")
+assert(crestRow.icon.texture==123456 and crestRow.owned.text=="77" and crestRow.value.text=="Log in to refresh", "offline rows show icons, separate quantities and readable refresh hints")
 assert(not visible(crestRow), "appearance view hides crest information")
 click("Weekly goals")
 RevathsWeeklyPlannerFrame:SetSize(1200,900)
-assert(visible(crestRow) and RevathsWeeklyPlannerFrame.contentPanel.height>500, "resizing retains room for goals and crest information")
+assert(visible(crestRow) and RevathsWeeklyPlannerFrame.contentPanel.height>400, "resizing retains room for goals and crest information")
 print("Crest info UI passed: per-alt selection, saved balance details, separate noninteractive rows, tab visibility and resize layout.")

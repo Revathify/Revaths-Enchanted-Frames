@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.3.0 - Clearer crest information
+
+- Added Blizzard currency icons, saved with balances for offline alts.
+- Replaced compact currency strings with separate crest, Owned and Can still earn columns.
+- Added readable weekly/season allowances, limit-reached highlighting and refresh hints while retaining full totals on hover.
+
 ## 4.2.0 - Character crest information
 
 - Moved crest balances and weekly/season allowances from the goal checklist to a matching information panel below the selected character's goals.

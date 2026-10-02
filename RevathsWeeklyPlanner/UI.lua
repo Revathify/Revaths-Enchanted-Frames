@@ -216,7 +216,7 @@ function ns:Refresh()
     filter:SetChecked(self.db.unfinishedOnly)
     undoButton:SetShown(view == "goals" and self.removedGoal ~= nil)
     local crests = self.GetCrestInfo and self:GetCrestInfo(character) or {}
-    local crestHeight = view == "goals" and self.GetCrestInfo and (40 + math.max(1, #crests) * 22) or 0
+    local crestHeight = view == "goals" and self.GetCrestInfo and (50 + math.max(1, #crests) * 24) or 0
     crestPanel:SetShown(crestHeight > 0)
     crestPanel:SetHeight(math.max(1, crestHeight))
     crestPanel:SetWidth(frame:GetWidth() - 242)
@@ -227,7 +227,14 @@ function ns:Refresh()
         row.entry = entry
         row:SetShown(entry ~= nil)
         row.label:SetText(entry and SafeText(entry.name) or "")
-        row.value:SetText(entry and SafeText(entry.summary) or "")
+        row.icon:SetTexture(entry and entry.icon or "Interface\\Icons\\INV_Misc_QuestionMark")
+        row.owned:SetText(entry and tostring(entry.quantity) or "")
+        row.value:SetText(entry and SafeText(entry.allowance) or "")
+        local c = Accent()
+        row.owned:SetTextColor(.96, .82, .48)
+        if entry and entry.stale then row.value:SetTextColor(.56, .62, .70)
+        elseif entry and entry.atLimit then row.value:SetTextColor(.45, .78, .60)
+        else row.value:SetTextColor(c[1], c[2], c[3]) end
     end
     crestHint:SetWidth(frame:GetWidth() - 262)
     crestHint:SetShown(#crests == 0)
@@ -362,13 +369,19 @@ local function Build()
     crestPanel = Surface(CreateFrame("Frame", nil, frame, "BackdropTemplate"), "panel")
     crestPanel:SetPoint("BOTTOMLEFT", 228, 102)
     local crestTitle = Label(crestPanel, 12)
-    crestTitle:SetPoint("TOPLEFT", 10, -8); crestTitle:SetText("CRESTS · Balances and allowances")
+    crestTitle:SetPoint("TOPLEFT", 10, -8); crestTitle:SetText("Your crests")
+    local typeHeader = Label(crestPanel, 9, true); typeHeader:SetPoint("TOPLEFT", 36, -29); typeHeader:SetText("CREST")
+    local ownedHeader = Label(crestPanel, 9, true); ownedHeader:SetPoint("TOPLEFT", 186, -29); ownedHeader:SetWidth(52); ownedHeader:SetJustifyH("RIGHT"); ownedHeader:SetText("OWNED")
+    local allowanceHeader = Label(crestPanel, 9, true); allowanceHeader:SetPoint("TOPLEFT", 258, -29); allowanceHeader:SetText("CAN STILL EARN")
     for index = 1, 5 do
         local row = CreateFrame("Frame", nil, crestPanel)
-        row:SetPoint("TOPLEFT", 10, -28 - (index-1)*22)
-        row:SetPoint("TOPRIGHT", -10, -28 - (index-1)*22); row:SetHeight(22)
-        row.label = Label(row, 11); row.label:SetPoint("LEFT"); row.label:SetWidth(145); row.label:SetWordWrap(false)
-        row.value = Label(row, 10, true); row.value:SetPoint("LEFT", 150, 0); row.value:SetPoint("RIGHT"); row.value:SetJustifyH("RIGHT"); row.value:SetWordWrap(false)
+        row:SetPoint("TOPLEFT", 10, -44 - (index-1)*24)
+        row:SetPoint("TOPRIGHT", -10, -44 - (index-1)*24); row:SetHeight(24)
+        row.icon = row:CreateTexture(nil, "ARTWORK"); row.icon:SetSize(18,18); row.icon:SetPoint("LEFT", 0, 0)
+        row.icon:SetTexCoord(.07, .93, .07, .93)
+        row.label = Label(row, 11); row.label:SetPoint("LEFT", 26, 0); row.label:SetWidth(145); row.label:SetWordWrap(false)
+        row.owned = Label(row, 12); row.owned:SetPoint("LEFT", 176, 0); row.owned:SetWidth(52); row.owned:SetJustifyH("RIGHT"); row.owned:SetWordWrap(false)
+        row.value = Label(row, 10); row.value:SetPoint("LEFT", 248, 0); row.value:SetPoint("RIGHT", -2, 0); row.value:SetJustifyH("LEFT"); row.value:SetWordWrap(false)
         row:EnableMouse(true)
         row:SetScript("OnEnter", function(self)
             if not self.entry or not GameTooltip then return end
@@ -382,7 +395,7 @@ local function Build()
         row:SetScript("OnHide", function() if GameTooltip then GameTooltip:Hide() end end)
         crestRows = crestRows or {}; crestRows[index] = row
     end
-    crestHint = Label(crestPanel, 11, true); crestHint:SetPoint("TOPLEFT", 10, -29)
+    crestHint = Label(crestPanel, 11, true); crestHint:SetPoint("TOPLEFT", 10, -47)
     local function SetView(nextView)
         view = nextView; raidOffset = 0; goalOffset = 0; CancelEdit(); Status(""); ns:Refresh()
         if nextView == "raids" then ns:RequestRaidRefresh() end

@@ -56,7 +56,7 @@ Select **Raid lockouts** to see saved raid IDs, difficulty, killed and available
 
 The planner now uses the same palette colours, panel styling, branded header, and Classic dialog/button textures as the mailbox and macro frames. Appearance preferences remain configurable on the Weekly Planner settings page.
 
-Crest balances and earning allowances appear in an information panel below the selected character's goals. They do not count as goals or completion targets. Hover a crest for full earning details and its update time. Offline alts show their own saved balances; log into that character to refresh expired allowances.
+Crest icons, Owned amounts and Can still earn allowances appear in an information panel below the selected character's goals. They do not count as goals or completion targets. Hover a crest for full earning details and its update time. Offline alts show their own saved balances; log into that character to refresh expired allowances.
 
 ## Compatibility
 
