@@ -284,8 +284,7 @@ local function ApplySelectedFont()
             local _, size, flags = object:GetFont()
             local selectedFlags = option.flags
             if selectedFlags == nil then selectedFlags = flags or "" end
-            local ok, loaded = pcall(object.SetFont, object, option.path, size or 12, selectedFlags)
-            if not ok or loaded == false then object:SetFont(STANDARD_TEXT_FONT, size or 12, flags or "") end
+            RevathsEnchantedFrames_ApplyFont(object,fontKey,size or 12)
         end
     end
 end
@@ -1769,19 +1768,20 @@ local function PagedFontMenu(anchor)
 
     function menu:Refresh()
         DiscoverSharedMediaFonts()
-        local pages = math.max(1, math.ceil(#FONT_ORDER / perPage))
+        local available={}
+        for _,key in ipairs(FONT_ORDER) do local _,_,valid=RevathsEnchantedFrames_ResolveFont(key); if valid then available[#available+1]=key end end
+        local pages = math.max(1, math.ceil(#available / perPage))
         self.page = math.max(1, math.min(self.page, pages))
         local offset = (self.page - 1) * perPage
         for slot, option in ipairs(self.buttons) do
-            local key = FONT_ORDER[offset + slot]
+            local key = available[offset + slot]
             local font = key and FONT_OPTIONS[key]
             option.fontKey = key
             option:SetShown(font ~= nil)
             if font then
                 option.label:SetText(font.label)
                 local _, size = option.label:GetFont()
-                local ok, loaded = pcall(option.label.SetFont, option.label, font.path, size or 11, font.flags or "")
-                if not ok or loaded == false then option.label:SetFont(STANDARD_TEXT_FONT, size or 11, "") end
+                RevathsEnchantedFrames_ApplyFont(option.label,key,size or 11)
             end
         end
         self.previous:SetEnabled(self.page > 1)

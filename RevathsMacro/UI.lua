@@ -404,8 +404,7 @@ local function ApplyAppearance()
         if object and object.SetFont then
             local _, currentSize = object:GetFont()
             local size = object == macroBody and (ns.db and ns.db.fontSize or 13) or object.baseSize or currentSize or 12
-            local ok, loaded = pcall(object.SetFont, object, option.path, size, option.flags or "")
-            if not ok or loaded == false then object:SetFont(STANDARD_TEXT_FONT, size, "") end
+            RevathsEnchantedFrames_ApplyFont(object,ns.db and ns.db.font or "friz",size)
         end
     end
     if editorFontValue and ns.db then editorFontValue:SetText(string.format("%d px", tonumber(ns.db.fontSize) or 13)) end
@@ -765,14 +764,16 @@ local function BuildSettings()
     local fontMenuPage = 1
     local function RefreshFontMenu()
         DiscoverSharedMediaFonts()
-        local pages = math.max(1, math.ceil(#FONTS / 10)); fontMenuPage = math.max(1, math.min(fontMenuPage, pages)); fontPage:SetText(string.format("%d / %d", fontMenuPage, pages))
+        local available={}
+        for _,font in ipairs(FONTS) do local _,_,valid=RevathsEnchantedFrames_ResolveFont(font.key); if valid then available[#available+1]=font end end
+        local pages = math.max(1, math.ceil(#available / 10)); fontMenuPage = math.max(1, math.min(fontMenuPage, pages)); fontPage:SetText(string.format("%d / %d", fontMenuPage, pages))
         local start = (fontMenuPage - 1) * 10
         for index, button in ipairs(fontMenuButtons) do
-            local option = FONTS[start + index]
+            local option = available[start + index]
             button:SetShown(option ~= nil)
             if option then
                 button.label:SetText(option.label)
-                button.label:SetFont(option.path, 11, option.flags or "")
+                RevathsEnchantedFrames_ApplyFont(button.label,option.key,11)
                 button.selected = option.key == ns.db.font
                 ApplyFrameBackdrop(button)
                 button:SetScript("OnClick", function()

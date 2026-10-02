@@ -9,7 +9,7 @@ local characterCapacity, goalCapacity = 7, 6
 local appearancePanel, modernButton, classicButton, opacitySlider, scaleSlider, opacityValue, scaleValue
 local crestPanel, crestRows, crestHint, crestTab, resourceTab, currencyHeader, resourceFooter
 local resourceOffset = 0
-local orderingCharacters, orderButton = false, nil
+local roster = {ordering=false}
 local refreshingAppearance = false
 local raidStatus, refreshRaids, headerGlow, headerLine, titlePlate, goalsTab, raidsTab
 local palettes = {
@@ -29,7 +29,6 @@ local function Accent()
     return ns.db.skin == "classic" and { .96,.72,.20 } or (accents[ns.db.palette] or accents.midnight)
 end
 
-local fonts = { friz = STANDARD_TEXT_FONT, arial = "Fonts\\ARIALN.TTF", morpheus = "Fonts\\MORPHEUS.TTF", skurri = "Fonts\\SKURRI.TTF" }
 
 local function SafeText(text) return (text or ""):gsub("|", "||") end
 
@@ -177,27 +176,19 @@ function ns:ApplyAppearance()
     end
     for _, surface in ipairs(surfaces) do Style(surface) end
     local key = self.db.font
-    local outline = key:find("Outline") and "OUTLINE" or ""
-    local path = fonts[key:gsub("Outline", "")] or STANDARD_TEXT_FONT
-    if key:sub(1, 7) == "shared:" and LibStub then
-        local media = LibStub("LibSharedMedia-3.0", true)
-        path = media and media:Fetch("font", key:sub(8), true) or path
-    end
     for _, label in ipairs(labels) do
-        local ok, loaded = pcall(label.SetFont, label, path, label.size, outline)
-        if not ok or loaded == false then label:SetFont(STANDARD_TEXT_FONT, label.size, "") end
+        RevathsEnchantedFrames_ApplyFont(label,key,label.size)
         local color = self.db.skin == "classic" and (label.muted and {.76,.64,.43} or {1,.92,.72})
             or (label.muted and {.56,.62,.70} or {.90,.93,.96})
         label:SetTextColor(color[1], color[2], color[3])
     end
-    local ok, loaded = pcall(input.SetFont, input, path, 13, outline)
-    if not ok or loaded == false then input:SetFont(STANDARD_TEXT_FONT, 13, "") end
+    RevathsEnchantedFrames_ApplyFont(input,key,13)
     self:Refresh()
 end
 
 function ns:Refresh()
     if not frame or not frame:IsShown() or not self.db then return end
-    local characters = self:GetCharacters(view == "raids", view == "visibility" or orderingCharacters)
+    local characters = self:GetCharacters(view == "raids", view == "visibility" or roster.ordering)
     if not selectedKey or not self.db.characters[selectedKey] then selectedKey = self.currentKey end
     local visibleSelection = false
     for _, entry in ipairs(characters) do if entry.key == selectedKey then visibleSelection = true end end
@@ -205,18 +196,14 @@ function ns:Refresh()
         selectedKey = characters[1].key; goalOffset, resourceOffset = 0, 0; CancelEdit()
     end
     characterOffset = math.max(0, math.min(characterOffset, #characters - characterCapacity))
-    orderButton.label:SetText(orderingCharacters and "Done" or "Order")
-    local allCharacters = self:GetCharacters(false, true)
-    local ranks = {}; for index, entry in ipairs(allCharacters) do ranks[entry.key] = index end
+    roster.orderButton.label:SetText(roster.ordering and "Done" or "Order")
     for index, row in ipairs(characterRows) do
         local entry = characters[characterOffset + index]
         row.key = entry and entry.key
         row:SetShown(entry ~= nil and index <= characterCapacity)
-        row.meta:SetShown(not orderingCharacters)
-        row.realm:SetWidth(orderingCharacters and 150 or 180)
-        row.up:SetShown(orderingCharacters); row.down:SetShown(orderingCharacters)
-        row.up:SetEnabled(entry ~= nil and (ranks[entry.key] or 1)>1)
-        row.down:SetEnabled(entry ~= nil and (ranks[entry.key] or #allCharacters)<#allCharacters)
+        row.meta:SetShown(not roster.ordering)
+        row.realm:SetWidth(180)
+        row:SetAlpha(row.key == roster.draggedKey and .45 or 1)
         if entry then
             local character = entry.character
             row.label:SetText((entry.key == selectedKey and "› " or "") .. SafeText(character.name))
@@ -350,7 +337,7 @@ function ns:Refresh()
     else
         for _, row in ipairs(raidRows) do row:Hide() end
     end
-    if orderingCharacters then Status("Use arrows to arrange characters; click Done to finish. Right-click the order button to reset.") end
+    if roster.ordering then Status("Drag characters to reorder them; scroll while dragging for more. Click Done when finished.") end
     if hoveredGoal then ShowGoalDetails(hoveredGoal) end
 end
 
@@ -475,12 +462,13 @@ local function Build()
     local filterLabel = Label(frame, 12); filterLabel:SetPoint("LEFT", filter, "RIGHT", 4, 0); filterLabel:SetText("Unfinished only")
     resetText = Label(frame, 12, true); resetText:SetPoint("TOPRIGHT", -18, -63)
     local rosterTitle = Label(frame, 13); rosterTitle:SetPoint("TOPLEFT", 18, -99); rosterTitle:SetText("CHARACTERS")
-    orderButton = Button(frame, "Order", 56,24,function(_,mouseButton)
+    roster.orderButton = Button(frame, "Order", 56,24,function(_,mouseButton)
+        if roster.stopDrag then roster.stopDrag() end
         if mouseButton == "RightButton" then ns:ResetCharacterOrder(); Status("Character order reset.")
-        else orderingCharacters = not orderingCharacters; Status(orderingCharacters and "Move characters with the arrows." or "Character order saved.") end
+        else roster.ordering = not roster.ordering; Status(roster.ordering and "Drag characters into your preferred order." or "Character order saved.") end
         ns:Refresh()
     end)
-    orderButton:SetPoint("TOPLEFT",111,-92); orderButton:RegisterForClicks("LeftButtonUp","RightButtonUp")
+    roster.orderButton:SetPoint("TOPLEFT",111,-92); roster.orderButton:RegisterForClicks("LeftButtonUp","RightButtonUp")
     local mine = Button(frame, "Me", 36, 24, function()
         selectedKey = ns.currentKey; goalOffset, resourceOffset = 0, 0; CancelEdit()
         -- Explicitly selecting a finished character makes its goals visible.
@@ -488,8 +476,17 @@ local function Build()
     end); mine:SetPoint("TOPLEFT", 175, -92)
     characterTitle = Label(frame, 15); characterTitle:SetPoint("TOPLEFT", 232, -124); characterTitle:SetWidth(470)
     progressText = Label(frame, 10, true); progressText:SetPoint("TOPLEFT", 232, -148); progressText:SetWidth(470)
+    roster.stopDrag = function()
+        if roster.source then roster.source:SetScript("OnUpdate",nil) end
+        roster.draggedKey,roster.source = nil,nil
+        for _,row in ipairs(characterRows) do row:SetAlpha(1); Style(row) end
+    end
+    local function DropTarget()
+        for _,row in ipairs(characterRows) do if row:IsShown() and row:IsMouseOver() then return row end end
+    end
     for index = 1, 20 do
         local row = Button(frame, "", 194, 36, function(self)
+            if roster.draggedKey then return end
             selectedKey = self.key; goalOffset, raidOffset, resourceOffset = 0, 0, 0; CancelEdit(); ns:Refresh()
         end)
         row:SetPoint("TOPLEFT", 18, -134 - (index - 1) * 38)
@@ -498,17 +495,33 @@ local function Build()
         row.meta = Label(row, 9, true); row.meta:SetPoint("TOPRIGHT", -6, -6); row.meta:SetWidth(69); row.meta:SetJustifyH("RIGHT")
         row.realm = Label(row, 9, true); row.realm:SetPoint("BOTTOMLEFT", 7, 4); row.realm:SetWidth(180)
         row.realm:SetWordWrap(false)
-        local function MoveCharacter(direction)
-            if ns:MoveCharacter(row.key,direction) then
-                local characters = ns:GetCharacters(false,true)
-                for rank, entry in ipairs(characters) do
-                    if entry.key == row.key then characterOffset = math.max(0, math.min(characterOffset,rank-1)); if rank>characterOffset+characterCapacity then characterOffset=rank-characterCapacity end; break end
+        row:RegisterForDrag("LeftButton")
+        row:SetScript("OnDragStart",function(self)
+            if not self.key then return end
+            roster.draggedKey,roster.source = self.key,self
+            roster.ordering = true
+            ns:Refresh()
+            self:SetScript("OnUpdate",function(_,elapsed)
+                local target=DropTarget()
+                for _,item in ipairs(characterRows) do Style(item) end
+                if target and target.key ~= roster.draggedKey then
+                    local c=Accent(); target:SetBackdropBorderColor(c[1],c[2],c[3],1)
                 end
-                ns:Refresh()
+            end)
+        end)
+        row:SetScript("OnDragStop",function()
+            local target=DropTarget()
+            if roster.draggedKey and target then
+                local after=false
+                if GetCursorPosition then
+                    local _,mouseY=GetCursorPosition()
+                    local _,centerY=target:GetCenter()
+                    after=mouseY/target:GetEffectiveScale()<centerY
+                end
+                ns:DropCharacter(roster.draggedKey,target.key,after)
             end
-        end
-        row.up = Button(row,"↑",20,16,function() MoveCharacter(-1) end); row.up:SetPoint("TOPRIGHT",-3,-2)
-        row.down = Button(row,"↓",20,16,function() MoveCharacter(1) end); row.down:SetPoint("BOTTOMRIGHT",-3,2)
+            roster.stopDrag(); ns:Refresh()
+        end)
         row:EnableMouseWheel(true)
         row:SetScript("OnMouseWheel", function(_, delta)
             characterOffset = math.max(0, characterOffset - delta); ns:Refresh()
@@ -657,7 +670,7 @@ local function Build()
     end
     resize:SetScript("OnMouseUp",StopResize)
     frame:SetScript("OnSizeChanged",function() ns:LayoutWindow() end)
-    frame:SetScript("OnHide",function() HideGoalDetails(); frame:StopMovingOrSizing(); CancelEdit() end)
+    frame:SetScript("OnHide",function() if roster.stopDrag then roster.stopDrag() end; HideGoalDetails(); frame:StopMovingOrSizing(); CancelEdit() end)
     ns:LayoutWindow()
     frame:SetScript("OnShow", function() ns:ImportMailboxCharacters(); ns:CheckWeeklyReset(); ns:Refresh(); ns:RequestRaidRefresh(); if ns.CaptureWeeklyProgress then ns:CaptureWeeklyProgress() end end)
     UISpecialFrames[#UISpecialFrames + 1] = "RevathsWeeklyPlannerFrame"

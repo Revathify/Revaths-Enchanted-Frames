@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.6.0 - Drag roster ordering and reliable fonts
+
+- Replaced roster arrow controls with drag-and-drop ordering, target highlighting and safe cancellation; existing custom order is preserved.
+- Added shared font resolution, locale-aware native fallbacks, client font load probes and filtering of unavailable fonts in font menus.
+- Fixed shared font names containing Outline incorrectly enabling outline styling in the planner.
+- Saved verified WoW font findings and maintenance guidance in docs/WOW-FONTS.md and AGENTS.md, with regression checks in the build.
+
 ## 4.5.0 - Status colors and character order
 
 - Colored available raid bosses green and killed bosses muted, with status colors for roster summaries, completed/in-progress goals and boss/quest/Vault hover details.

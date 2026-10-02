@@ -2,7 +2,7 @@
 ## Title: Revath's Enchanted Weekly Planner
 ## Notes: Weekly goals, mailbox character roster, and saved raid IDs with boss progress.
 ## Author: Revath#2331 (Revathify)
-## Version: 4.5.0
+## Version: 4.6.0
 ## Dependencies: RevathsEnchantedFrames
 ## OptionalDeps: LibSharedMedia-3.0, RevathsMailbox
 ## SavedVariables: RevathsWeeklyPlannerDB

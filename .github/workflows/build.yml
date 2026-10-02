@@ -35,7 +35,7 @@ jobs:
             fi
           done
           npx --yes luaparse \
-            RevathsEnchantedFrames/Core.lua RevathsEnchantedFrames/Settings.lua \
+            RevathsEnchantedFrames/Core.lua RevathsEnchantedFrames/Fonts.lua RevathsEnchantedFrames/Settings.lua \
             RevathsMailbox/Core.lua RevathsMailbox/UI.lua \
             RevathsMacro/Core.lua RevathsMacro/UI.lua \
             RevathsMailboxTooltipHelper/Tooltips.lua \
@@ -49,6 +49,7 @@ jobs:
           lua5.1 tests/weekly_progress.lua
           lua5.1 tests/weekly_activities.lua
           lua5.1 tests/macro_default_icon.lua
+          lua5.1 tests/fonts.lua
 
       - name: Package suite
         shell: bash

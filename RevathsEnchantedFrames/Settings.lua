@@ -39,7 +39,14 @@ local function FontOptions()
             for _, font in ipairs(additions) do FONTS[#FONTS + 1] = font end
         end
     end
-    return FONTS
+    local available={}
+    for _,font in ipairs(FONTS) do
+        local path,flags,valid=RevathsEnchantedFrames_ResolveFont(font.key)
+        if valid then
+            available[#available+1]={key=font.key,label=font.label,path=path,flags=flags}
+        end
+    end
+    return available
 end
 
 local function EnsureMailboxSettings()

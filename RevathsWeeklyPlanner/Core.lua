@@ -155,6 +155,29 @@ function ns:MoveCharacter(key, direction)
     return false
 end
 
+function ns:DropCharacter(sourceKey, targetKey, after)
+    if sourceKey == targetKey then return false end
+    local characters = self:GetCharacters(false, true)
+    local sourceIndex, source
+    local targetFound = false
+    for index, entry in ipairs(characters) do
+        if entry.key == sourceKey then sourceIndex,source = index,entry end
+        if entry.key == targetKey then targetFound=true end
+    end
+    if not source or not targetFound then return false end
+    table.remove(characters,sourceIndex)
+    for index, entry in ipairs(characters) do
+        if entry.key == targetKey then
+            local destination=index+(after and 1 or 0)
+            if destination==sourceIndex then return false end
+            table.insert(characters,destination,source)
+            for rank,item in ipairs(characters) do item.character.sortOrder=rank end
+            return true
+        end
+    end
+    return false
+end
+
 function ns:ResetCharacterOrder()
     for _, entry in ipairs(self:GetCharacters(false, true)) do entry.character.sortOrder = nil end
 end

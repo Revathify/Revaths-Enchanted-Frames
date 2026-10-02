@@ -207,6 +207,7 @@ function methods:SetFont(path, size) assert(type(path) == "string"); self.font, 
 function methods:SetTextColor(...) self.color = {...} end
 function methods:SetFocus() self.focused = true end
 function methods:ClearFocus() self.focused = false end
+function methods:IsMouseOver() return self.mouseOver==true end
 function methods:IsShown() return self.shown end
 function methods:Hide() self:SetShown(false) end
 function methods:Show() self:SetShown(true) end
@@ -219,6 +220,7 @@ end
 CreateFrame = object
 UIParent = object("Frame"); STANDARD_TEXT_FONT = "font"
 UISpecialFrames = {}; RAID_CLASS_COLORS = {MAGE = {r = .4, g = .8, b = 1}}
+assert(loadfile("RevathsEnchantedFrames/Fonts.lua"))()
 assert(loadfile("RevathsWeeklyPlanner/UI.lua"))("RevathsWeeklyPlanner", ns)
 local function visible(f) return f.shown and (not f.parent or visible(f.parent)) end
 local function click(text, button)
@@ -465,17 +467,24 @@ local firstKey=before[1].key
 assert(not ns:MoveCharacter(firstKey,-1), "cannot move above first character")
 click("Order")
 local firstRow
-for _,f in ipairs(objects) do if f.key==firstKey and visible(f) and f.down then firstRow=f end end
-assert(firstRow and firstRow.down:IsShown() and not firstRow.meta:IsShown(), "order mode exposes arrows without overlapping metadata")
-firstRow.down.scripts.OnClick()
+for _,f in ipairs(objects) do if f.key==firstKey and visible(f) and f.scripts.OnDragStart then firstRow=f end end
+assert(firstRow and not firstRow.meta:IsShown(), "order mode clears metadata for dragging")
+firstRow.scripts.OnDragStart(firstRow)
+local targetRow
+for _,f in ipairs(objects) do if f.key==before[2].key and visible(f) and f.scripts.OnDragStart then targetRow=f end end
+assert(firstRow.alpha==.45 and firstRow.scripts.OnUpdate, "dragging marks its source and enables drop feedback")
+targetRow.mouseOver=true
+GetCursorPosition=function() return 360,200 end
+firstRow.scripts.OnDragStop(firstRow)
+targetRow.mouseOver=false
 local reordered=ns:GetCharacters(false,true)
-assert(reordered[2].key==firstKey and reordered[1].key==before[2].key, "down arrow swaps adjacent characters including the current character")
+assert(reordered[2].key==firstKey and reordered[1].key==before[2].key, "drop below the target moves the current character after it")
 ns:InitializeDatabase()
 assert(ns:GetCharacters(false,true)[2].key==firstKey, "custom ordering survives reload")
 ns.db.unfinishedOnly=true
 assert(ns:GetCharacters(false,true)[2].key==firstKey, "filtering does not rewrite stored ordering")
 click("Done")
-assert(not firstRow.down:IsShown(), "finishing hides the roster arrows")
+assert(not firstRow.scripts.OnUpdate and firstRow.alpha==1, "finishing clears drag feedback")
 ns.db.unfinishedOnly=false
 click("Order","RightButton")
 assert(ns:GetCharacters(false,true)[1].key==ns.currentKey, "reset restores the original roster order")
@@ -484,4 +493,10 @@ local r,g,b=ns:GetDetailColor("[Remaining] Boss")
 assert(g>r and g>b, "remaining boss details use available green")
 r,g,b=ns:GetDetailColor("Dungeons slot 1: Locked - 1/8")
 assert(r>g and g>b, "locked Vault slots show amber progress")
-print("Status colors and roster order passed: raid colors, tooltip states, UI arrows, reload, filters, boundaries and reset.")
+local priorOrder=ns:GetCharacters(false,true)
+firstRow.scripts.OnDragStart(firstRow); firstRow.scripts.OnDragStop(firstRow)
+assert(ns:GetCharacters(false,true)[1].key==priorOrder[1].key, "dropping outside a row leaves order unchanged")
+assert(not ns:DropCharacter(firstKey,"missing",true) and not ns:DropCharacter(firstKey,firstKey,true), "invalid targets never change order")
+firstRow.scripts.OnDragStart(firstRow); ns:Toggle()
+assert(not firstRow.scripts.OnUpdate and firstRow.alpha==1, "closing cancels an active drag")
+print("Status colors and roster order passed: raid colors, tooltip states, drag/drop, reload, filters, boundaries and reset.")

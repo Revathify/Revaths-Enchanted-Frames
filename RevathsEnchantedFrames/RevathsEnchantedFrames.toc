@@ -2,10 +2,11 @@
 ## Title: Revath's Enchanted Frames
 ## Notes: Shared settings and module framework for Revath's Enchanted addon suite.
 ## Author: Revath#2331 (Revathify)
-## Version: 4.5.0
+## Version: 4.6.0
 ## SavedVariables: RevathsEnchantedFramesDB
 ## Category: User Interface
 ## IconTexture: Interface\AddOns\RevathsEnchantedFrames\Media\Icon-v2
 
 Core.lua
+Fonts.lua
 Settings.lua
