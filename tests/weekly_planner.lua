@@ -387,3 +387,34 @@ click("Choose goals"); chosenRow.check.scripts.OnClick()
 assert(not ns.db.characters[bob].hiddenGoals["auto:raid"] and chosenRow.check.checked, "restore hidden default through its checkbox")
 click("Weekly goals")
 print("Goal visibility UI passed: configure, hide and restore per-character goals.")
+
+-- Crest balances are informational and switch with the selected offline alt.
+assert(loadfile("RevathsWeeklyPlanner/Catalog.lua"))("RevathsWeeklyPlanner",ns)
+assert(loadfile("RevathsWeeklyPlanner/Activities.lua"))("RevathsWeeklyPlanner",ns)
+ns.db.characters[bob].resources={}
+for id=3442,3446 do ns.db.characters[bob].resources[id]={name="Test crest "..id,quantity=id-3440,capturedAt=now} end
+imported.resources={[3445]={name="Alt Hero crest",quantity=77,capturedAt=now}}
+click("Me")
+local crestRow
+for _,f in ipairs(objects) do if f.entry and f.entry.name=="Test crest 3445" and visible(f) then crestRow=f end end
+assert(crestRow and not crestRow.check, "crest panel has information rows without completion controls")
+crestRow.scripts.OnEnter(crestRow)
+assert(table.concat(GameTooltip.lines,"\n"):find("5 available (saved)",1,true), "crest hover shows saved amounts and update details")
+crestRow.scripts.OnLeave(crestRow)
+local visibleGoals=0
+for _,f in ipairs(objects) do
+    if f.goalID and visible(f) then
+        assert(f.goalID~="auto:crests", "crests never appear in goal rows")
+        visibleGoals=visibleGoals+1
+    end
+end
+assert(visibleGoals*36+6<=RevathsWeeklyPlannerFrame.contentPanel.height, "minimum-size goal rows fit above the crest panel")
+click("Cara")
+for _,f in ipairs(objects) do if f.entry and f.entry.name=="Alt Hero crest" then crestRow=f end end
+assert(crestRow.entry and crestRow.entry.quantity==77 and visible(crestRow), "selecting an offline alt refreshes its own crest panel")
+click("Settings")
+assert(not visible(crestRow), "appearance view hides crest information")
+click("Weekly goals")
+RevathsWeeklyPlannerFrame:SetSize(1200,900)
+assert(visible(crestRow) and RevathsWeeklyPlannerFrame.contentPanel.height>500, "resizing retains room for goals and crest information")
+print("Crest info UI passed: per-alt selection, saved balance details, separate noninteractive rows, tab visibility and resize layout.")

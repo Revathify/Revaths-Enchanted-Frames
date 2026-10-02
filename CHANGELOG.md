@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.2.0 - Character crest information
+
+- Moved crest balances and weekly/season allowances from the goal checklist to a matching information panel below the selected character's goals.
+- Removed crests from completion totals and Choose goals; old manual overrides no longer affect their information.
+- Retained per-character offline balances, allowance refresh hints, hover details and capture timestamps.
+- Adjusted the goal list to fit above the panel when resizing the window.
+
 ## 4.1.0 - Suite versioning correction
 
 - Established Major.Minor.Hotfix versioning for the suite with the new Weekly Planner frame and its expanded tracking features.

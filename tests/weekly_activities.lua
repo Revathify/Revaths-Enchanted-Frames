@@ -57,13 +57,21 @@ local character=ns.db.characters[key]
 local function Goal(id,targetKey)
     for _,goal in ipairs(ns:GetGoals(targetKey or key,true)) do if goal.id==id then return goal end end
 end
+local function CrestDetails()
+    local lines={}
+    for _, row in ipairs(ns:GetCrestInfo(character)) do
+        for _, line in ipairs(row.details) do lines[#lines+1]=line end
+    end
+    return table.concat(lines,"\n")
+end
 local function Details(id) local _,lines=ns:GetGoalDetails(key,id); return table.concat(lines,"\n") end
+assert(not Goal("auto:crests"), "crest information never appears as a selectable goal")
 assert(Goal("auto:shards").title:find("450/600",1,true))
 assert(Details("auto:shards"):find("150 remaining",1,true) and Details("auto:shards"):find("Keys available: 3",1,true))
 currencies[3310].quantity=0; currencies[3028].quantity=2; ns:CaptureWeeklyProgress()
 assert(Goal("auto:shards").title:find("450/600",1,true),"spending/conversion must not alter earned count")
-assert(Details("auto:crests"):find("Season earnings: 650/1000 - 350 remaining",1,true),"season cap uses total earned, not balance")
-assert(not Details("auto:crests"):find("Weekly earnings",1,true),"never invent a weekly cap for season-limited crests")
+assert(CrestDetails():find("Season earnings: 650/1000 - 350 remaining",1,true),"season cap uses total earned, not balance")
+assert(not CrestDetails():find("Weekly earnings",1,true),"never invent a weekly cap for season-limited crests")
 assert(Goal("auto:profession:164").title:find("2/4",1,true),"weekly quest and treasure completion")
 assert(Goal("auto:profession:186").title:find("3/8",1,true),"gathering-drop slots and treatise")
 assert(not Goal("auto:profession:171"),"hide foreign professions")
@@ -81,10 +89,19 @@ currencies[3310].quantity=0
 currencies[3310].maxWeeklyQuantity=750; ns:CaptureWeeklyProgress()
 assert(Goal("auto:shards").title:find("450/750",1,true),"limits follow live API updates")
 currencies[3445].isTypeUnused=true; ns:CaptureWeeklyProgress()
-assert(not Details("auto:crests"):find("Hero Mistcrest",1,true),"retired currencies disappear")
+assert(not CrestDetails():find("Hero Mistcrest",1,true),"retired currencies disappear")
 ns.db.characters.alt={name="Alt",realm="Realm",region=3,goals={},nextID=1,weekly=character.weekly,
     resources=character.resources,professions=character.professions,resetAt=reset}
+character.weeklyOverrides={ ["auto:crests"]=true }
+character.hiddenGoals={ ["auto:crests"]=true }
+local crestRows=ns:GetCrestInfo(character)
+assert(#crestRows==1 and crestRows[1].quantity==9, "old completion/visibility overrides never hide crest information")
 local _,before=ns:GetProgress(character)
+character.resources[3443]={name="Veteran Mistcrest",quantity=77,capturedAt=now}
+local _,withCrests=ns:GetProgress(character)
+assert(before==withCrests, "crest balances never change completion totals")
+assert(ns:GetCrestInfo({resources={[3443]={name="Veteran Mistcrest",quantity=12,capturedAt=now}}})[1].quantity==12,
+    "offline selected characters use their own saved balance")
 ns:ToggleGoalVisibility(key,"auto:shards")
 local _,after=ns:GetProgress(character)
 assert(after==before-1 and #ns:GetGoals(key,true)>#ns:GetGoals(key),"hidden goals leave progress totals but remain configurable")
@@ -96,5 +113,5 @@ now=reset+1; reset=reset+604800; completed={}; ns:CheckWeeklyReset()
 assert(not character.weekly and character.resources[3028].quantity==2,"weekly reset clears earnings, preserves saved balances")
 assert(character.hiddenGoals["auto:shards"] and not character.weeklyOverrides,"visibility survives reset; completion does not")
 assert(Goal("auto:profession:164").title:find("Waiting",1,true),"offline profession weeklies wait for fresh flags after reset")
-assert(Goal("auto:crests").title:find("Log in",1,true),"offline crest balances remain visible without stale earning limits")
+assert(CrestDetails():find("Log into",1,true),"offline crest balances remain visible without stale earning limits")
 print("Weekly activity tests passed: currency limits, conversion, profession sources, named events, Prey, partial APIs, offline/reset behavior and per-character visibility.")

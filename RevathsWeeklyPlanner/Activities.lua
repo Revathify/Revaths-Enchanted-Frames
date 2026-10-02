@@ -92,6 +92,29 @@ local function CurrencyLines(currency)
     return lines
 end
 
+-- Informational balances belong to the selected character, never the goal checklist.
+function ns:GetCrestInfo(character)
+    local rows = {}
+    local currencies = character and character.weekly and character.weekly.currencies or {}
+    local balances = character and character.resources or {}
+    for id = 3442, 3446 do
+        local currency, balance = currencies[id], balances[id]
+        if currency then
+            local earned, cap, kind = Allowance(currency)
+            rows[#rows + 1] = { name = currency.name, quantity = currency.quantity,
+                summary = cap and string.format("%d held | %s %d/%d | %d left", currency.quantity, kind, earned, cap, math.max(0, cap-earned))
+                    or (currency.quantity .. " held | No earning limit"),
+                details = CurrencyLines(currency), capturedAt = currency.capturedAt }
+        elseif balance then
+            rows[#rows + 1] = { name = balance.name, quantity = balance.quantity,
+                summary = balance.quantity .. " held (saved) | Allowance needs refresh",
+                details = {balance.name .. ": " .. balance.quantity .. " available (saved)",
+                    "Log into this character to refresh the earning allowance."}, capturedAt = balance.capturedAt }
+        end
+    end
+    return rows
+end
+
 function ns:GetAdditionalGoals(character)
     local snapshot,goals=character.weekly or {},{}
     local currencies=snapshot.currencies or {}
@@ -108,23 +131,6 @@ function ns:GetAdditionalGoals(character)
             capturedAt=shards and shards.capturedAt or (balances[3028] or balances[3310]).capturedAt,
             title="Coffer keys / shards - "..(cap and string.format("%d/%d earned",earned,cap) or (shards and "No earning limit" or "Log in to update"))}
     end
-    local crestLines,limited,capped,stamp,waiting={},0,0,nil,false
-    for id=3442,3446 do
-        local currency=currencies[id]
-        if currency then
-            for _,line in ipairs(CurrencyLines(currency)) do crestLines[#crestLines+1]=line end
-            local earned,cap=Allowance(currency)
-            if cap then limited=limited+1; if earned>=cap then capped=capped+1 end end
-            stamp=math.max(stamp or 0,currency.capturedAt)
-        elseif balances[id] then
-            crestLines[#crestLines+1]=balances[id].name..": "..balances[id].quantity.." available (saved)"
-            crestLines[#crestLines+1]="Log into this character to refresh the earning allowance."
-            stamp=math.max(stamp or 0,balances[id].capturedAt)
-            waiting=true
-        end
-    end
-    if #crestLines>0 then goals[#goals+1]={id="auto:crests",automatic=true,done=limited>0 and capped==limited,details=crestLines,capturedAt=stamp,
-        title="Crest allowances - "..(waiting and "Log in to update" or (limited>0 and string.format("%d/%d types at limit",capped,limited) or "No earning limits"))} end
     local professions={}
     for baseID,profession in pairs(character.professions or {}) do professions[#professions+1]={id=baseID,info=profession} end
     table.sort(professions,function(a,b) return a.info.name<b.info.name end)

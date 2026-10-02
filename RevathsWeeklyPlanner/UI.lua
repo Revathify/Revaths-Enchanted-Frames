@@ -7,6 +7,7 @@ local view, raidOffset = "goals", 0
 local raidRows, goalControls = {}, {}
 local characterCapacity, goalCapacity = 7, 6
 local appearancePanel, modernButton, classicButton, opacitySlider, scaleSlider, opacityValue, scaleValue
+local crestPanel, crestRows, crestHint
 local refreshingAppearance = false
 local raidStatus, refreshRaids, headerGlow, headerLine, titlePlate, goalsTab, raidsTab
 local palettes = {
@@ -214,6 +215,23 @@ function ns:Refresh()
     raidsTab.label:SetTextColor(view == "raids" and accent[1] or .56, view == "raids" and accent[2] or .62, view == "raids" and accent[3] or .70)
     filter:SetChecked(self.db.unfinishedOnly)
     undoButton:SetShown(view == "goals" and self.removedGoal ~= nil)
+    local crests = self.GetCrestInfo and self:GetCrestInfo(character) or {}
+    local crestHeight = view == "goals" and self.GetCrestInfo and (40 + math.max(1, #crests) * 22) or 0
+    crestPanel:SetShown(crestHeight > 0)
+    crestPanel:SetHeight(math.max(1, crestHeight))
+    crestPanel:SetWidth(frame:GetWidth() - 242)
+    frame.contentPanel:SetHeight(frame:GetHeight() - 268 - (crestHeight > 0 and crestHeight + 6 or 0))
+    goalCapacity = math.max(1, math.min(#goalRows, math.floor((frame.contentPanel:GetHeight() - 6) / 36)))
+    for index, row in ipairs(crestRows) do
+        local entry = crests[index]
+        row.entry = entry
+        row:SetShown(entry ~= nil)
+        row.label:SetText(entry and SafeText(entry.name) or "")
+        row.value:SetText(entry and SafeText(entry.summary) or "")
+    end
+    crestHint:SetWidth(frame:GetWidth() - 262)
+    crestHint:SetShown(#crests == 0)
+    crestHint:SetText("Log into this character to collect crest balances and allowances.")
     local goals = self:GetGoals(selectedKey, view == "visibility")
     goalOffset = math.max(0, math.min(goalOffset, #goals - goalCapacity))
     for index, row in ipairs(goalRows) do
@@ -341,6 +359,30 @@ local function Build()
     local contentPanel = Surface(CreateFrame("Frame", nil, frame, "BackdropTemplate"), "panel")
     contentPanel:SetPoint("TOPLEFT", 228,-166); contentPanel:SetSize(478,232)
     frame.contentPanel = contentPanel
+    crestPanel = Surface(CreateFrame("Frame", nil, frame, "BackdropTemplate"), "panel")
+    crestPanel:SetPoint("BOTTOMLEFT", 228, 102)
+    local crestTitle = Label(crestPanel, 12)
+    crestTitle:SetPoint("TOPLEFT", 10, -8); crestTitle:SetText("CRESTS · Balances and allowances")
+    for index = 1, 5 do
+        local row = CreateFrame("Frame", nil, crestPanel)
+        row:SetPoint("TOPLEFT", 10, -28 - (index-1)*22)
+        row:SetPoint("TOPRIGHT", -10, -28 - (index-1)*22); row:SetHeight(22)
+        row.label = Label(row, 11); row.label:SetPoint("LEFT"); row.label:SetWidth(145); row.label:SetWordWrap(false)
+        row.value = Label(row, 10, true); row.value:SetPoint("LEFT", 150, 0); row.value:SetPoint("RIGHT"); row.value:SetJustifyH("RIGHT"); row.value:SetWordWrap(false)
+        row:EnableMouse(true)
+        row:SetScript("OnEnter", function(self)
+            if not self.entry or not GameTooltip then return end
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:ClearLines()
+            GameTooltip:AddLine(SafeText(self.entry.name), 1, .82, .3, false)
+            for _, line in ipairs(self.entry.details) do GameTooltip:AddLine(SafeText(line), .9, .93, .96, false) end
+            if self.entry.capturedAt then GameTooltip:AddLine("Updated " .. date("%d %b, %H:%M", self.entry.capturedAt), .55, .7, .8, false) end
+            GameTooltip:Show()
+        end)
+        row:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+        row:SetScript("OnHide", function() if GameTooltip then GameTooltip:Hide() end end)
+        crestRows = crestRows or {}; crestRows[index] = row
+    end
+    crestHint = Label(crestPanel, 11, true); crestHint:SetPoint("TOPLEFT", 10, -29)
     local function SetView(nextView)
         view = nextView; raidOffset = 0; goalOffset = 0; CancelEdit(); Status(""); ns:Refresh()
         if nextView == "raids" then ns:RequestRaidRefresh() end
