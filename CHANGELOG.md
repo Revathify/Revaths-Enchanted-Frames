@@ -1,5 +1,9 @@
 # Changelog
 
+## Upcoming - Wider weekly goal tooltips
+
+- Let goal tooltips grow to fit their longest entry, keeping titles, boss details, Vault slots and quest objectives on individual rows.
+
 ## Upcoming - Clickable default weekly goals
 
 - Restored row and checkbox clicks for the four default goals, including offline alts.

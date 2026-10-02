@@ -46,11 +46,12 @@ local function ShowGoalDetails(row)
     detailOffset = math.max(0, math.min(detailOffset, math.max(0, #lines - pageSize)))
     GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
     GameTooltip:ClearLines()
-    GameTooltip:AddLine(SafeText(title), 1, .82, .3, true)
+    -- Let the tooltip fit the longest entry instead of wrapping into its default narrow width.
+    GameTooltip:AddLine(SafeText(title), 1, .82, .3, false)
     for index = detailOffset + 1, math.min(#lines, detailOffset + pageSize) do
-        GameTooltip:AddLine(SafeText(lines[index]), .9, .93, .96, true)
+        GameTooltip:AddLine(SafeText(lines[index]), .9, .93, .96, false)
     end
-    if #lines > pageSize then GameTooltip:AddLine("Hold Shift and scroll for more details", .55, .7, .8, true) end
+    if #lines > pageSize then GameTooltip:AddLine("Hold Shift and scroll for more details", .55, .7, .8, false) end
     GameTooltip:Show()
 end
 
