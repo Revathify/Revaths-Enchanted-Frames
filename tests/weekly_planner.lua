@@ -372,3 +372,18 @@ assert(not GameTooltip.shown, "switching tabs hides goal details")
 click("Weekly goals"); automaticRow.scripts.OnEnter(automaticRow)
 ns:Toggle(); assert(not GameTooltip.shown, "closing planner hides goal details")
 print("Weekly hover details passed: saved data, bounded pages, Shift-scroll and tooltip cleanup.")
+
+shiftDown=false
+RevathsEnchantedWeeklyPlanner_Open(); click("Me"); click("Choose goals")
+assert(not input:IsShown(), "visibility choices hide goal editor")
+local chosenRow
+for _,f in ipairs(objects) do if f.goalID=="auto:raid" and visible(f) then chosenRow=f; break end end
+assert(chosenRow and chosenRow.check.checked, "visibility checkboxes show enabled goals regardless of completion")
+chosenRow.scripts.OnClick(chosenRow,"LeftButton")
+assert(ns.db.characters[bob].hiddenGoals["auto:raid"] and not chosenRow.check.checked)
+click("Weekly goals")
+for _,goal in ipairs(ns:GetGoals(bob)) do assert(goal.id~="auto:raid", "hidden goal disappears from checklist") end
+click("Choose goals"); chosenRow.check.scripts.OnClick()
+assert(not ns.db.characters[bob].hiddenGoals["auto:raid"] and chosenRow.check.checked, "restore hidden default through its checkbox")
+click("Weekly goals")
+print("Goal visibility UI passed: configure, hide and restore per-character goals.")

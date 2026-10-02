@@ -11,6 +11,8 @@
 
 Core.lua
 Characters.lua
+Catalog.lua
+Activities.lua
 Progress.lua
 Details.lua
 UI.lua

@@ -174,7 +174,7 @@ end
 
 function ns:Refresh()
     if not frame or not frame:IsShown() or not self.db then return end
-    local characters = self:GetCharacters(view == "raids")
+    local characters = self:GetCharacters(view == "raids", view == "visibility")
     if not selectedKey or not self.db.characters[selectedKey] then selectedKey = self.currentKey end
     local visibleSelection = false
     for _, entry in ipairs(characters) do if entry.key == selectedKey then visibleSelection = true end end
@@ -214,17 +214,17 @@ function ns:Refresh()
     raidsTab.label:SetTextColor(view == "raids" and accent[1] or .56, view == "raids" and accent[2] or .62, view == "raids" and accent[3] or .70)
     filter:SetChecked(self.db.unfinishedOnly)
     undoButton:SetShown(view == "goals" and self.removedGoal ~= nil)
-    local goals = self:GetGoals(selectedKey)
+    local goals = self:GetGoals(selectedKey, view == "visibility")
     goalOffset = math.max(0, math.min(goalOffset, #goals - goalCapacity))
     for index, row in ipairs(goalRows) do
         local goal = goals[goalOffset + index]
         if hoveredGoal == row and row.goalID ~= (goal and goal.id) then HideGoalDetails() end
         row.goalID = goal and goal.id
-        row:SetShown(view == "goals" and goal ~= nil and index <= goalCapacity)
+        row:SetShown((view == "goals" or view == "visibility") and goal ~= nil and index <= goalCapacity)
         if goal then
-            row.check:SetChecked(goal.done == true)
+            row.check:SetChecked(view == "visibility" and not (character.hiddenGoals and character.hiddenGoals[goal.id]) or (view ~= "visibility" and goal.done == true))
             row.check:SetEnabled(true)
-            row.remove:SetShown(not goal.automatic)
+            row.remove:SetShown(view == "goals" and not goal.automatic)
             row.label:SetText(SafeText(goal.title))
             row.label:SetTextColor(goal.done and .45 or .95, goal.done and .78 or .96, goal.done and .60 or .98)
         end
@@ -233,6 +233,10 @@ function ns:Refresh()
     frame.empty:SetText(total == 0 and "What would you like to finish this week?\nAdd a goal below, or choose a starter goal."
         or "All goals complete for this character.\nTurn off Unfinished only to see or change them.")
     for _, control in ipairs(goalControls) do control:SetShown(view == "goals") end
+    if view == "visibility" then
+        progressText:SetText("Choose which goals appear for this character. Checked = shown; scroll for more.")
+        Status("Hidden goals keep their saved progress and stay hidden after weekly reset.")
+    end
     appearancePanel:SetShown(view == "appearance")
     if view == "appearance" then
         characterTitle:SetText("Appearance")
@@ -338,11 +342,13 @@ local function Build()
     contentPanel:SetPoint("TOPLEFT", 228,-166); contentPanel:SetSize(478,232)
     frame.contentPanel = contentPanel
     local function SetView(nextView)
-        view = nextView; raidOffset = 0; CancelEdit(); Status(""); ns:Refresh()
+        view = nextView; raidOffset = 0; goalOffset = 0; CancelEdit(); Status(""); ns:Refresh()
         if nextView == "raids" then ns:RequestRaidRefresh() end
     end
     goalsTab = Button(frame, "Weekly goals", 112,26, function() SetView("goals") end); goalsTab:SetPoint("TOPLEFT",232,-89)
     raidsTab = Button(frame, "Raid lockouts", 112,26, function() SetView("raids") end); raidsTab:SetPoint("LEFT",goalsTab,"RIGHT",6,0)
+    local chooseGoals = Button(frame, "Choose goals", 110,26, function() SetView("visibility") end)
+    chooseGoals:SetPoint("LEFT",raidsTab,"RIGHT",6,0)
     local close = Button(frame, "×", 28, 28, function() frame:Hide() end); close:SetPoint("TOPRIGHT", -12, -12)
     local settings = Button(frame, "Settings", 78, 28, function()
         SetView("appearance")
@@ -381,6 +387,7 @@ local function Build()
     end
     for index = 1, 20 do
         local row = Button(frame, "", 470, 32, function(self, mouseButton)
+            if view == "visibility" then ns:ToggleGoalVisibility(selectedKey, self.goalID); ns:Refresh(); return end
             if type(self.goalID) == "string" then
                 if mouseButton == "RightButton" then
                     Status("Click to check off this goal; Shift-click to restore automatic completion.")
@@ -405,7 +412,8 @@ local function Build()
         row.check = CreateFrame("CheckButton", nil, row, "UICheckButtonTemplate")
         row.check:SetSize(26, 26); row.check:SetPoint("LEFT", 3, 0)
         row.check:SetScript("OnClick", function()
-            if type(row.goalID) == "string" and IsShiftKeyDown and IsShiftKeyDown() then ns:ResetGoalOverride(selectedKey, row.goalID)
+            if view == "visibility" then ns:ToggleGoalVisibility(selectedKey, row.goalID)
+            elseif type(row.goalID) == "string" and IsShiftKeyDown and IsShiftKeyDown() then ns:ResetGoalOverride(selectedKey, row.goalID)
             else ns:ToggleGoal(selectedKey, row.goalID) end
             ns:Refresh()
         end)

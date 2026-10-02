@@ -26,10 +26,27 @@ local eventQuests = {
     [90576] = { name = "Fortify the Runestones: Shades of the Row", event = "Saltheril's Soiree" },
     [93889] = { name = "Midnight: Saltheril's Soiree", event = "Saltheril's Soiree" },
 }
+for id, definition in pairs(ns.namedWeeklyQuests or {}) do
+    if not eventQuests[id] then eventQuests[id] = definition end
+end
 
 local function Text(value, fallback)
     value = Public(value)
     return type(value) == "string" and value ~= "" and value or fallback
+end
+
+local function QuestName(id, fallback)
+    local name = C_QuestLog.GetTitleForQuestID and Read(function() return Text(C_QuestLog.GetTitleForQuestID(id)) end)
+    if name then return name end
+    if C_QuestLog.RequestLoadQuestByID then
+        ns.weeklyQuestRequests = ns.weeklyQuestRequests or {}
+        local now = GetServerTime()
+        if not ns.weeklyQuestRequests[id] or now - ns.weeklyQuestRequests[id] >= 30 then
+            ns.weeklyQuestRequests[id] = now
+            pcall(C_QuestLog.RequestLoadQuestByID, id)
+        end
+    end
+    return fallback
 end
 
 local function RewardItemLevel(activityID, now)
@@ -151,10 +168,12 @@ function ns:CaptureWeeklyProgress()
             end
             for id, definition in pairs(eventQuests) do
                 local active = C_QuestLog.IsOnQuest and Public(C_QuestLog.IsOnQuest(id))
+                if not active and C_TaskQuest and C_TaskQuest.IsActive then active = Public(C_TaskQuest.IsActive(id)) end
                 local completed = Public(C_QuestLog.IsQuestFlaggedCompleted(id))
                 if active or completed then
-                    local name = C_QuestLog.GetTitleForQuestID and Text(C_QuestLog.GetTitleForQuestID(id), definition.name) or definition.name
+                    local name = QuestName(id, known[id] and known[id].name or definition.name)
                     known[id] = known[id] or { name = name, done = false }
+                    known[id].name = name
                     known[id].event, known[id].active = definition.event, active == true
                 end
             end
@@ -192,6 +211,7 @@ function ns:CaptureWeeklyProgress()
         if quests then snapshot.quests, snapshot.questsUpdatedAt = quests, now end
     end
     character.weekly = snapshot
+    if self.CaptureActivities then self:CaptureActivities(character, snapshot) end
     if self.Refresh then self:Refresh() end
 end
 
@@ -212,6 +232,13 @@ function ns:GetDefaultGoals(character)
             title = "Fill Great Vault slots - " .. (vault and string.format("%d/%d", vault.filled, vault.total)
                 or (snapshot.rewardPending and "Claim last week's reward to refresh" or "Waiting for Vault data")) },
     }
+    if self.GetAdditionalGoals then
+        local additional = self:GetAdditionalGoals(character)
+        for _, goal in ipairs(additional) do
+            goals[#goals + 1] = goal
+            if goal.id:find("auto:world:", 1, true) or goal.id:find("auto:profession:", 1, true) then goals[3].countsForProgress = false end
+        end
+    end
     for _, goal in ipairs(goals) do
         local override = character.weeklyOverrides and character.weeklyOverrides[goal.id]
         if type(override) == "boolean" then goal.done, goal.manualCompletion = override, true end
@@ -221,11 +248,13 @@ end
 
 local events = CreateFrame("Frame")
 for _, event in ipairs({ "PLAYER_LOGIN", "PLAYER_ENTERING_WORLD", "WEEKLY_REWARDS_UPDATE", "CHALLENGE_MODE_COMPLETED",
-    "CHALLENGE_MODE_MAPS_UPDATE", "QUEST_LOG_UPDATE", "QUEST_TURNED_IN", "PLAYER_REGEN_ENABLED", "ENCOUNTER_END", "ITEM_DATA_LOAD_RESULT" }) do events:RegisterEvent(event) end
+    "CHALLENGE_MODE_MAPS_UPDATE", "QUEST_LOG_UPDATE", "QUEST_TURNED_IN", "PLAYER_REGEN_ENABLED", "ENCOUNTER_END", "ITEM_DATA_LOAD_RESULT",
+    "CURRENCY_DISPLAY_UPDATE", "SKILL_LINES_CHANGED", "TRADE_SKILL_SHOW", "TRADE_SKILL_DATA_SOURCE_CHANGED", "QUEST_DATA_LOAD_RESULT" }) do events:RegisterEvent(event) end
 events:SetScript("OnEvent", function(_, event, questID, encounterName, difficultyID, groupSize, success)
     if not ns.db or not ns.currentKey then return end
     if event == "ENCOUNTER_END" and ((issecretvalue and issecretvalue(success)) or success ~= 1) then return end
     if event == "ITEM_DATA_LOAD_RESULT" and ((issecretvalue and issecretvalue(questID)) or not ns.weeklyItemRequests or not ns.weeklyItemRequests[questID]) then return end
+    if event == "QUEST_DATA_LOAD_RESULT" and ((issecretvalue and issecretvalue(questID)) or not ns.weeklyQuestRequests or not ns.weeklyQuestRequests[questID]) then return end
     if event == "QUEST_TURNED_IN" and not (issecretvalue and issecretvalue(questID)) then
         local snapshot = ns.db.characters[ns.currentKey].weekly
         if snapshot and snapshot.quests[questID] then snapshot.quests[questID].done = true end

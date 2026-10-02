@@ -40,6 +40,7 @@ function ns:InitializeDatabase()
             end
             character.goals = valid
             character.weeklyOverrides = type(character.weeklyOverrides) == "table" and character.weeklyOverrides or nil
+            character.hiddenGoals = type(character.hiddenGoals) == "table" and character.hiddenGoals or nil
             character.nextID = math.max(tonumber(character.nextID) or 1, largestID + 1)
         end
     end
@@ -95,16 +96,23 @@ function ns:TrackCurrentCharacter()
 end
 
 function ns:GetProgress(character)
-    local done = 0
-    for _, goal in ipairs(character.goals) do if goal.done then done = done + 1 end end
-    local total = #character.goals
+    local done, total = 0, 0
+    for _, goal in ipairs(character.goals) do
+        if not (character.hiddenGoals and character.hiddenGoals[goal.id]) then
+            total = total + 1; if goal.done then done = done + 1 end
+        end
+    end
     if self.GetDefaultGoals then
-        for _, goal in ipairs(self:GetDefaultGoals(character)) do total = total + 1; if goal.done then done = done + 1 end end
+        for _, goal in ipairs(self:GetDefaultGoals(character)) do
+            if goal.countsForProgress ~= false and not (character.hiddenGoals and character.hiddenGoals[goal.id]) then
+                total = total + 1; if goal.done then done = done + 1 end
+            end
+        end
     end
     return done, total
 end
 
-function ns:GetCharacters(includeRaids)
+function ns:GetCharacters(includeRaids, includeAll)
     local list = {}
     if not self.db then return list end
     for key, character in pairs(self.db.characters) do
@@ -115,7 +123,7 @@ function ns:GetCharacters(includeRaids)
                 if raid.resetAt > Now() and raid.killed < #raid.bosses then pendingRaid = true end
             end
         end
-        if character.region == Region() and (not self.db.unfinishedOnly or total == 0 or done < total or pendingRaid) then
+        if character.region == Region() and (includeAll or not self.db.unfinishedOnly or total == 0 or done < total or pendingRaid) then
             list[#list + 1] = { key = key, character = character, done = done, total = total }
         end
     end
@@ -128,18 +136,25 @@ function ns:GetCharacters(includeRaids)
     return list
 end
 
-function ns:GetGoals(key)
+function ns:GetGoals(key, includeHidden)
     local character = self.db and self.db.characters[key]
     local list = {}
     if character and self.GetDefaultGoals then
         for _, goal in ipairs(self:GetDefaultGoals(character)) do
-            if not self.db.unfinishedOnly or not goal.done then list[#list + 1] = goal end
+            if includeHidden or (not (character.hiddenGoals and character.hiddenGoals[goal.id]) and (not self.db.unfinishedOnly or not goal.done)) then list[#list + 1] = goal end
         end
     end
     for _, goal in ipairs(character and character.goals or {}) do
-        if not self.db.unfinishedOnly or not goal.done then list[#list + 1] = goal end
+        if includeHidden or (not (character.hiddenGoals and character.hiddenGoals[goal.id]) and (not self.db.unfinishedOnly or not goal.done)) then list[#list + 1] = goal end
     end
     return list
+end
+
+function ns:ToggleGoalVisibility(key, id)
+    local character = self.db and self.db.characters[key]
+    if not character then return end
+    character.hiddenGoals = character.hiddenGoals or {}
+    character.hiddenGoals[id] = not character.hiddenGoals[id] or nil
 end
 
 local function CleanTitle(title)

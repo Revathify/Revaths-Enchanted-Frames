@@ -7,9 +7,11 @@ function ns:GetGoalDetails(key, goalID)
     local goal
     for _, entry in ipairs(self:GetGoals(key)) do if entry.id == goalID then goal = entry; break end end
     if not goal then return end
-    local lines, snapshot, stamp = {}, character.weekly or {}, nil
+    local lines, snapshot, stamp = {}, character.weekly or {}, goal.capturedAt
     local function Add(text) lines[#lines + 1] = text end
-    if goalID == "auto:raid" then
+    if goal.details then
+        for _, line in ipairs(goal.details) do Add(line) end
+    elseif goalID == "auto:raid" then
         local raid = snapshot.raid
         stamp = raid and raid.capturedAt
         local lastRaid
@@ -56,6 +58,7 @@ function ns:GetGoalDetails(key, goalID)
     if stamp then Add("Updated " .. date("%d %b, %H:%M", stamp)) end
     if key ~= self.currentKey then Add("Offline snapshot - log into this character to refresh.") end
     if goal.automatic then
+        if goal.countsForProgress == false then Add("Summary only - individual activity goals count toward completion.") end
         Add(goal.manualCompletion and "Completion set manually for this week." or "Completion follows live progress.")
         Add("Click to check off; Shift-click to restore automatic completion.")
     end

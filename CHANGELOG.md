@@ -1,5 +1,14 @@
 # Changelog
 
+## Upcoming - More weekly activities and per-character goal selection
+
+- Added Coffer Key and shard balances, weekly shard earnings and remaining allowance from Blizzard's currency counters.
+- Added current-season Mistcrest balances and reported weekly/season earning limits, keeping spending separate from earnings.
+- Added Midnight knowledge-source checklists for learned professions: weekly quest, treatise, weekly treasures and gathering/disenchanting drops.
+- Added named goals for tracked Soiree, Abundance, Special Assignments, weekly dungeon/meta quests, Void Assaults, Coiled Isle weeklies and Prey reward hunts, including the four new Nightmare targets.
+- Added Choose goals to hide/restore activities per character, exclude hidden activities from totals, and preserve preferences across resets.
+- Preserved offline balances, expired weekly counters, retained safe snapshots on restricted/partial API reads, and kept manual completion available.
+
 ## Upcoming - Wider weekly goal tooltips
 
 - Let goal tooltips grow to fit their longest entry, keeping titles, boss details, Vault slots and quest objectives on individual rows.
