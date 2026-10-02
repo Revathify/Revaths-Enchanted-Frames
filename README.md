@@ -12,6 +12,16 @@ Revath's Enchanted Frames is a modular World of Warcraft Retail addon suite that
 - **Revath's Enchanted Tooltips** — account-wide bag, bank, and Warband-bank item totals with Shift details per character.
 - **Revath's Enchanted Weekly Planner** — personal goals for each character, automatic weekly resets, and an unfinished-only view.
 
+## Release versions
+
+The suite uses **Major.Minor.Hotfix**, starting with **4.1.0** for the expanded suite with the Weekly Planner.
+
+- **Major**: a new frame/module or a major suite redesign (for example, `5.0.0`).
+- **Minor**: new features within existing frames (for example, `4.2.0`).
+- **Hotfix**: fixes to existing behavior (for example, `4.1.1`).
+
+Before publishing, choose the appropriate version and update all five active addon manifests together. A major change resets Minor and Hotfix to zero; a minor change resets Hotfix to zero. Pushing to `main` builds and publishes that exact version. The release workflow never increments it automatically, and an already-published version is skipped rather than replaced.
+
 ## Install or upgrade
 
 1. Extract all five folders into `_retail_/Interface/AddOns/`, replacing the existing module folders when prompted:

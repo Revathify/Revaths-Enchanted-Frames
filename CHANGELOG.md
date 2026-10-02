@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.1.0 - Suite versioning correction
+
+- Established Major.Minor.Hotfix versioning for the suite with the new Weekly Planner frame and its expanded tracking features.
+- Synchronized all five active addon manifests to 4.1.0.
+- Releases now package the explicitly chosen version instead of automatically incrementing Hotfix on every push.
+- Documented major releases for new frames, minor releases for features, and hotfix releases for fixes.
+
 ## Upcoming - More weekly activities and per-character goal selection
 
 - Added Coffer Key and shard balances, weekly shard earnings and remaining allowance from Blizzard's currency counters.
