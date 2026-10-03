@@ -22,7 +22,16 @@ function RevathsEnchantedFrames_NormalizeWindowLayers(frame)
     local function Normalize(parent)
         if not parent.revathsFocusHook then
             parent.revathsFocusHook=true
-            parent:HookScript("OnMouseDown",function() FocusWindow(frame) end)
+            -- Mouse scripts make decorative Frames hit-testable. Never attach
+            -- them to chrome/insets, and never reorder a pressed control.
+            if parent==frame then
+                parent:HookScript("OnMouseUp",function() FocusWindow(frame) end)
+            elseif parent.GetObjectType then
+                local kind=parent:GetObjectType()
+                if kind=="Button" or kind=="CheckButton" then
+                    parent:HookScript("OnClick",function() FocusWindow(frame) end)
+                end
+            end
         end
         for _, child in ipairs({parent:GetChildren()}) do
             child:SetFrameLevel(parent:GetFrameLevel()+1)

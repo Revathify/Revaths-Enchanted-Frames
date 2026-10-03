@@ -26,6 +26,8 @@ function ns:ApplyAppearance()
     if f.NineSlice then f.NineSlice:SetShown(native) end
     if f.Bg then f.Bg:SetShown(native) end
     if f.TitleBg then f.TitleBg:SetShown(native) end
+    if f.TitleContainer then f.TitleContainer:SetShown(native) end
+    if self.brandHeader then self.brandHeader:SetShown(not native) end
     if f.Inset.Bg then f.Inset.Bg:SetShown(native) end
     if f.Inset.NineSlice then f.Inset.NineSlice:SetShown(native) end
     f.custom:SetShown(not native)
@@ -145,6 +147,7 @@ function ns:Build()
     f.custom:SetAllPoints(); f.custom:SetFrameLevel(f:GetFrameLevel())
     f.custom:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8", edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",edgeSize=12,insets={left=3,right=3,top=3,bottom=3}})
     local header = Label(f, "Revath's Enchanted Whispers"); header:SetPoint("TOPLEFT", 64, -8)
+    self.brandHeader=header
     if f.TitleText then header:Hide() end
     self.fontObjects={header}
     self.newTarget=Input(f,120); self.newTarget:SetPoint("TOPLEFT",24,-36)
