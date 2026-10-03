@@ -26,14 +26,21 @@ function ns:ApplyAppearance()
     if f.NineSlice then f.NineSlice:SetShown(native) end
     if f.Bg then f.Bg:SetShown(native) end
     if f.TitleBg then f.TitleBg:SetShown(native) end
+    if f.Inset.Bg then f.Inset.Bg:SetShown(native) end
+    if f.Inset.NineSlice then f.Inset.NineSlice:SetShown(native) end
     f.custom:SetShown(not native)
     f.custom:SetBackdropColor(.04, .06, .09, s.opacity)
     f.custom:SetBackdropBorderColor(.32, .39, .48, 1)
-    if f.Bg then f.Bg:SetAlpha(s.opacity) end
+    if f.Bg then f.Bg:SetAlpha(native and 1 or s.opacity) end
+    if RevathsEnchantedFrames_NormalizeWindowLayers then RevathsEnchantedFrames_NormalizeWindowLayers(f) end
     for _, object in ipairs(self.fontObjects) do
         RevathsEnchantedFrames_ApplyFont(object, s.font, object == self.transcript and s.fontSize or 12)
     end
-    self.sidebar:SetBackdropColor(.035, .045, .065, s.opacity)
+    self.sidebar:SetBackdropColor(.035, .045, .065, native and 1 or s.opacity)
+    if RevathsEnchantedFrames_StyleClassicSurface then
+        RevathsEnchantedFrames_ResetClassicSurface(self.sidebar)
+        if native then RevathsEnchantedFrames_StyleClassicSurface(self.sidebar,"panel",1) end
+    end
     self:Refresh(true)
 end
 
@@ -116,12 +123,14 @@ end
 
 function ns:Build()
     local s = self.db.settings
-    local f = CreateFrame("Frame", "RevathsEnchantedWhispersFrame", UIParent, "PortraitFrameTemplate")
+    local f = CreateFrame("Frame", "RevathsEnchantedWhispersFrame", UIParent, "ButtonFrameTemplate")
     self.frame = f
+    if ButtonFrameTemplate_HideButtonBar then ButtonFrameTemplate_HideButtonBar(f) end
+    f.Inset:ClearAllPoints(); f.Inset:SetPoint("TOPLEFT",166,-68); f.Inset:SetPoint("BOTTOMRIGHT",-16,68)
     f:SetSize(math.max(440, math.min(900, tonumber(s.width) or 540)), math.max(280, math.min(700, tonumber(s.height) or 360)))
     f:SetPoint("CENTER", UIParent, "CENTER", tonumber(s.x) or 0, tonumber(s.y) or 0)
     f:SetClampedToScreen(true); f:SetMovable(true); f:SetResizable(true); f:SetResizeBounds(440, 280, 900, 700)
-    f:SetFrameStrata("DIALOG"); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
+    f:SetFrameStrata("HIGH"); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
     f:SetScript("OnDragStart", function() f:StartMoving() end)
     local function SavePosition()
         f:StopMovingOrSizing()
@@ -149,12 +158,12 @@ function ns:Build()
     self.search=Input(self.sidebar,112); self.search:SetPoint("TOPLEFT",10,-8); self.search:SetMaxLetters(80)
     self.search:SetScript("OnTextChanged",function() self.offset=0; self:Refresh(false) end)
     self.rows={}
-    self.chatTitle=Label(f, "Choose a conversation"); self.chatTitle:SetPoint("TOPLEFT",self.sidebar,"TOPRIGHT",10,-5); self.chatTitle:SetPoint("RIGHT",-83,0)
+    self.chatTitle=Label(f.Inset, "Choose a conversation"); self.chatTitle:SetPoint("TOPLEFT",self.sidebar,"TOPRIGHT",10,-5); self.chatTitle:SetPoint("RIGHT",-83,0)
     self.delete=Button(f,"Clear",52,function()
         if self.selected then StaticPopup_Show("REVATHS_WHISPERS_CLEAR", nil,nil,self.selected) end
     end); self.delete:SetPoint("TOPRIGHT",-20,-70)
-    self.transcript=CreateFrame("ScrollingMessageFrame",nil,f)
-    self.transcript:SetPoint("TOPLEFT",self.sidebar,"TOPRIGHT",10,-28); self.transcript:SetPoint("BOTTOMRIGHT",-20,78)
+    self.transcript=CreateFrame("ScrollingMessageFrame",nil,f.Inset)
+    self.transcript:SetPoint("TOPLEFT",self.sidebar,"TOPRIGHT",14,-28); self.transcript:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-20,78)
     self.transcript:SetJustifyH("LEFT"); self.transcript:SetFading(false); self.transcript:SetMaxLines(110); self.transcript:SetSpacing(4)
     self.transcript:EnableMouseWheel(true); self.transcript:SetHyperlinksEnabled(true)
     self.transcript:SetScript("OnMouseWheel",function(t,delta) if delta>0 then t:ScrollUp() else t:ScrollDown() end end)

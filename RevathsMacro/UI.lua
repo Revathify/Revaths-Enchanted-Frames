@@ -242,10 +242,11 @@ local SelectSource
 local function Color(role) return unpack(COLORS[role]) end
 
 local function ApplyFrameBackdrop(object)
+    if RevathsEnchantedFrames_ResetClassicSurface then RevathsEnchantedFrames_ResetClassicSurface(object) end
     local role = object.styleRole or "panel"
     local classic = ns.db and ns.db.skin == "classic"
     if classic and RevathsEnchantedFrames_StyleClassicSurface then
-        RevathsEnchantedFrames_StyleClassicSurface(object, object.isWorkshopButton and "button" or role, ns.db.opacity)
+        RevathsEnchantedFrames_StyleClassicSurface(object, object.isWorkshopButton and not object.isMacroRow and "button" or (object.isMacroRow and "panel" or role), ns.db.opacity)
         return
     end
     if classic and (role == "background" or role == "panel" or role == "parchment") then
@@ -422,7 +423,14 @@ local function ApplyAppearance()
         ApplyFrameBackdrop(modernSkinButton); ApplyFrameBackdrop(classicSkinButton)
     end
     if frame and not scaleDragging then frame:SetScale(ns.db and ns.db.scale or 1) end
-    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,ns.db and (ns.db.skin == "classic" or ns.db.nativeChrome)) end
+    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,ns.db and (ns.db.skin == "classic" or ns.db.nativeChrome), ns.db and ns.db.skin == "classic" and {title="Revath's Enchanted Macros",close=frame.headerClose,icon="Interface\\AddOns\\RevathsMacro\\Media\\IconSmall-v2"} or nil)
+    if frame and frame.brandTitle then
+        local classic = ns.db.skin == "classic"
+        frame.headerClose:SetShown(not classic)
+        frame.brandTitle:SetShown(not classic); frame.brandAccent:SetShown(not classic); frame.brandIcon:SetShown(not classic)
+        headerLine:SetShown(not classic)
+        frame.headerClose:ClearAllPoints(); frame.headerClose:SetPoint("TOPRIGHT",-15,classic and -30 or -15)
+    end end
 end
 
 local function ChangeEditorFontSize(delta)
@@ -838,6 +846,7 @@ local function BuildUI()
     local titleAccent = Text(frame, 22, "accent"); titleAccent:SetPoint("LEFT", title, "RIGHT", 6, 0); titleAccent:SetPoint("RIGHT", settings, "LEFT", -18, 0); titleAccent:SetWordWrap(false); titleAccent:SetText("ENCHANTED MACROS")
     local subtitle = Text(frame, 10, "muted"); subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 1, -4); subtitle:SetPoint("RIGHT", settings, "LEFT", -18, 0); subtitle:SetWordWrap(false); subtitle:SetText("ACCOUNT, CHARACTER, AND COMMUNITY MACROS")
     headerLine = frame:CreateTexture(nil, "ARTWORK"); headerLine:SetHeight(2); headerLine:SetPoint("TOPLEFT", 22, -61); headerLine:SetPoint("RIGHT", -22, 0); headerLine:SetColorTexture(Color("accent")); headerLine:SetAlpha(0.45)
+    frame.brandTitle,frame.brandAccent,frame.brandIcon,frame.headerClose = title,titleAccent,headerIcon,close
     settings:SetScript("OnClick", function()
         if settingsPage:IsShown() then SelectSource(activeSource) else mainArea:Hide(); settingsPage:Show(); settingsPage:Refresh() end
     end)

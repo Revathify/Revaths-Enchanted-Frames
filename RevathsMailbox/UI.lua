@@ -153,6 +153,7 @@ local function ColorRole(color, fallback)
 end
 
 local function SetFrameBackdrop(frame, role)
+    if RevathsEnchantedFrames_ResetClassicSurface then RevathsEnchantedFrames_ResetClassicSurface(frame) end
     if activeSkin == "classic" and RevathsEnchantedFrames_StyleClassicSurface then
         RevathsEnchantedFrames_StyleClassicSurface(frame, role, SavedSetting("modernOpacity", .96))
         return
@@ -384,11 +385,15 @@ footer:SetPoint("BOTTOMLEFT", 24, 17)
 footer:SetText("Inbox data is saved when each character visits a mailbox.")
 
 local function ApplyGeometry(skin)
-    frame:SetSize(940, 680)
+    local classic = skin == "classic"
+    frame:SetSize(classic and 930 or 940, classic and 670 or 680)
 
     glow:SetHeight(72)
+    glow:SetShown(not classic)
+    title:SetShown(not classic)
+    headerIcon:SetShown(not classic)
     classicTitlePlate:Hide()
-    headerLine:Show()
+    headerLine:SetShown(not classic)
 
     headerIcon:ClearAllPoints()
     headerIcon:SetSize(46, 46)
@@ -402,13 +407,15 @@ local function ApplyGeometry(skin)
     subtitle:ClearAllPoints()
     subtitle:SetWidth(360)
     subtitle:SetJustifyH("LEFT")
-    subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 1, -4)
+    if classic then subtitle:SetPoint("TOPLEFT", 76, -38)
+    else subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 1, -4) end
 
     status:ClearAllPoints()
     status:SetWidth(260)
+    close:SetShown(not classic)
     close:ClearAllPoints()
     close:SetSize(30, 30)
-    close:SetPoint("TOPRIGHT", -14, -14)
+    close:SetPoint("TOPRIGHT", -14, classic and -30 or -14)
     headerSettings:ClearAllPoints()
     headerSettings:SetSize(76, 30)
     headerSettings:SetPoint("RIGHT", close, "LEFT", -7, 0)
@@ -417,23 +424,23 @@ local function ApplyGeometry(skin)
     for i, definition in ipairs(tabDefinitions) do
         local tab = frame.tabs[definition.page]
         tab:ClearAllPoints()
-        tab:SetSize(112, 32)
-        local x = 24 + ((i - 1) * 120)
-        tab:SetPoint("TOPLEFT", x, -83)
+        tab:SetSize(classic and 124 or 112, classic and 34 or 32)
+        local x = classic and (205 + ((i - 1) * 132)) or (24 + ((i - 1) * 120))
+        tab:SetPoint("TOPLEFT", x, classic and -88 or -83)
     end
 
     content:ClearAllPoints()
-    content:SetPoint("TOPLEFT", 24, -126)
-    content:SetPoint("BOTTOMRIGHT", -24, 46)
+    content:SetPoint("TOPLEFT", classic and 36 or 24, classic and -136 or -126)
+    content:SetPoint("BOTTOMRIGHT", classic and -36 or -24, classic and 58 or 46)
     footer:ClearAllPoints()
-    footer:SetPoint("BOTTOMLEFT", 24, 17)
+    footer:SetPoint("BOTTOMLEFT", classic and 38 or 24, classic and 23 or 17)
 
     if frame.composeSidebarButtons then
-        for _, button in ipairs(frame.composeSidebarButtons) do button:SetWidth(238) end
+        for _, button in ipairs(frame.composeSidebarButtons) do button:SetWidth(classic and 206 or 238) end
     end
     if frame.materialMenu then
-        frame.materialMenu:SetWidth(258)
-        for _, button in ipairs(frame.materialMenu.buttons or {}) do button:SetWidth(238) end
+        frame.materialMenu:SetWidth(classic and 226 or 258)
+        for _, button in ipairs(frame.materialMenu.buttons or {}) do button:SetWidth(classic and 206 or 238) end
     end
 end
 
@@ -461,7 +468,7 @@ function ns:ApplySkin(skin)
         if object and object.SetTextColor then object:SetTextColor(unpack(skin == "classic" and C.ink or C[modernRole])) end
     end
     ApplySelectedFont()
-    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,skin == "classic" or (self.db and self.db.settings.nativeChrome)) end
+    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,skin == "classic" or (self.db and self.db.settings.nativeChrome), skin == "classic" and {title="Revath's Enchanted Mailbox",close=close,icon="Interface\\AddOns\\RevathsMailbox\\Media\\IconSmall-v2"} or nil) end
     glow:SetColorTexture(C.accent[1], C.accent[2], C.accent[3], skin == "classic" and 0.20 or 0.12)
     headerLine:SetColorTexture(unpack(C.accent))
     if skin == "classic" then
@@ -1636,7 +1643,7 @@ classicButton:SetPoint("TOPLEFT", 210, -75)
 local classicDescription = Font(appearanceCard, 11, C.muted)
 classicDescription:SetPoint("TOPLEFT", classicButton, "BOTTOMLEFT", 2, -9)
 classicDescription:SetWidth(170)
-classicDescription:SetText("Native WoW borders and dark panels.")
+classicDescription:SetText("Native portrait header, textured panels and centered tabs.")
 
 modernButton:SetScript("OnClick", function()
     if ns:ApplySkinSafe("modern") then ns:SetStatus("Modern skin selected.")

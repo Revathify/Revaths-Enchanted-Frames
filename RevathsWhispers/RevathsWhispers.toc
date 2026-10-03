@@ -2,7 +2,7 @@
 ## Title: Revath's Enchanted Whispers
 ## Notes: Compact conversations, saved drafts, native styling, and whisper notifications.
 ## Author: Revath
-## Version: 5.1.0
+## Version: 5.1.1
 ## Dependencies: RevathsEnchantedFrames
 ## SavedVariables: RevathsWhispersDB
 ## IconTexture: Interface\AddOns\RevathsWhispers\Media\WhispersIcon

@@ -45,7 +45,7 @@ local function Widget(parent,kind)
 end
 CreateFrame=function(kind,_,parent,template)
     local w=Widget(parent,kind)
-    if template=="PortraitFrameTemplate" then w.NineSlice=Widget(w); w.Bg=Widget(w); w.TitleBg=Widget(w); w.TitleText=Widget(w); w.PortraitContainer={portrait=Widget(w)} end
+    if template=="ButtonFrameTemplate" then w.NineSlice=Widget(w); w.Bg=Widget(w); w.TitleBg=Widget(w); w.TitleText=Widget(w); w.PortraitContainer={portrait=Widget(w)}; w.Inset=Widget(w); w.Inset.Bg=Widget(w.Inset); w.Inset.NineSlice=Widget(w.Inset) end
     return w
 end
 UIParent=Widget(); Minimap=Widget(); UISpecialFrames={}; StaticPopupDialogs={}; SlashCmdList={}

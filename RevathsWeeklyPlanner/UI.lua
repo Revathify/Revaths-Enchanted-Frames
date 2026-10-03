@@ -92,9 +92,10 @@ local function Surface(surface, role)
 end
 
 local function Style(surface)
+    if RevathsEnchantedFrames_ResetClassicSurface then RevathsEnchantedFrames_ResetClassicSurface(surface) end
     local classic = ns.db.skin == "classic"
     if classic and RevathsEnchantedFrames_StyleClassicSurface then
-        RevathsEnchantedFrames_StyleClassicSurface(surface, surface.kindButton and "button" or surface.role, ns.db.opacity)
+        RevathsEnchantedFrames_StyleClassicSurface(surface, surface.kindButton and not surface.classicRow and "button" or (surface.classicRow and "panel" or surface.role), ns.db.opacity)
         return
     end
     local palette = palettes[ns.db.palette] or palettes.midnight
@@ -170,11 +171,18 @@ end
 function ns:ApplyAppearance()
     if not frame or not self.db then return end
     frame:SetScale(self.db.scale)
-    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,self.db.skin == "classic" or self.db.nativeChrome) end
+    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,self.db.skin == "classic" or self.db.nativeChrome,self.db.skin == "classic" and {title="Revath's Enchanted Planner",close=frame.headerClose,icon="Interface\\AddOns\\RevathsWeeklyPlanner\\Media\\PlannerIcon"} or nil) end
     local c = Accent()
     headerGlow:SetColorTexture(c[1], c[2], c[3], .12)
     headerLine:SetColorTexture(c[1], c[2], c[3], .45)
     titlePlate:Hide()
+    local classic = self.db.skin == "classic"
+    headerGlow:SetShown(not classic); headerLine:SetShown(not classic)
+    if frame.brandTitle then frame.brandTitle:SetShown(not classic); frame.brandIcon:SetShown(not classic) end
+    if frame.headerClose then
+        frame.headerClose:SetShown(not classic)
+        frame.headerClose:ClearAllPoints(); frame.headerClose:SetPoint("TOPRIGHT",-12,classic and -30 or -12)
+    end
     local border = self.db.skin == "classic" and {.58,.48,.30} or (palettes[self.db.palette] or palettes.midnight).border
     for _, slider in ipairs({opacitySlider,scaleSlider}) do
         slider.track:SetColorTexture(border[1],border[2],border[3],.8)
@@ -393,6 +401,7 @@ local function Build()
     local icon = frame:CreateTexture(nil, "ARTWORK")
     icon:SetTexture("Interface\\AddOns\\RevathsWeeklyPlanner\\Media\\PlannerIcon"); icon:SetSize(40,40); icon:SetPoint("TOPLEFT", 20,-14)
     local title = Label(frame, 20); title:SetPoint("TOPLEFT", 76, -18); title:SetText("REVATH'S ENCHANTED PLANNER")
+    frame.brandTitle, frame.brandIcon = title, icon
     local subtitle = Label(frame, 11, true); subtitle:SetPoint("TOPLEFT", 76,-44); subtitle:SetText("Weekly goals · Characters · Raid lockouts")
     headerLine = frame:CreateTexture(nil, "ARTWORK")
     headerLine:SetPoint("TOPLEFT", 18,-78); headerLine:SetPoint("TOPRIGHT", -18,-78); headerLine:SetHeight(2)
@@ -454,7 +463,7 @@ local function Build()
     raidsTab = Button(frame, "Raid lockouts", 112,26, function() SetView("raids") end); raidsTab:SetPoint("LEFT",goalsTab,"RIGHT",6,0)
     local chooseGoals = Button(frame, "Choose goals", 110,26, function() SetView("visibility") end)
     chooseGoals:SetPoint("LEFT",raidsTab,"RIGHT",6,0)
-    local close = Button(frame, "×", 28, 28, function() frame:Hide() end); close:SetPoint("TOPRIGHT", -12, -12)
+    local close = Button(frame, "×", 28, 28, function() frame:Hide() end); close:SetPoint("TOPRIGHT", -12, -12); frame.headerClose = close
     local settings = Button(frame, "Settings", 78, 28, function()
         SetView("appearance")
     end); settings:SetPoint("RIGHT", close, "LEFT", -6, 0)
@@ -531,6 +540,7 @@ local function Build()
         row:SetScript("OnMouseWheel", function(_, delta)
             characterOffset = math.max(0, characterOffset - delta); ns:Refresh()
         end)
+        row.classicRow = true
         characterRows[index] = row
     end
     for index = 1, 20 do
@@ -585,6 +595,7 @@ local function Build()
                 detailOffset = detailOffset - delta * 6; ShowGoalDetails(self)
             else HideGoalDetails(); goalOffset = math.max(0, goalOffset - delta); ns:Refresh() end
         end)
+        row.classicRow = true
         goalRows[index] = row
     end
     for index = 1, 20 do
