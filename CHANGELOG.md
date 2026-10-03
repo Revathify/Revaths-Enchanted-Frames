@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.0.0 - Enchanted Whispers and local Jenkins builds
+
+- Added a compact whisper window with a narrow conversation list, character and Battle.net chats, saved drafts, bounded history, unread counts, search, and independent resizing.
+- Added Native WoW styling, font and sound selection, custom sound paths, opacity settings, and a transparent branded minimap icon.
+- Kept ordinary combat handling lightweight and preserved drafts when Blizzard restricts addon chat access.
+- Added optional native WoW borders to Mailbox, Macros, and Weekly Planner.
+- Moved validation, packaging, and GitHub release publishing from GitHub Actions into the local Enchanted Frames Jenkins project.
+
 ## 4.6.0 - Drag roster ordering and reliable fonts
 
 - Replaced roster arrow controls with drag-and-drop ordering, target highlighting and safe cancellation; existing custom order is preserved.

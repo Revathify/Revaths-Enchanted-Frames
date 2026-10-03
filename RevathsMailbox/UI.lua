@@ -460,6 +460,7 @@ function ns:ApplySkin(skin)
         if object and object.SetTextColor then object:SetTextColor(unpack(skin == "classic" and C.ink or C[modernRole])) end
     end
     ApplySelectedFont()
+    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,self.db and self.db.settings.nativeChrome) end
     glow:SetColorTexture(C.accent[1], C.accent[2], C.accent[3], skin == "classic" and 0.20 or 0.12)
     headerLine:SetColorTexture(unpack(C.accent))
     if skin == "classic" then

@@ -418,6 +418,7 @@ local function ApplyAppearance()
         ApplyFrameBackdrop(modernSkinButton); ApplyFrameBackdrop(classicSkinButton)
     end
     if frame and not scaleDragging then frame:SetScale(ns.db and ns.db.scale or 1) end
+    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,ns.db and ns.db.nativeChrome) end
 end
 
 local function ChangeEditorFontSize(delta)

@@ -166,6 +166,7 @@ end
 function ns:ApplyAppearance()
     if not frame or not self.db then return end
     frame:SetScale(self.db.scale)
+    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,self.db.nativeChrome) end
     local c = Accent()
     headerGlow:SetColorTexture(c[1], c[2], c[3], .12)
     headerLine:SetColorTexture(c[1], c[2], c[3], .45)

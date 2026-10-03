@@ -266,20 +266,40 @@ local function AddModuleStatus(panel, y, title, addonID, description)
     detail:SetPoint("TOPLEFT", name, "BOTTOMLEFT", 20, -5); detail:SetWidth(560); detail:SetJustifyH("LEFT"); detail:SetText(description)
 end
 
+local function WhisperSettings()
+    RevathsWhispersDB = type(RevathsWhispersDB) == "table" and RevathsWhispersDB or {}
+    RevathsWhispersDB.settings = RevathsWhispersDB.settings or {}
+    local s = RevathsWhispersDB.settings
+    s.skin, s.font, s.sound = s.skin or "native", s.font or "friz", s.sound or "tell"
+    s.opacity, s.fontSize = tonumber(s.opacity) or .96, tonumber(s.fontSize) or 12
+    return s
+end
+local function ApplyWhispers()
+    if RevathsEnchantedWhispers_ApplySettings then RevathsEnchantedWhispers_ApplySettings() end
+end
+local function SoundOptions()
+    local result={{key="none",label="Silent"},{key="tell",label="WoW whisper"},{key="raid",label="Raid warning"},{key="custom",label="Custom file (path below)"}}
+    local media=LibStub and LibStub("LibSharedMedia-3.0",true)
+    local sounds=media and media.HashTable and media:HashTable("sound")
+    local names={}
+    for name,path in pairs(sounds or {}) do if type(name)=="string" and type(path)=="string" then names[#names+1]=name end end
+    table.sort(names)
+    for _,name in ipairs(names) do result[#result+1]={key="shared:"..name,label=name} end
+    return result
+end
+
 function ns:RegisterSettings()
     if self.settingsRegistered then return end
     self.settingsRegistered = true
 
-    local overview = CreatePanel(self.title, "One parent addon with independently managed Mailbox, Macros, Tooltips, and Weekly Planner modules.")
+    local overview = CreatePanel(self.title, "Independently managed Mailbox, Macros, Tooltips, Weekly Planner, and Whispers modules.")
     AddModuleStatus(overview, -104, "Revath's Enchanted Mailbox", "RevathsMailbox", "Mailbox replacement, contacts, alt tracking, quick attachments, and Modern or Classic skins.")
     AddModuleStatus(overview, -174, "Revath's Enchanted Macros", "RevathsMacro", "Account and character macro editing, curated templates, icon browser, drag-to-action-bar, and syntax assistance.")
     AddModuleStatus(overview, -244, "Revath's Enchanted Tooltips", "RevathsMailboxTooltipHelper", "Account-wide bag, bank, and Warband-bank item totals in item tooltips.")
     AddModuleStatus(overview, -314, "Revath's Enchanted Weekly Planner", "RevathsWeeklyPlanner", "Personal weekly goals for each character, automatic resets, and an unfinished-only view.")
-    Label(overview, "AUTHOR", -410, "GameFontNormalSmall")
-    Label(overview, self.author, -432, "GameFontHighlight")
-    Label(overview, "VERSION", -472, "GameFontNormalSmall")
-    Label(overview, tostring(self.version), -494, "GameFontHighlight")
-    Label(overview, "Open these settings with /ref or /enchantedframes.", -536, "GameFontHighlightSmall")
+    AddModuleStatus(overview, -384, "Revath's Enchanted Whispers", "RevathsWhispers", "Compact character and Battle.net conversations, saved drafts, fonts and notification sounds.")
+    Label(overview, self.author .. "  •  Version " .. tostring(self.version), -464, "GameFontHighlight")
+    Label(overview, "Open these settings with /ref or /enchantedframes.", -500, "GameFontHighlightSmall")
 
     local mailboxPanel = CreatePanel("Revath's Enchanted Mailbox", "Account-wide appearance and mailbox behavior. Changes apply immediately when the mailbox module is loaded.")
     AddDropdown(mailboxPanel, -96, "Skin", function() return SKINS end, function() return EnsureMailboxSettings().skin end, function(v) EnsureMailboxSettings().skin = v end, ApplyMailbox)
@@ -288,6 +308,7 @@ function ns:RegisterSettings()
     AddSlider(mailboxPanel, -326, "Modern opacity", 0.55, 1, 0.05, function() return EnsureMailboxSettings().modernOpacity end, function(v) EnsureMailboxSettings().modernOpacity = v end, ApplyMailbox, function(v) return string.format("%d%%", v * 100) end)
     AddSlider(mailboxPanel, -410, "Window scale", 0.65, 1.10, 0.05, function() return EnsureMailboxSettings().scale end, function(v) EnsureMailboxSettings().scale = v end, ApplyMailbox, function(v) return string.format("%d%%", v * 100) end)
     AddCheckbox(mailboxPanel, -486, "Show offline contacts", function() return EnsureMailboxSettings().showOfflineContacts ~= false end, function(v) EnsureMailboxSettings().showOfflineContacts = v end, ApplyMailbox)
+    AddCheckbox(mailboxPanel,-530,"Native WoW window border",function() return EnsureMailboxSettings().nativeChrome==true end,function(v) EnsureMailboxSettings().nativeChrome=v end,ApplyMailbox)
 
     local macroPanel = CreatePanel("Revath's Enchanted Macros", "Appearance controls for the macro editor. Its font-size buttons remain available inside the editor as well.")
     AddDropdown(macroPanel, -96, "Skin", function() return SKINS end, function() return EnsureMacroSettings().skin end, function(v) EnsureMacroSettings().skin = v end, ApplyMacros)
@@ -295,6 +316,7 @@ function ns:RegisterSettings()
     AddDropdown(macroPanel, -244, "Font", FontOptions, function() return EnsureMacroSettings().font end, function(v) EnsureMacroSettings().font = v end, ApplyMacros)
     AddSlider(macroPanel, -326, "Window opacity", 0.55, 1, 0.05, function() return EnsureMacroSettings().opacity end, function(v) EnsureMacroSettings().opacity = v end, ApplyMacros, function(v) return string.format("%d%%", v * 100) end)
     AddSlider(macroPanel, -410, "Editor font size", 10, 24, 1, function() return EnsureMacroSettings().fontSize end, function(v) EnsureMacroSettings().fontSize = v end, ApplyMacros, function(v) return string.format("%d px", v) end)
+    AddCheckbox(macroPanel,-486,"Native WoW window border",function() return EnsureMacroSettings().nativeChrome==true end,function(v) EnsureMacroSettings().nativeChrome=v end,ApplyMacros)
 
     local tooltipPanel = CreatePanel("Revath's Enchanted Tooltips", "Control account-wide item totals shown in item tooltips. Hold Shift over an item for the character breakdown.")
     AddCheckbox(tooltipPanel, -102, "Show account-wide item totals", function() return EnsureMailboxSettings().tooltipHelperEnabled ~= false end, function(v) EnsureMailboxSettings().tooltipHelperEnabled = v end, ApplyTooltips)
@@ -309,9 +331,26 @@ function ns:RegisterSettings()
     local openPlanner = CreateFrame("Button", nil, plannerPanel, "UIPanelButtonTemplate")
     openPlanner:SetPoint("TOPLEFT", 24, -484); openPlanner:SetSize(180, 30); openPlanner:SetText("Open Weekly Planner")
     openPlanner:SetScript("OnClick", function() if RevathsEnchantedWeeklyPlanner_Open then RevathsEnchantedWeeklyPlanner_Open() end end)
+    AddCheckbox(plannerPanel,-530,"Native WoW window border",function() return EnsurePlannerSettings().nativeChrome==true end,function(v) EnsurePlannerSettings().nativeChrome=v end,ApplyPlanner)
 
+    local whispersPanel=CreatePanel("Revath's Enchanted Whispers", "Compact conversations. Open with /rwhisper or the minimap icon. Drafts are saved per conversation.")
+    AddDropdown(whispersPanel,-96,"Skin",function() return {{key="native",label="Native WoW HUD"},{key="modern",label="Modern"},{key="classic",label="Classic-inspired"}} end,function() return WhisperSettings().skin end,function(v) WhisperSettings().skin=v end,ApplyWhispers)
+    AddDropdown(whispersPanel,-170,"Font",FontOptions,function() return WhisperSettings().font end,function(v) WhisperSettings().font=v end,ApplyWhispers)
+    AddSlider(whispersPanel,-244,"Message size",10,20,1,function() return WhisperSettings().fontSize end,function(v) WhisperSettings().fontSize=v end,ApplyWhispers,function(v) return string.format("%d px",v) end)
+    AddSlider(whispersPanel,-326,"Window opacity",.55,1,.05,function() return WhisperSettings().opacity end,function(v) WhisperSettings().opacity=v end,ApplyWhispers,function(v) return string.format("%d%%",v*100) end)
+    AddDropdown(whispersPanel,-410,"Notification sound",SoundOptions,function() return WhisperSettings().sound end,function(v) WhisperSettings().sound=v end,ApplyWhispers)
+    Label(whispersPanel,"Custom sound: Interface\\AddOns\\MyMedia\\sound.ogg",-480,"GameFontHighlightSmall")
+    local soundPath=CreateFrame("EditBox",nil,whispersPanel,"InputBoxTemplate")
+    soundPath:SetPoint("TOPLEFT",31,-503); soundPath:SetSize(400,24); soundPath:SetAutoFocus(false); soundPath:SetFontObject(GameFontHighlight); soundPath:SetMaxLetters(255)
+    soundPath:SetScript("OnEnterPressed",function(e) WhisperSettings().soundPath=e:GetText(); e:ClearFocus() end)
+    soundPath:SetScript("OnEditFocusLost",function(e) WhisperSettings().soundPath=e:GetText() end)
+    whispersPanel.refreshers[#whispersPanel.refreshers+1]=function() if not soundPath:HasFocus() then soundPath:SetText(WhisperSettings().soundPath or "") end end
+    AddCheckbox(whispersPanel,-545,"Open on incoming whisper (outside combat)",function() return WhisperSettings().openOnWhisper==true end,function(v) WhisperSettings().openOnWhisper=v end,ApplyWhispers)
+    local preview=CreateFrame("Button",nil,whispersPanel,"UIPanelButtonTemplate")
+    preview:SetPoint("TOPLEFT",450,-503); preview:SetSize(100,24); preview:SetText("Test sound")
+    preview:SetScript("OnClick",function() if RevathsEnchantedWhispers_TestSound then RevathsEnchantedWhispers_TestSound() end end)
     self.settingsPanel = overview
-    self.settingsPanels = { overview, mailboxPanel, macroPanel, tooltipPanel, plannerPanel }
+    self.settingsPanels = { overview, mailboxPanel, macroPanel, tooltipPanel, plannerPanel, whispersPanel }
     if Settings and Settings.RegisterCanvasLayoutCategory then
         local category = Settings.RegisterCanvasLayoutCategory(overview, self.title)
         Settings.RegisterAddOnCategory(category)
@@ -319,11 +358,15 @@ function ns:RegisterSettings()
         Settings.RegisterCanvasLayoutSubcategory(category, macroPanel, "Macros")
         Settings.RegisterCanvasLayoutSubcategory(category, tooltipPanel, "Tooltips")
         Settings.RegisterCanvasLayoutSubcategory(category, plannerPanel, "Weekly Planner")
+        local whisperCategory=Settings.RegisterCanvasLayoutSubcategory(category,whispersPanel,"Whispers")
+        RevathsEnchantedWhispers_Settings=function() Settings.OpenToCategory(whisperCategory:GetID()) end
         self.settingsCategoryID = category:GetID()
     elseif InterfaceOptions_AddCategory then
         InterfaceOptions_AddCategory(overview)
         mailboxPanel.parent, macroPanel.parent, tooltipPanel.parent, plannerPanel.parent = self.title, self.title, self.title, self.title
         InterfaceOptions_AddCategory(mailboxPanel); InterfaceOptions_AddCategory(macroPanel); InterfaceOptions_AddCategory(tooltipPanel); InterfaceOptions_AddCategory(plannerPanel)
+        whispersPanel.parent=self.title; InterfaceOptions_AddCategory(whispersPanel)
+        RevathsEnchantedWhispers_Settings=function() InterfaceOptionsFrame_OpenToCategory(whispersPanel) end
     end
 
     function RevathsEnchantedFrames_RefreshSettings()
