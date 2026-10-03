@@ -53,4 +53,8 @@ if __name__ == "__main__":
     try:
         publish()
     except HTTPError as error:
-        raise SystemExit(f"GitHub publishing failed: HTTP {error.code}. Check the Jenkins credential permissions.") from None
+        try:
+            message = json.loads(error.read()).get("message", "")
+        except (ValueError, UnicodeError):
+            message = ""
+        raise SystemExit(f"GitHub publishing failed: HTTP {error.code}. {message} Check the Jenkins credential permissions.") from None
