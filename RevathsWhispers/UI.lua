@@ -21,12 +21,13 @@ end
 function ns:ApplyAppearance()
     if not self.frame then return end
     local s, f = self.db.settings, self.frame
-    local native = s.skin == "native"
+    s.skin = s.skin == "modern" and "modern" or "classic"
+    local native = s.skin == "classic"
     if f.NineSlice then f.NineSlice:SetShown(native) end
     if f.Bg then f.Bg:SetShown(native) end
     if f.TitleBg then f.TitleBg:SetShown(native) end
     f.custom:SetShown(not native)
-    f.custom:SetBackdropColor(s.skin == "classic" and .12 or .04, .06, .09, s.opacity)
+    f.custom:SetBackdropColor(.04, .06, .09, s.opacity)
     f.custom:SetBackdropBorderColor(.32, .39, .48, 1)
     if f.Bg then f.Bg:SetAlpha(s.opacity) end
     for _, object in ipairs(self.fontObjects) do

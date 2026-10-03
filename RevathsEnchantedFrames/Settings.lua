@@ -270,7 +270,9 @@ local function WhisperSettings()
     RevathsWhispersDB = type(RevathsWhispersDB) == "table" and RevathsWhispersDB or {}
     RevathsWhispersDB.settings = RevathsWhispersDB.settings or {}
     local s = RevathsWhispersDB.settings
-    s.skin, s.font, s.sound = s.skin or "native", s.font or "friz", s.sound or "tell"
+    s.skin = s.skin == "modern" and "modern" or "classic"
+    s.font, s.sound = s.font or "friz", s.sound or "tell"
+    if s.openOnWhisper == nil then s.openOnWhisper = true end
     s.opacity, s.fontSize = tonumber(s.opacity) or .96, tonumber(s.fontSize) or 12
     return s
 end
@@ -334,7 +336,7 @@ function ns:RegisterSettings()
     AddCheckbox(plannerPanel,-530,"Native WoW window border",function() return EnsurePlannerSettings().nativeChrome==true end,function(v) EnsurePlannerSettings().nativeChrome=v end,ApplyPlanner)
 
     local whispersPanel=CreatePanel("Revath's Enchanted Whispers", "Compact conversations. Open with /rwhisper or the minimap icon. Drafts are saved per conversation.")
-    AddDropdown(whispersPanel,-96,"Skin",function() return {{key="native",label="Native WoW HUD"},{key="modern",label="Modern"},{key="classic",label="Classic-inspired"}} end,function() return WhisperSettings().skin end,function(v) WhisperSettings().skin=v end,ApplyWhispers)
+    AddDropdown(whispersPanel,-96,"Skin",function() return {{key="classic",label="Classic"},{key="modern",label="Modern"}} end,function() return WhisperSettings().skin end,function(v) WhisperSettings().skin=v end,ApplyWhispers)
     AddDropdown(whispersPanel,-170,"Font",FontOptions,function() return WhisperSettings().font end,function(v) WhisperSettings().font=v end,ApplyWhispers)
     AddSlider(whispersPanel,-244,"Message size",10,20,1,function() return WhisperSettings().fontSize end,function(v) WhisperSettings().fontSize=v end,ApplyWhispers,function(v) return string.format("%d px",v) end)
     AddSlider(whispersPanel,-326,"Window opacity",.55,1,.05,function() return WhisperSettings().opacity end,function(v) WhisperSettings().opacity=v end,ApplyWhispers,function(v) return string.format("%d%%",v*100) end)

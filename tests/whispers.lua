@@ -1,4 +1,5 @@
 local ns={}
+ns.Open=function(self,key) self.opened=key end
 local ticks,combat,locked=100,false,false
 time=function() return ticks end
 UnitGUID=function() return "Player-Test" end
@@ -12,6 +13,7 @@ PlaySound=function() sounds=sounds+1 end
 PlaySoundFile=function() sounds=sounds+1 end
 assert(loadfile("RevathsWhispers/Core.lua"))("RevathsWhispers",ns)
 assert(ns:Initialize())
+assert(ns.db.settings.skin=="classic" and ns.db.settings.openOnWhisper)
 local alice=assert(ns:Receive("wow","Hello","Alice-Realm","Alice-Realm"))
 assert(alice.unread==1 and sounds==1)
 assert(ns:GetChat("wow","alice-realm")==alice,"case variants share a conversation")
@@ -19,6 +21,7 @@ alice.draft="Saved draft"; ns:Select(alice.key)
 assert(alice.unread==0 and alice.draft=="Saved draft")
 combat=true
 assert(ns:Receive("wow","During ordinary combat","Bob-Realm","Bob-Realm"))
+assert(ns.opened=="wow:bob-realm", "public incoming whispers open without focusing, even in ordinary combat")
 C_ChatInfo.SendChatMessage=function(text,kind,language,target) sent={text,kind,target} end
 assert(ns:Send(alice,"Reply in combat"))
 assert(sent[1]=="Reply in combat" and sent[2]=="WHISPER" and sent[3]=="Alice-Realm")

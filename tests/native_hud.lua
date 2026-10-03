@@ -21,4 +21,13 @@ RevathsEnchantedFrames_ApplyNativeChrome(frame,true)
 assert(created==1,"appearance changes reuse the native template")
 RevathsEnchantedFrames_ApplyNativeChrome(frame,false)
 assert(not c.shown)
+local surface={classicTexture=Part(),
+    SetBackdrop=function(self,v) self.backdrop=v end,
+    SetBackdropColor=function(self,...) self.color={...} end,
+    SetBackdropBorderColor=function(self,...) self.border={...} end}
+RevathsEnchantedFrames_StyleClassicSurface(surface,"letter",.7)
+assert(surface.classicTexture.hidden and surface.color[4]==.7)
+assert(surface.color[1]==.035 and surface.border[4]==1,"letters use readable dark panels at the selected opacity")
+RevathsEnchantedFrames_StyleClassicSurface(surface,"bg",.8)
+assert(surface.border[4]==0,"native outer chrome replaces the old double border")
 print("Native HUD tests passed: opt-in, reuse, transparent chrome and click-through decoration.")

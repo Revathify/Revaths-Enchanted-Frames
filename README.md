@@ -21,7 +21,7 @@ The suite uses **Major.Minor.Hotfix**, starting with **4.1.0** for the expanded 
 - **Minor**: new features within existing frames (for example, `4.2.0`).
 - **Hotfix**: fixes to existing behavior (for example, `4.1.1`).
 
-Before publishing, choose the appropriate version and update all six active addon manifests together. A major change resets Minor and Hotfix to zero; a minor change resets Hotfix to zero. Local Jenkins polls `main` every two minutes, validates and packages changes, and publishes that exact version. It never increments versions automatically and never replaces an already-published release. Enchanted Whispers introduces version **5.0.0**.
+Before publishing, choose the appropriate version and update all six active addon manifests together. A major change resets Minor and Hotfix to zero; a minor change resets Hotfix to zero. Local Jenkins polls `main` every two minutes, validates and packages changes, and publishes that exact version. It never increments versions automatically and never replaces an already-published release. Enchanted Whispers introduces version **5.0.0**. Version **5.1.0** unifies Classic styling and adds automatic whisper handoff.
 
 ## Install or upgrade
 
@@ -69,11 +69,11 @@ Font discovery checks the client's actual font files and installed shared-media 
 
 The default window is **540 × 360**, with a **138-pixel conversation list**. Drag the header to move it or the lower-right handle to resize it, independently of font size. Search or scroll the conversation list; unread counts and saved-draft indicators help you switch between chats. Use **New** for a character name, **Friends** for an online Battle.net friend, and Enter or **Send** to send. Chat history and drafts are saved separately for each logged-in character. **Clear** asks before removing a conversation. Storage is bounded to 50 conversations and 100 messages per conversation; unread chats and drafts are never automatically evicted.
 
-Click the matching minimap icon to open or close Whispers, right-click for its settings, or drag to reposition it. Settings include Native WoW, Modern, and Classic-inspired appearances, verified built-in and shared-media fonts, opacity, message size, and optional incoming-message popups outside combat. Notifications support Blizzard sounds, registered LibSharedMedia sounds, or a custom in-game addon sound path. Select **Custom file**, enter a path such as `Interface\AddOns\MyMedia\sound.ogg`, and use **Test sound**. The sound file must be installed before starting WoW.
+Click the matching minimap icon to open or close Whispers, right-click for its settings, or drag to reposition it. Settings include Classic and Modern appearances, verified built-in and shared-media fonts, opacity, message size, and incoming-message popups enabled by default. Notifications support Blizzard sounds, registered LibSharedMedia sounds, or a custom in-game addon sound path. Select **Custom file**, enter a path such as `Interface\AddOns\MyMedia\sound.ogg`, and use **Test sound**. The sound file must be installed before starting WoW.
 
 Ordinary combat does not automatically open the window or take keyboard focus. Public whisper events are handled normally, without modifying Blizzard chat frames or intercepting their protected functions. When Blizzard restricts addon chat access in encounters, M+, PvP, or other restricted contexts, sending is disabled and drafts are retained. Restricted/secret text is never compared, converted, stored, or displayed; use Blizzard chat there. Battle.net conversations use BattleTags as identities rather than trusting account IDs saved from another session. After logging back in, select that friend from **Friends** or receive a new message before sending from their saved conversation.
 
-Mailbox, Macros, and Weekly Planner now offer an optional **Native WoW window border** in their shared settings pages. This reuses Blizzard's native chrome while keeping their established layouts, palettes, and controls.
+Classic uses native WoW borders and consistent dark panels across the suite. Modern windows can also enable the optional **Native WoW window border**. Starting a Blizzard whisper transfers the recipient and draft to Enchanted Whispers; incoming messages open it without taking keyboard focus.
 
 ## Builds and releases
 

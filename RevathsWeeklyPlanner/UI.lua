@@ -93,6 +93,10 @@ end
 
 local function Style(surface)
     local classic = ns.db.skin == "classic"
+    if classic and RevathsEnchantedFrames_StyleClassicSurface then
+        RevathsEnchantedFrames_StyleClassicSurface(surface, surface.kindButton and "button" or surface.role, ns.db.opacity)
+        return
+    end
     local palette = palettes[ns.db.palette] or palettes.midnight
     local bg = classic and (surface.role == "bg" and {.030,.024,.014} or {.040,.030,.016}) or palette[surface.role]
     local border = classic and {.58,.48,.30} or palette.border
@@ -166,11 +170,11 @@ end
 function ns:ApplyAppearance()
     if not frame or not self.db then return end
     frame:SetScale(self.db.scale)
-    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,self.db.nativeChrome) end
+    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,self.db.skin == "classic" or self.db.nativeChrome) end
     local c = Accent()
     headerGlow:SetColorTexture(c[1], c[2], c[3], .12)
     headerLine:SetColorTexture(c[1], c[2], c[3], .45)
-    titlePlate:SetShown(self.db.skin == "classic")
+    titlePlate:Hide()
     local border = self.db.skin == "classic" and {.58,.48,.30} or (palettes[self.db.palette] or palettes.midnight).border
     for _, slider in ipairs({opacitySlider,scaleSlider}) do
         slider.track:SetColorTexture(border[1],border[2],border[3],.8)
@@ -179,7 +183,7 @@ function ns:ApplyAppearance()
     local key = self.db.font
     for _, label in ipairs(labels) do
         RevathsEnchantedFrames_ApplyFont(label,key,label.size)
-        local color = self.db.skin == "classic" and (label.muted and {.76,.64,.43} or {1,.92,.72})
+        local color = self.db.skin == "classic" and (label.muted and {.56,.62,.70} or {.90,.93,.96})
             or (label.muted and {.56,.62,.70} or {.90,.93,.96})
         label:SetTextColor(color[1], color[2], color[3])
     end

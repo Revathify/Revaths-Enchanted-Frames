@@ -17,10 +17,10 @@ local THEMES = {
         bg = { 0.030, 0.024, 0.014, 1 }, panel = { 0.040, 0.030, 0.016, 1 },
         panelAlt = { 0.020, 0.016, 0.009, 1 }, input = { 0.025, 0.018, 0.009, 1 },
         button = { 0.36, 0.030, 0.012, 1 }, parchment = { 0.76, 0.48, 0.20, 1 },
-        letter = { 0.76, 0.48, 0.20, 1 }, ink = { 0.10, 0.040, 0.012, 1 },
+        letter = { 0.035, 0.040, 0.050, 1 }, ink = { 0.90, 0.93, 0.96, 1 },
         border = { 0.58, 0.48, 0.30, 1 }, accent = { 0.96, 0.72, 0.20, 1 },
-        accent2 = { 0.98, 0.83, 0.43, 1 }, text = { 1.00, 0.92, 0.72, 1 },
-        muted = { 0.76, 0.64, 0.43, 1 }, danger = { 0.96, 0.35, 0.24, 1 },
+        accent2 = { 0.98, 0.83, 0.43, 1 }, text = { 0.90, 0.93, 0.96, 1 },
+        muted = { 0.56, 0.62, 0.70, 1 }, danger = { 0.96, 0.35, 0.24, 1 },
     },
 }
 
@@ -153,6 +153,10 @@ local function ColorRole(color, fallback)
 end
 
 local function SetFrameBackdrop(frame, role)
+    if activeSkin == "classic" and RevathsEnchantedFrames_StyleClassicSurface then
+        RevathsEnchantedFrames_StyleClassicSurface(frame, role, SavedSetting("modernOpacity", .96))
+        return
+    end
     if activeSkin == "classic" and (role == "bg" or role == "panel" or role == "parchment" or role == "letter") then
         local edgeSize = role == "bg" and 32 or role == "panel" and 22 or 18
         local inset = role == "bg" and 11 or role == "panel" and 7 or 6
@@ -183,7 +187,7 @@ local function SetFrameBackdrop(frame, role)
         frame:SetHighlightTexture("Interface\\Buttons\\UI-Panel-Button-Highlight", "ADD")
         if frame:GetNormalTexture() then
             frame:GetNormalTexture():SetTexCoord(0, 0.625, 0, 0.6875)
-            frame:GetNormalTexture():SetVertexColor(0.78, 0.20, 0.08, 1)
+            frame:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
         end
         if frame:GetPushedTexture() then
             frame:GetPushedTexture():SetTexCoord(0, 0.625, 0, 0.6875)
@@ -380,59 +384,56 @@ footer:SetPoint("BOTTOMLEFT", 24, 17)
 footer:SetText("Inbox data is saved when each character visits a mailbox.")
 
 local function ApplyGeometry(skin)
-    local isClassic = skin == "classic"
-    frame:SetSize(isClassic and 930 or 940, isClassic and 670 or 680)
+    frame:SetSize(940, 680)
 
-    glow:SetHeight(isClassic and 94 or 72)
-    classicTitlePlate:SetShown(isClassic)
-    headerLine:SetShown(not isClassic)
+    glow:SetHeight(72)
+    classicTitlePlate:Hide()
+    headerLine:Show()
 
     headerIcon:ClearAllPoints()
-    headerIcon:SetSize(isClassic and 48 or 46, isClassic and 48 or 46)
-    headerIcon:SetPoint("TOPLEFT", isClassic and 24 or 20, isClassic and -24 or -13)
+    headerIcon:SetSize(46, 46)
+    headerIcon:SetPoint("TOPLEFT", 20, -13)
 
     title:ClearAllPoints()
-    title:SetWidth(isClassic and 360 or 420)
-    title:SetJustifyH(isClassic and "CENTER" or "LEFT")
-    if isClassic then title:SetPoint("TOP", frame, "TOP", 0, -2)
-    else title:SetPoint("TOPLEFT", 76, -18) end
+    title:SetWidth(420)
+    title:SetJustifyH("LEFT")
+    title:SetPoint("TOPLEFT", 76, -18)
 
     subtitle:ClearAllPoints()
-    subtitle:SetWidth(isClassic and 420 or 360)
-    subtitle:SetJustifyH(isClassic and "CENTER" or "LEFT")
-    if isClassic then subtitle:SetPoint("TOP", frame, "TOP", 0, -40)
-    else subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 1, -4) end
+    subtitle:SetWidth(360)
+    subtitle:SetJustifyH("LEFT")
+    subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 1, -4)
 
     status:ClearAllPoints()
-    status:SetWidth(isClassic and 180 or 260)
+    status:SetWidth(260)
     close:ClearAllPoints()
-    close:SetSize(isClassic and 34 or 30, isClassic and 34 or 30)
-    close:SetPoint("TOPRIGHT", isClassic and -24 or -14, isClassic and -23 or -14)
+    close:SetSize(30, 30)
+    close:SetPoint("TOPRIGHT", -14, -14)
     headerSettings:ClearAllPoints()
-    headerSettings:SetSize(isClassic and 82 or 76, isClassic and 34 or 30)
+    headerSettings:SetSize(76, 30)
     headerSettings:SetPoint("RIGHT", close, "LEFT", -7, 0)
     status:SetPoint("RIGHT", headerSettings, "LEFT", -10, 0)
 
     for i, definition in ipairs(tabDefinitions) do
         local tab = frame.tabs[definition.page]
         tab:ClearAllPoints()
-        tab:SetSize(isClassic and 124 or 112, isClassic and 34 or 32)
-        local x = isClassic and (205 + ((i - 1) * 132)) or (24 + ((i - 1) * 120))
-        tab:SetPoint("TOPLEFT", x, isClassic and -99 or -83)
+        tab:SetSize(112, 32)
+        local x = 24 + ((i - 1) * 120)
+        tab:SetPoint("TOPLEFT", x, -83)
     end
 
     content:ClearAllPoints()
-    content:SetPoint("TOPLEFT", isClassic and 36 or 24, isClassic and -148 or -126)
-    content:SetPoint("BOTTOMRIGHT", isClassic and -36 or -24, isClassic and 58 or 46)
+    content:SetPoint("TOPLEFT", 24, -126)
+    content:SetPoint("BOTTOMRIGHT", -24, 46)
     footer:ClearAllPoints()
-    footer:SetPoint("BOTTOMLEFT", isClassic and 38 or 24, isClassic and 23 or 17)
+    footer:SetPoint("BOTTOMLEFT", 24, 17)
 
     if frame.composeSidebarButtons then
-        for _, button in ipairs(frame.composeSidebarButtons) do button:SetWidth(isClassic and 206 or 238) end
+        for _, button in ipairs(frame.composeSidebarButtons) do button:SetWidth(238) end
     end
     if frame.materialMenu then
-        frame.materialMenu:SetWidth(isClassic and 226 or 258)
-        for _, button in ipairs(frame.materialMenu.buttons or {}) do button:SetWidth(isClassic and 206 or 238) end
+        frame.materialMenu:SetWidth(258)
+        for _, button in ipairs(frame.materialMenu.buttons or {}) do button:SetWidth(238) end
     end
 end
 
@@ -460,7 +461,7 @@ function ns:ApplySkin(skin)
         if object and object.SetTextColor then object:SetTextColor(unpack(skin == "classic" and C.ink or C[modernRole])) end
     end
     ApplySelectedFont()
-    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,self.db and self.db.settings.nativeChrome) end
+    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,skin == "classic" or (self.db and self.db.settings.nativeChrome)) end
     glow:SetColorTexture(C.accent[1], C.accent[2], C.accent[3], skin == "classic" and 0.20 or 0.12)
     headerLine:SetColorTexture(unpack(C.accent))
     if skin == "classic" then
@@ -492,14 +493,14 @@ function ns:SelectTab(name)
             tab:SetBackdropColor(C.accent[1], C.accent[2], C.accent[3], 0.22)
             tab:SetBackdropBorderColor(unpack(C.accent))
             if activeSkin == "classic" and tab:GetNormalTexture() then
-                tab:GetNormalTexture():SetVertexColor(0.76, 0.53, 0.10, 1)
+                tab:GetNormalTexture():SetVertexColor(1, .85, .5, 1)
                 tab.label:SetTextColor(unpack(C.accent2))
             end
         else
             tab:SetBackdropColor(unpack(C.panelAlt))
             tab:SetBackdropBorderColor(unpack(C.border))
             if activeSkin == "classic" and tab:GetNormalTexture() then
-                tab:GetNormalTexture():SetVertexColor(0.78, 0.20, 0.08, 1)
+                tab:GetNormalTexture():SetVertexColor(1, 1, 1, 1)
                 tab.label:SetTextColor(unpack(C.text))
             end
         end
@@ -1635,7 +1636,7 @@ classicButton:SetPoint("TOPLEFT", 210, -75)
 local classicDescription = Font(appearanceCard, 11, C.muted)
 classicDescription:SetPoint("TOPLEFT", classicButton, "BOTTOMLEFT", 2, -9)
 classicDescription:SetWidth(170)
-classicDescription:SetText("Old-WoW frames and parchment.")
+classicDescription:SetText("Native WoW borders and dark panels.")
 
 modernButton:SetScript("OnClick", function()
     if ns:ApplySkinSafe("modern") then ns:SetStatus("Modern skin selected.")
@@ -1896,12 +1897,12 @@ function ns:RefreshSettings()
             button:SetBackdropColor(C.accent[1], C.accent[2], C.accent[3], 0.25)
             button:SetBackdropBorderColor(unpack(C.accent))
             button.label:SetText(name == "modern" and "Modern" or "Classic")
-            if activeSkin == "classic" and button:GetNormalTexture() then button:GetNormalTexture():SetVertexColor(0.76, 0.53, 0.10, 1) end
+            if activeSkin == "classic" and button:GetNormalTexture() then button:GetNormalTexture():SetVertexColor(1, .85, .5, 1) end
         else
             button:SetBackdropColor(unpack(C.panelAlt))
             button:SetBackdropBorderColor(unpack(C.border))
             button.label:SetText(name == "modern" and "Modern" or "Classic")
-            if activeSkin == "classic" and button:GetNormalTexture() then button:GetNormalTexture():SetVertexColor(0.78, 0.20, 0.08, 1) end
+            if activeSkin == "classic" and button:GetNormalTexture() then button:GetNormalTexture():SetVertexColor(1, 1, 1, 1) end
         end
     end
     paletteButton.label:SetText((MODERN_PALETTES[paletteKey] or MODERN_PALETTES.midnight).label)

@@ -46,8 +46,8 @@ local CLASSIC_COLORS = {
     background = { 0.030, 0.024, 0.014 }, panel = { 0.040, 0.030, 0.016 },
     panelAlt = { 0.090, 0.055, 0.022 }, input = { 0.025, 0.018, 0.009 }, parchment = { 0.055, 0.040, 0.022 },
     border = { 0.58, 0.48, 0.30 }, accent = { 0.96, 0.72, 0.20 },
-    accent2 = { 0.98, 0.83, 0.43 }, text = { 1.00, 0.92, 0.72 },
-    muted = { 0.76, 0.64, 0.43 }, danger = { 0.96, 0.35, 0.24 },
+    accent2 = { 0.98, 0.83, 0.43 }, text = { 0.90, 0.93, 0.96 },
+    muted = { 0.56, 0.62, 0.70 }, danger = { 0.96, 0.35, 0.24 },
 }
 
 local FONTS = {
@@ -244,6 +244,10 @@ local function Color(role) return unpack(COLORS[role]) end
 local function ApplyFrameBackdrop(object)
     local role = object.styleRole or "panel"
     local classic = ns.db and ns.db.skin == "classic"
+    if classic and RevathsEnchantedFrames_StyleClassicSurface then
+        RevathsEnchantedFrames_StyleClassicSurface(object, object.isWorkshopButton and "button" or role, ns.db.opacity)
+        return
+    end
     if classic and (role == "background" or role == "panel" or role == "parchment") then
         local outer = role == "background"
         object:SetBackdrop({
@@ -418,7 +422,7 @@ local function ApplyAppearance()
         ApplyFrameBackdrop(modernSkinButton); ApplyFrameBackdrop(classicSkinButton)
     end
     if frame and not scaleDragging then frame:SetScale(ns.db and ns.db.scale or 1) end
-    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,ns.db and ns.db.nativeChrome) end
+    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,ns.db and (ns.db.skin == "classic" or ns.db.nativeChrome)) end
 end
 
 local function ChangeEditorFontSize(delta)

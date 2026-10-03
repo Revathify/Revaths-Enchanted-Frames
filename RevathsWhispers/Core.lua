@@ -15,7 +15,9 @@ function ns:Initialize()
     self.db = RevathsWhispersDB
     self.db.settings = type(self.db.settings) == "table" and self.db.settings or {}
     local s = self.db.settings
-    s.font, s.skin = s.font or "friz", s.skin or "native"
+    s.font = s.font or "friz"
+    s.skin = s.skin == "modern" and "modern" or "classic"
+    if s.openOnWhisper == nil then s.openOnWhisper = true end
     s.fontSize = math.max(10, math.min(20, tonumber(s.fontSize) or 12))
     s.opacity = math.max(.55, math.min(1, tonumber(s.opacity) or .96))
     s.sound = s.sound or "tell"
@@ -129,8 +131,8 @@ function ns:Receive(kind, text, target, label, outgoing)
     if not outgoing then
         chat.unread = visible and 0 or (chat.unread or 0) + 1
         if not visible then self:Notify() end
-        -- Avoid popup/focus stealing during combat; capture public messages normally.
-        if self.db.settings.openOnWhisper and not (InCombatLockdown and InCombatLockdown()) then
+        -- Opening this unprotected window never focuses the composer.
+        if self.db.settings.openOnWhisper then
             if not self.frame or not self.frame:IsShown() then self:Open(chat.key) end
         end
     end
@@ -179,6 +181,7 @@ events:SetScript("OnEvent", function(_, event, ...)
         if not ns:Initialize() then return end
         for _, name in ipairs({"CHAT_MSG_WHISPER", "CHAT_MSG_WHISPER_INFORM", "CHAT_MSG_BN_WHISPER", "CHAT_MSG_BN_WHISPER_INFORM", "PLAYER_REGEN_ENABLED", "PLAYER_REGEN_DISABLED", "ADDON_RESTRICTION_STATE_CHANGED"}) do events:RegisterEvent(name) end
         ns:Build()
+        if ns.InstallChatIntegration then ns:InstallChatIntegration() end
     elseif event == "ADDON_RESTRICTION_STATE_CHANGED" then
         local kind, state = ...
         if Public(kind) and Public(state) then ns.restrictions[kind] = state end
