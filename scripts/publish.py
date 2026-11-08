@@ -2,11 +2,13 @@
 import json
 import os
 from pathlib import Path
+import subprocess
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 REPO = "Revathify/Revaths-Enchanted-Frames"
 API = f"https://api.github.com/repos/{REPO}"
+GIT_REMOTE = f"https://github.com/{REPO}.git"
 
 def request(url, data=None, content_type="application/json", method=None):
     headers = {"Authorization": "Bearer " + os.environ["GH_TOKEN"],
@@ -15,6 +17,17 @@ def request(url, data=None, content_type="application/json", method=None):
     req = Request(url, data=data, headers=headers, method=method)
     with urlopen(req, timeout=120) as response:
         return json.load(response)
+
+def push_release_tag(commit, tag):
+    # A real Git push delivers the webhook used by CurseForge. Bind the same
+    # Jenkins credential without putting it in the remote URL or arguments.
+    helper = '!f() { if [ "$1" = get ]; then printf "username=%s\\npassword=%s\\n" "$GH_USER" "$GH_TOKEN"; fi; }; f'
+    subprocess.run(
+        ["git", "-c", "credential.helper=", "-c", f"credential.helper={helper}",
+         "push", "--no-follow-tags", GIT_REMOTE, f"{commit}:refs/tags/{tag}"],
+        env={**os.environ, "GIT_TERMINAL_PROMPT": "0"},
+        check=True,
+    )
 
 def publish():
     evidence = json.loads(Path("artifacts/build.json").read_text())
@@ -46,6 +59,7 @@ def publish():
     else:
         upload = release["upload_url"].split("{")[0] + "?name=" + asset.name
         request(upload, asset.read_bytes(), "application/zip")
+    push_release_tag(evidence["commit"], tag)
     request(API + "/releases/" + str(release["id"]), json.dumps({"draft": False}).encode(), method="PATCH")
     print(f"Published {tag} from validated commit {evidence['commit']}.")
 

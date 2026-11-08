@@ -12,4 +12,12 @@ Project: http://localhost:8088/job/enchanted-frames/
 - `PUBLISH_RELEASE=true` publishes a new version. Public versions are skipped. A draft release is populated before publication so interrupted uploads can be retried without publishing an empty ZIP release.
 - Builds and packages are archived in Jenkins. Set `PUBLISH_RELEASE=false` for review builds. Keep Jenkins/Docker running for automatic polling.
 
+## CurseForge automatic packaging
+
+CurseForge project [1696169](https://authors.curseforge.com/#/projects/1696169/source) uses this public GitHub repository and packages new tags only. The root `.pkgmeta` moves the six active addon folders to the ZIP root and excludes repository tooling and the retired Auction House addon.
+
+After validation and the draft GitHub ZIP upload, Jenkins pushes the selected version tag at the validated commit. A retry can push the same tag again. Git rejects a conflicting tag. Jenkins then publishes the GitHub draft.
+
+In the repository's [Webhooks settings](https://github.com/Revathify/Revaths-Enchanted-Frames/settings/hooks), configure an active push webhook using the payload URL `https://www.curseforge.com/api/projects/1696169/package?token=TOKEN` and the defaults from [CurseForge's setup guide](https://support.curseforge.com/support/solutions/articles/9000197281-automatic-packaging). Generate the token in [CurseForge account settings](https://www.curseforge.com/account/api-tokens) and enter it directly into the webhook configuration. Keep the URL with its real token out of source and logs. Check the GitHub webhook delivery and the CurseForge build for the first new version tag.
+
 Local validation: install `scripts/ci/requirements.txt` in an isolated Python environment, then run `python scripts/build.py` from the repository root. This creates `artifacts/RevathsEnchantedFrames-vVERSION.zip` and `artifacts/build.json`.
