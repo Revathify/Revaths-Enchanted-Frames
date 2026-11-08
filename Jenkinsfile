@@ -33,7 +33,10 @@ pipeline {
         stage('Publish release') {
             when { expression { params.PUBLISH_RELEASE } }
             steps {
-                withCredentials([usernamePassword(credentialsId: 'bd5bb50f-3087-4908-86fb-c43f8b8a6960', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
+                withCredentials([
+                    usernamePassword(credentialsId: 'bd5bb50f-3087-4908-86fb-c43f8b8a6960', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN'),
+                    string(credentialsId: 'curseforge-upload-token', variable: 'CURSEFORGE_API_TOKEN')
+                ]) {
                     sh 'python3 scripts/publish.py'
                 }
             }

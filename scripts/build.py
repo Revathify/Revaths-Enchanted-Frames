@@ -43,7 +43,10 @@ def build():
         for addon in ADDONS:
             for asset in sorted(Path(addon).rglob("*")):
                 if asset.is_file():
-                    package.write(asset, asset.as_posix())
+                    # Use a stable member timestamp so a clean checkout can
+                    # reproduce an existing draft's verified artifact.
+                    member = zipfile.ZipInfo(asset.as_posix())
+                    package.writestr(member, asset.read_bytes(), compress_type=zipfile.ZIP_DEFLATED)
     with zipfile.ZipFile(archive) as package:
         assert package.testzip() is None, "Corrupt archive"
         assert {name.split("/")[0] for name in package.namelist()} == set(ADDONS)
