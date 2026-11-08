@@ -500,3 +500,19 @@ assert(not ns:DropCharacter(firstKey,"missing",true) and not ns:DropCharacter(fi
 firstRow.scripts.OnDragStart(firstRow); ns:Toggle()
 assert(not firstRow.scripts.OnUpdate and firstRow.alpha==1, "closing cancels an active drag")
 print("Status colors and roster order passed: raid colors, tooltip states, drag/drop, reload, filters, boundaries and reset.")
+
+local planner = RevathsWeeklyPlannerFrame
+local nativeEnabled
+RevathsEnchantedFrames_ApplyNativeChrome = function(_, enabled) nativeEnabled = enabled end
+function planner:SetBackdropBorderColor(_, _, _, alpha) self.borderAlpha = alpha end
+ns.db.skin, ns.db.nativeChrome = "modern", true
+ns:ApplyAppearance()
+assert(nativeEnabled and planner.borderAlpha == 0, "the native border replaces the Modern outer border")
+assert(planner.brandTitle.point[3] < -20 and planner.brandIcon.point[3] < -20
+    and planner.headerClose.point[3] < -20, "the Modern header clears the native title strip")
+ns.db.nativeChrome = false
+ns:ApplyAppearance()
+assert(not nativeEnabled and planner.borderAlpha == 1, "turning off native borders restores the Modern outline")
+assert(planner.brandTitle.point[3] == -18 and planner.brandIcon.width == 40
+    and planner.headerClose.point[3] == -12, "turning off native borders restores the original header")
+print("Planner native border tests passed: header clearance and reversible styling.")

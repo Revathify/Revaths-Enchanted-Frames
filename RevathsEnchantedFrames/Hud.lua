@@ -59,6 +59,12 @@ function RevathsEnchantedFrames_ApplyNativeChrome(frame, enabled, classic)
     end
     if chrome then chrome:SetShown(enabled==true) end
     if not chrome then return end
+    -- The portrait ring belongs to the NineSlice, separate from the portrait itself.
+    local border=classic and "PortraitFrameTemplate" or "ButtonFrameTemplateNoPortrait"
+    if chrome.SetBorder and chrome.revathsBorder~=border then
+        chrome:SetBorder(border)
+        chrome.revathsBorder=border
+    end
     if chrome.TitleContainer then chrome.TitleContainer:SetShown(classic ~= nil) end
     if chrome.PortraitContainer then chrome.PortraitContainer:SetShown(classic ~= nil) end
     if classic then

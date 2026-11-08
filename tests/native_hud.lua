@@ -10,6 +10,7 @@ CreateFrame=function(_,_,parent,template)
     local region=Part()
     return {parent=parent,NineSlice=Part(),Bg=Part(),TitleContainer=Part(),PortraitContainer=Part(),CloseButton=Part(),
         SetTitle=function(self,v) self.title=v end,SetPortraitToAsset=function(self,v) self.icon=v end,
+        SetBorder=function(self,v) self.border=v end,
         SetAllPoints=function(self,p) self.anchored=p end,EnableMouse=function(self,v) self.mouse=v end,
         GetRegions=function() return region end,SetShown=function(self,v) self.shown=v end}
 end
@@ -22,6 +23,7 @@ RevathsEnchantedFrames_ApplyNativeChrome(frame,true)
 local c=frame.revathsNativeChrome
 assert(created==1 and c.shown and c.anchored==frame)
 assert(c.Bg.hidden and c.PortraitContainer.hidden and c.CloseButton.hidden)
+assert(c.border=="ButtonFrameTemplateNoPortrait","Modern native borders remove the ring from the NineSlice")
 assert(c.mouse==false and c.NineSlice.mouse==false,"decoration never intercepts window controls")
 RevathsEnchantedFrames_ApplyNativeChrome(frame,true)
 assert(created==1,"appearance changes reuse the native template")
@@ -40,9 +42,13 @@ local closed=false
 local close={GetScript=function() return function() closed=true end end}
 RevathsEnchantedFrames_ApplyNativeChrome(frame,true,{title="Classic window",icon="AddonIcon",close=close})
 assert(c.title=="Classic window" and c.icon=="AddonIcon")
+assert(c.border=="PortraitFrameTemplate","Classic restores the portrait ring on the reused template")
 assert(not c.TitleContainer.hidden and not c.PortraitContainer.hidden and not c.CloseButton.hidden)
 assert(frame.revathsClassicBackground.asset=="Interface\\FrameGeneral\\UI-Background-Rock" and frame.revathsClassicBackground.horizTile)
 c.CloseButton.click(); assert(closed,"native close preserves the module's close behavior")
+RevathsEnchantedFrames_ApplyNativeChrome(frame,true)
+assert(c.shown and c.border=="ButtonFrameTemplateNoPortrait" and c.PortraitContainer.hidden,
+    "switching to Modern with native borders enabled removes the Classic portrait and ring")
 RevathsEnchantedFrames_ApplyNativeChrome(frame,false)
 assert(frame.revathsClassicBackground.hidden and c.TitleContainer.hidden and c.CloseButton.hidden,"switching to Modern removes the full Classic treatment")
 local insetBg=Part()

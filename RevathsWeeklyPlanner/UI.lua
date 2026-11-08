@@ -11,7 +11,7 @@ local crestPanel, crestRows, crestHint, crestTab, resourceTab, currencyHeader, r
 local resourceOffset = 0
 local roster = {ordering=false}
 local refreshingAppearance = false
-local raidStatus, refreshRaids, headerGlow, headerLine, titlePlate, goalsTab, raidsTab
+local raidStatus, refreshRaids, headerGlow, headerLine, headerSubtitle, goalsTab, raidsTab
 local palettes = {
     midnight = { bg={.035,.047,.071}, panel={.065,.082,.115}, button={.09,.11,.15}, input={.025,.034,.052}, border={.18,.23,.31} },
     arcane = { bg={.050,.035,.080}, panel={.085,.060,.125}, button={.105,.070,.155}, input={.035,.025,.060}, border={.30,.22,.42} },
@@ -171,23 +171,33 @@ end
 function ns:ApplyAppearance()
     if not frame or not self.db then return end
     frame:SetScale(self.db.scale)
-    if RevathsEnchantedFrames_ApplyNativeChrome then RevathsEnchantedFrames_ApplyNativeChrome(frame,self.db.skin == "classic" or self.db.nativeChrome,self.db.skin == "classic" and {title="Revath's Enchanted Planner",close=frame.headerClose,icon="Interface\\AddOns\\RevathsWeeklyPlanner\\Media\\PlannerIcon"} or nil) end
+    local classic = self.db.skin == "classic"
+    local nativeBorder = not classic and self.db.nativeChrome == true and RevathsEnchantedFrames_ApplyNativeChrome ~= nil
+    if RevathsEnchantedFrames_ApplyNativeChrome then
+        RevathsEnchantedFrames_ApplyNativeChrome(frame, classic or nativeBorder, classic and {
+            title="Revath's Enchanted Planner", close=frame.headerClose,
+            icon="Interface\\AddOns\\RevathsWeeklyPlanner\\Media\\PlannerIcon",
+        } or nil)
+    end
     local c = Accent()
     headerGlow:SetColorTexture(c[1], c[2], c[3], .12)
     headerLine:SetColorTexture(c[1], c[2], c[3], .45)
-    titlePlate:Hide()
-    local classic = self.db.skin == "classic"
     headerGlow:SetShown(not classic); headerLine:SetShown(not classic)
-    if frame.brandTitle then frame.brandTitle:SetShown(not classic); frame.brandIcon:SetShown(not classic) end
-    if frame.headerClose then
-        frame.headerClose:SetShown(not classic)
-        frame.headerClose:ClearAllPoints(); frame.headerClose:SetPoint("TOPRIGHT",-12,classic and -30 or -12)
-    end
+    frame.brandTitle:SetShown(not classic); frame.brandIcon:SetShown(not classic)
+    -- Keep the custom header below the native title strip.
+    frame.brandTitle:SetPoint("TOPLEFT", 76, nativeBorder and -25 or -18)
+    frame.brandIcon:SetPoint("TOPLEFT", 20, nativeBorder and -23 or -14)
+    local iconSize = nativeBorder and 32 or 40
+    frame.brandIcon:SetSize(iconSize, iconSize)
+    headerSubtitle:SetPoint("TOPLEFT", 76, nativeBorder and -48 or -44)
+    frame.headerClose:SetShown(not classic)
+    frame.headerClose:SetPoint("TOPRIGHT", -12, classic and -30 or (nativeBorder and -24 or -12))
     local border = self.db.skin == "classic" and {.58,.48,.30} or (palettes[self.db.palette] or palettes.midnight).border
     for _, slider in ipairs({opacitySlider,scaleSlider}) do
         slider.track:SetColorTexture(border[1],border[2],border[3],.8)
     end
     for _, surface in ipairs(surfaces) do Style(surface) end
+    if nativeBorder then frame:SetBackdropBorderColor(0,0,0,0) end
     local key = self.db.font
     for _, label in ipairs(labels) do
         RevathsEnchantedFrames_ApplyFont(label,key,label.size)
@@ -396,13 +406,11 @@ local function Build()
     end)
     headerGlow = frame:CreateTexture(nil, "BACKGROUND")
     headerGlow:SetPoint("TOPLEFT", 5, -5); headerGlow:SetPoint("TOPRIGHT", -5, -5); headerGlow:SetHeight(72)
-    titlePlate = frame:CreateTexture(nil, "BORDER")
-    titlePlate:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Header"); titlePlate:SetSize(460, 84); titlePlate:SetPoint("TOP", 0, 14)
     local icon = frame:CreateTexture(nil, "ARTWORK")
-    icon:SetTexture("Interface\\AddOns\\RevathsWeeklyPlanner\\Media\\PlannerIcon"); icon:SetSize(40,40); icon:SetPoint("TOPLEFT", 20,-14)
-    local title = Label(frame, 20); title:SetPoint("TOPLEFT", 76, -18); title:SetText("REVATH'S ENCHANTED PLANNER")
+    icon:SetTexture("Interface\\AddOns\\RevathsWeeklyPlanner\\Media\\PlannerIcon")
+    local title = Label(frame, 20); title:SetText("REVATH'S ENCHANTED PLANNER")
     frame.brandTitle, frame.brandIcon = title, icon
-    local subtitle = Label(frame, 11, true); subtitle:SetPoint("TOPLEFT", 76,-44); subtitle:SetText("Weekly goals · Characters · Raid lockouts")
+    headerSubtitle = Label(frame, 11, true); headerSubtitle:SetText("Weekly goals · Characters · Raid lockouts")
     headerLine = frame:CreateTexture(nil, "ARTWORK")
     headerLine:SetPoint("TOPLEFT", 18,-78); headerLine:SetPoint("TOPRIGHT", -18,-78); headerLine:SetHeight(2)
     local rosterPanel = Surface(CreateFrame("Frame", nil, frame, "BackdropTemplate"), "panel")
